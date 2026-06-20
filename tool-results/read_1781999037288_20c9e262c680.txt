@@ -1,0 +1,1008 @@
+     1→'use client'
+     2→
+     3→import { useState, useMemo } from 'react'
+     4→import { useAppStore } from '@/lib/store'
+     5→import { translations } from '@/lib/i18n'
+     6→import {
+     7→  mockEmployees,
+     8→  mockEmployeeCourses,
+     9→  mockOrders,
+    10→  mockNPSResponses,
+    11→} from '@/lib/mock-data'
+    12→import type { Employee } from '@/lib/mock-data'
+    13→import {
+    14→  Card,
+    15→  CardContent,
+    16→  CardHeader,
+    17→  CardTitle,
+    18→} from '@/components/ui/card'
+    19→import { Badge } from '@/components/ui/badge'
+    20→import { Button } from '@/components/ui/button'
+    21→import { Input } from '@/components/ui/input'
+    22→import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+    23→import {
+    24→  Select,
+    25→  SelectContent,
+    26→  SelectItem,
+    27→  SelectTrigger,
+    28→  SelectValue,
+    29→} from '@/components/ui/select'
+    30→import {
+    31→  Table,
+    32→  TableBody,
+    33→  TableCell,
+    34→  TableHead,
+    35→  TableHeader,
+    36→  TableRow,
+    37→} from '@/components/ui/table'
+    38→import {
+    39→  ArrowLeft,
+    40→  Search,
+    41→  UserPlus,
+    42→  Users,
+    43→  AlertTriangle,
+    44→  TrendingUp,
+    45→  Star,
+    46→  ChevronRight,
+    47→  Trophy,
+    48→  BookOpen,
+    49→  ClipboardList,
+    50→  MessageSquare,
+    51→} from 'lucide-react'
+    52→
+    53→// ---- Helper functions ----
+    54→
+    55→const departmentColors: Record<string, string> = {
+    56→  'Alimentos y Bebidas': 'bg-orange-500',
+    57→  'Food & Beverage': 'bg-orange-500',
+    58→  'Conserjería': 'bg-blue-500',
+    59→  'Concierge': 'bg-blue-500',
+    60→  'Recepción': 'bg-purple-500',
+    61→  'Front Desk': 'bg-purple-500',
+    62→  'Ama de Llaves': 'bg-teal-500',
+    63→  'Housekeeping': 'bg-teal-500',
+    64→  'Bar': 'bg-rose-500',
+    65→}
+    66→
+    67→function getDepartmentColor(dept: string, deptEn: string): string {
+    68→  return departmentColors[dept] || departmentColors[deptEn] || 'bg-gray-500'
+    69→}
+    70→
+    71→function getInitials(name: string): string {
+    72→  return name
+    73→    .split(' ')
+    74→    .map((n) => n[0])
+    75→    .join('')
+    76→    .substring(0, 2)
+    77→    .toUpperCase()
+    78→}
+    79→
+    80→function getStatusColor(status: string): string {
+    81→  switch (status) {
+    82→    case 'active':
+    83→      return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+    84→    case 'onboarding':
+    85→      return 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400'
+    86→    case 'offboarding':
+    87→      return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+    88→    case 'inactive':
+    89→      return 'bg-gray-100 text-gray-600 dark:bg-gray-800/30 dark:text-gray-400'
+    90→    default:
+    91→      return 'bg-gray-100 text-gray-600'
+    92→  }
+    93→}
+    94→
+    95→function getTurnoverRiskColor(risk: number): string {
+    96→  if (risk < 25) return 'text-emerald-600 dark:text-emerald-400'
+    97→  if (risk < 50) return 'text-amber-600 dark:text-amber-400'
+    98→  if (risk < 75) return 'text-orange-600 dark:text-orange-400'
+    99→  return 'text-red-600 dark:text-red-400'
+   100→}
+   101→
+   102→function getScoreColor(score: number): string {
+   103→  if (score < 40) return 'text-red-600 dark:text-red-400'
+   104→  if (score < 70) return 'text-amber-600 dark:text-amber-400'
+   105→  return 'text-emerald-600 dark:text-emerald-400'
+   106→}
+   107→
+   108→function getScoreRingColor(score: number): string {
+   109→  if (score < 40) return 'stroke-red-500'
+   110→  if (score < 70) return 'stroke-amber-500'
+   111→  return 'stroke-emerald-500'
+   112→}
+   113→
+   114→function getScoreBarColor(score: number): string {
+   115→  if (score < 40) return '#ef4444'
+   116→  if (score < 70) return '#f59e0b'
+   117→  return '#10b981'
+   118→}
+   119→
+   120→function getTurnoverRiskBarColor(risk: number): string {
+   121→  if (risk < 25) return '#10b981'
+   122→  if (risk < 50) return '#f59e0b'
+   123→  if (risk < 75) return '#f97316'
+   124→  return '#ef4444'
+   125→}
+   126→
+   127→function ColoredProgressBar({ value, color, className = '' }: { value: number; color: string; className?: string }) {
+   128→  return (
+   129→    <div
+   130→      className={`relative h-1.5 w-full overflow-hidden rounded-full bg-primary/20 ${className}`}
+   131→    >
+   132→      <div
+   133→        className="h-full rounded-full transition-all duration-300"
+   134→        style={{ width: `${Math.min(100, Math.max(0, value))}%`, backgroundColor: color }}
+   135→      />
+   136→    </div>
+   137→  )
+   138→}
+   139→
+   140→// ---- Score Circle Component ----
+   141→
+   142→function ScoreCircle({
+   143→  score,
+   144→  size = 80,
+   145→  strokeWidth = 6,
+   146→  label,
+   147→}: {
+   148→  score: number
+   149→  size?: number
+   150→  strokeWidth?: number
+   151→  label?: string
+   152→}) {
+   153→  const radius = (size - strokeWidth) / 2
+   154→  const circumference = 2 * Math.PI * radius
+   155→  const offset = circumference - (score / 100) * circumference
+   156→
+   157→  return (
+   158→    <div className="flex flex-col items-center gap-1">
+   159→      <div className="relative" style={{ width: size, height: size }}>
+   160→        <svg
+   161→          width={size}
+   162→          height={size}
+   163→          className="-rotate-90"
+   164→          viewBox={`0 0 ${size} ${size}`}
+   165→        >
+   166→          <circle
+   167→            cx={size / 2}
+   168→            cy={size / 2}
+   169→            r={radius}
+   170→            fill="none"
+   171→            className="stroke-muted"
+   172→            strokeWidth={strokeWidth}
+   173→          />
+   174→          <circle
+   175→            cx={size / 2}
+   176→            cy={size / 2}
+   177→            r={radius}
+   178→            fill="none"
+   179→            className={getScoreRingColor(score)}
+   180→            strokeWidth={strokeWidth}
+   181→            strokeDasharray={circumference}
+   182→            strokeDashoffset={offset}
+   183→            strokeLinecap="round"
+   184→            style={{ transition: 'stroke-dashoffset 0.5s ease-in-out' }}
+   185→          />
+   186→        </svg>
+   187→        <div className="absolute inset-0 flex items-center justify-center">
+   188→          <span className={`text-lg font-bold ${getScoreColor(score)}`}>
+   189→            {score.toFixed(score % 1 === 0 ? 0 : 1)}
+   190→          </span>
+   191→        </div>
+   192→      </div>
+   193→      {label && (
+   194→        <span className="text-xs font-medium text-muted-foreground">
+   195→          {label}
+   196→        </span>
+   197→      )}
+   198→    </div>
+   199→  )
+   200→}
+   201→
+   202→// ---- Employee List View ----
+   203→
+   204→function EmployeeListView() {
+   205→  const { locale, selectedProperty, setSelectedEmployee, setShowAddEmployee } =
+   206→    useAppStore()
+   207→  const t = translations[locale].employees
+   208→  const tc = translations[locale].common
+   209→
+   210→  const [searchQuery, setSearchQuery] = useState('')
+   211→  const [statusFilter, setStatusFilter] = useState<string>('all')
+   212→  const [departmentFilter, setDepartmentFilter] = useState<string>('all')
+   213→
+   214→  // Filter employees by property
+   215→  const propertyFilteredEmployees = useMemo(() => {
+   216→    if (selectedProperty === 'all') return mockEmployees
+   217→    return mockEmployees.filter((e) => e.propertyId === selectedProperty)
+   218→  }, [selectedProperty])
+   219→
+   220→  // Get unique departments
+   221→  const departments = useMemo(() => {
+   222→    const depts = new Set(
+   223→      propertyFilteredEmployees.map((e) =>
+   224→        locale === 'es' ? e.department : e.departmentEn
+   225→      )
+   226→    )
+   227→    return Array.from(depts).sort()
+   228→  }, [propertyFilteredEmployees, locale])
+   229→
+   230→  // Apply all filters
+   231→  const filteredEmployees = useMemo(() => {
+   232→    return propertyFilteredEmployees.filter((e) => {
+   233→      const matchesSearch =
+   234→        e.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+   235→        e.employeeId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+   236→        e.position.toLowerCase().includes(searchQuery.toLowerCase()) ||
+   237→        e.positionEn.toLowerCase().includes(searchQuery.toLowerCase())
+   238→      const matchesStatus =
+   239→        statusFilter === 'all' || e.status === statusFilter
+   240→      const matchesDepartment =
+   241→        departmentFilter === 'all' ||
+   242→        (locale === 'es' ? e.department : e.departmentEn) ===
+   243→          departmentFilter
+   244→      return matchesSearch && matchesStatus && matchesDepartment
+   245→    })
+   246→  }, [propertyFilteredEmployees, searchQuery, statusFilter, departmentFilter, locale])
+   247→
+   248→  // Stats
+   249→  const stats = useMemo(() => {
+   250→    const active = propertyFilteredEmployees.filter(
+   251→      (e) => e.status === 'active'
+   252→    ).length
+   253→    const onboarding = propertyFilteredEmployees.filter(
+   254→      (e) => e.status === 'onboarding'
+   255→    ).length
+   256→    const atRisk = propertyFilteredEmployees.filter(
+   257→      (e) => e.turnoverRisk > 50
+   258→    ).length
+   259→    const avgScore =
+   260→      propertyFilteredEmployees.length > 0
+   261→        ? propertyFilteredEmployees.reduce(
+   262→            (sum, e) => sum + e.overallScore,
+   263→            0
+   264→          ) / propertyFilteredEmployees.length
+   265→        : 0
+   266→    return { active, onboarding, atRisk, avgScore }
+   267→  }, [propertyFilteredEmployees])
+   268→
+   269→  return (
+   270→    <div className="space-y-6">
+   271→      {/* Header */}
+   272→      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+   273→        <h2 className="text-2xl font-bold tracking-tight">{t.title}</h2>
+   274→        <Button onClick={() => setShowAddEmployee(true)} className="gap-2">
+   275→          <UserPlus className="size-4" />
+   276→          {t.addEmployee}
+   277→        </Button>
+   278→      </div>
+   279→
+   280→      {/* Search & Filters */}
+   281→      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+   282→        <div className="relative flex-1">
+   283→          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+   284→          <Input
+   285→            placeholder={t.search}
+   286→            value={searchQuery}
+   287→            onChange={(e) => setSearchQuery(e.target.value)}
+   288→            className="pl-9"
+   289→          />
+   290→        </div>
+   291→        <Select value={statusFilter} onValueChange={setStatusFilter}>
+   292→          <SelectTrigger className="w-full sm:w-[180px]">
+   293→            <SelectValue placeholder={t.filterByStatus} />
+   294→          </SelectTrigger>
+   295→          <SelectContent>
+   296→            <SelectItem value="all">{t.allStatuses}</SelectItem>
+   297→            <SelectItem value="active">{t.active}</SelectItem>
+   298→            <SelectItem value="onboarding">{t.onboarding}</SelectItem>
+   299→            <SelectItem value="offboarding">{t.offboarding}</SelectItem>
+   300→            <SelectItem value="inactive">{t.inactive}</SelectItem>
+   301→          </SelectContent>
+   302→        </Select>
+   303→        <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+   304→          <SelectTrigger className="w-full sm:w-[200px]">
+   305→            <SelectValue placeholder={t.filterByDepartment} />
+   306→          </SelectTrigger>
+   307→          <SelectContent>
+   308→            <SelectItem value="all">{t.allDepartments}</SelectItem>
+   309→            {departments.map((dept) => (
+   310→              <SelectItem key={dept} value={dept}>
+   311→                {dept}
+   312→              </SelectItem>
+   313→            ))}
+   314→          </SelectContent>
+   315→        </Select>
+   316→      </div>
+   317→
+   318→      {/* Stats Row */}
+   319→      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+   320→        <Card className="py-4">
+   321→          <CardContent className="flex items-center gap-3 px-4">
+   322→            <div className="flex size-10 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
+   323→              <Users className="size-5 text-emerald-600 dark:text-emerald-400" />
+   324→            </div>
+   325→            <div>
+   326→              <p className="text-2xl font-bold">{stats.active}</p>
+   327→              <p className="text-xs text-muted-foreground">{t.totalActive}</p>
+   328→            </div>
+   329→          </CardContent>
+   330→        </Card>
+   331→        <Card className="py-4">
+   332→          <CardContent className="flex items-center gap-3 px-4">
+   333→            <div className="flex size-10 items-center justify-center rounded-lg bg-sky-100 dark:bg-sky-900/30">
+   334→              <TrendingUp className="size-5 text-sky-600 dark:text-sky-400" />
+   335→            </div>
+   336→            <div>
+   337→              <p className="text-2xl font-bold">{stats.onboarding}</p>
+   338→              <p className="text-xs text-muted-foreground">{t.onboarding}</p>
+   339→            </div>
+   340→          </CardContent>
+   341→        </Card>
+   342→        <Card className="py-4">
+   343→          <CardContent className="flex items-center gap-3 px-4">
+   344→            <div className="flex size-10 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30">
+   345→              <AlertTriangle className="size-5 text-red-600 dark:text-red-400" />
+   346→            </div>
+   347→            <div>
+   348→              <p className="text-2xl font-bold">{stats.atRisk}</p>
+   349→              <p className="text-xs text-muted-foreground">{t.atRisk}</p>
+   350→            </div>
+   351→          </CardContent>
+   352→        </Card>
+   353→        <Card className="py-4">
+   354→          <CardContent className="flex items-center gap-3 px-4">
+   355→            <div className="flex size-10 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30">
+   356→              <Star className="size-5 text-amber-600 dark:text-amber-400" />
+   357→            </div>
+   358→            <div>
+   359→              <p className="text-2xl font-bold">
+   360→                {stats.avgScore.toFixed(1)}
+   361→              </p>
+   362→              <p className="text-xs text-muted-foreground">{t.avgScore}</p>
+   363→            </div>
+   364→          </CardContent>
+   365→        </Card>
+   366→      </div>
+   367→
+   368→      {/* Employee Cards Grid */}
+   369→      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+   370→        {filteredEmployees.map((employee) => (
+   371→          <EmployeeCard
+   372→            key={employee.id}
+   373→            employee={employee}
+   374→            locale={locale}
+   375→            onSelect={() => setSelectedEmployee(employee.id)}
+   376→          />
+   377→        ))}
+   378→      </div>
+   379→
+   380→      {filteredEmployees.length === 0 && (
+   381→        <div className="flex flex-col items-center justify-center py-12 text-center">
+   382→          <Users className="size-12 text-muted-foreground/50" />
+   383→          <p className="mt-3 text-lg font-medium text-muted-foreground">
+   384→            {tc.noData}
+   385→          </p>
+   386→        </div>
+   387→      )}
+   388→    </div>
+   389→  )
+   390→}
+   391→
+   392→// ---- Employee Card ----
+   393→
+   394→function EmployeeCard({
+   395→  employee,
+   396→  locale,
+   397→  onSelect,
+   398→}: {
+   399→  employee: Employee
+   400→  locale: 'es' | 'en'
+   401→  onSelect: () => void
+   402→}) {
+   403→  const t = translations[locale].employees
+   404→
+   405→  const statusLabel =
+   406→    locale === 'es'
+   407→      ? t[employee.status as keyof typeof t]
+   408→      : t[employee.status as keyof typeof t]
+   409→
+   410→  return (
+   411→    <Card className="group transition-shadow hover:shadow-md py-4">
+   412→      <CardHeader className="pb-0 pt-0">
+   413→        <div className="flex items-start gap-3">
+   414→          <Avatar className="size-12 shrink-0">
+   415→            <AvatarFallback
+   416→              className={`${getDepartmentColor(employee.department, employee.departmentEn)} text-white text-sm font-semibold`}
+   417→            >
+   418→              {getInitials(employee.name)}
+   419→            </AvatarFallback>
+   420→          </Avatar>
+   421→          <div className="min-w-0 flex-1">
+   422→            <div className="flex items-center gap-2">
+   423→              <h3 className="truncate text-sm font-semibold">
+   424→                {employee.name}
+   425→              </h3>
+   426→            </div>
+   427→            <p className="text-xs text-muted-foreground">
+   428→              {employee.employeeId}
+   429→            </p>
+   430→            <p className="truncate text-sm text-muted-foreground">
+   431→              {locale === 'es' ? employee.position : employee.positionEn}
+   432→            </p>
+   433→            <p className="text-xs text-muted-foreground">
+   434→              {locale === 'es' ? employee.department : employee.departmentEn}
+   435→            </p>
+   436→          </div>
+   437→          <Badge
+   438→            variant="secondary"
+   439→            className={`shrink-0 text-[10px] ${getStatusColor(employee.status)}`}
+   440→          >
+   441→            {String(statusLabel)}
+   442→          </Badge>
+   443→        </div>
+   444→      </CardHeader>
+   445→
+   446→      <CardContent className="space-y-3 pt-3">
+   447→        {/* Overall Score */}
+   448→        <div className="flex items-center justify-between">
+   449→          <span className="text-xs font-medium text-muted-foreground">
+   450→            {t.overallScore}
+   451→          </span>
+   452→          <div className="flex items-center gap-2">
+   453→            <span
+   454→              className={`text-lg font-bold ${getScoreColor(employee.overallScore)}`}
+   455→            >
+   456→              {employee.overallScore.toFixed(1)}
+   457→            </span>
+   458→            <div
+   459→              className="size-3 rounded-full"
+   460→              style={{ backgroundColor: getScoreBarColor(employee.overallScore) }}
+   461→            />
+   462→          </div>
+   463→        </div>
+   464→
+   465→        {/* Mini Progress Bars */}
+   466→        <div className="space-y-2">
+   467→          <div className="space-y-1">
+   468→            <div className="flex items-center justify-between">
+   469→              <span className="text-xs text-muted-foreground">
+   470→                {t.knowledge}
+   471→              </span>
+   472→              <span className="text-xs font-medium">
+   473→                {employee.knowledgeScore}
+   474→              </span>
+   475→            </div>
+   476→            <ColoredProgressBar
+   477→              value={employee.knowledgeScore}
+   478→              color={getScoreBarColor(employee.knowledgeScore)}
+   479→            />
+   480→          </div>
+   481→          <div className="space-y-1">
+   482→            <div className="flex items-center justify-between">
+   483→              <span className="text-xs text-muted-foreground">
+   484→                {t.sales}
+   485→              </span>
+   486→              <span className="text-xs font-medium">
+   487→                {employee.salesScore}
+   488→              </span>
+   489→            </div>
+   490→            <ColoredProgressBar
+   491→              value={employee.salesScore}
+   492→              color={getScoreBarColor(employee.salesScore)}
+   493→            />
+   494→          </div>
+   495→          <div className="space-y-1">
+   496→            <div className="flex items-center justify-between">
+   497→              <span className="text-xs text-muted-foreground">
+   498→                {t.hospitality}
+   499→              </span>
+   500→              <span className="text-xs font-medium">
+   501→                {employee.hospitalityScore}
+   502→              </span>
+   503→            </div>
+   504→            <ColoredProgressBar
+   505→              value={employee.hospitalityScore}
+   506→              color={getScoreBarColor(employee.hospitalityScore)}
+   507→            />
+   508→          </div>
+   509→        </div>
+   510→
+   511→        {/* Turnover Risk */}
+   512→        <div className="flex items-center justify-between">
+   513→          <span className="text-xs font-medium text-muted-foreground">
+   514→            {t.turnoverRisk}
+   515→          </span>
+   516→          <div className="flex items-center gap-1.5">
+   517→            <div
+   518→              className="size-2 rounded-full"
+   519→              style={{ backgroundColor: getTurnoverRiskBarColor(employee.turnoverRisk) }}
+   520→            />
+   521→            <span
+   522→              className={`text-xs font-semibold ${getTurnoverRiskColor(employee.turnoverRisk)}`}
+   523→            >
+   524→              {employee.turnoverRisk}%
+   525→            </span>
+   526→          </div>
+   527→        </div>
+   528→
+   529→        {/* View Profile Button */}
+   530→        <Button
+   531→          variant="outline"
+   532→          size="sm"
+   533→          className="w-full gap-1"
+   534→          onClick={onSelect}
+   535→        >
+   536→          {t.viewProfile}
+   537→          <ChevronRight className="size-3" />
+   538→        </Button>
+   539→      </CardContent>
+   540→    </Card>
+   541→  )
+   542→}
+   543→
+   544→// ---- Employee Detail View ----
+   545→
+   546→function EmployeeDetailView({ employeeId }: { employeeId: string }) {
+   547→  const { locale, setSelectedEmployee, selectedProperty } = useAppStore()
+   548→  const t = translations[locale].employees
+   549→  const tc = translations[locale].common
+   550→
+   551→  const employee = useMemo(
+   552→    () => mockEmployees.find((e) => e.id === employeeId),
+   553→    [employeeId]
+   554→  )
+   555→
+   556→  const employeeCourses = useMemo(
+   557→    () => mockEmployeeCourses.filter((ec) => ec.employeeId === employeeId),
+   558→    [employeeId]
+   559→  )
+   560→
+   561→  const employeeOrders = useMemo(
+   562→    () => mockOrders.filter((o) => o.employeeId === employeeId),
+   563→    [employeeId]
+   564→  )
+   565→
+   566→  const employeeNPS = useMemo(
+   567→    () => mockNPSResponses.filter((nps) => nps.employeeId === employeeId),
+   568→    [employeeId]
+   569→  )
+   570→
+   571→  if (!employee) {
+   572→    return (
+   573→      <div className="flex flex-col items-center justify-center py-16">
+   574→        <p className="text-muted-foreground">{tc.noData}</p>
+   575→        <Button
+   576→          variant="outline"
+   577→          className="mt-4"
+   578→          onClick={() => setSelectedEmployee(null)}
+   579→        >
+   580→          {tc.back}
+   581→        </Button>
+   582→      </div>
+   583→    )
+   584→  }
+   585→
+   586→  const careerPathSteps =
+   587→    locale === 'es'
+   588→      ? employee.careerPath.split(' → ')
+   589→      : employee.careerPathEn.split(' → ')
+   590→
+   591→  const currentLevelIndex = Math.min(
+   592→    employee.careerLevel - 1,
+   593→    careerPathSteps.length - 1
+   594→  )
+   595→
+   596→  return (
+   597→    <div className="space-y-6">
+   598→      {/* Header */}
+   599→      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+   600→        <Button
+   601→          variant="ghost"
+   602→          size="sm"
+   603→          className="gap-1 self-start"
+   604→          onClick={() => setSelectedEmployee(null)}
+   605→        >
+   606→          <ArrowLeft className="size-4" />
+   607→          {tc.back}
+   608→        </Button>
+   609→        <div className="flex flex-1 items-center gap-3">
+   610→          <Avatar className="size-12">
+   611→            <AvatarFallback
+   612→              className={`${getDepartmentColor(employee.department, employee.departmentEn)} text-white font-semibold`}
+   613→            >
+   614→              {getInitials(employee.name)}
+   615→            </AvatarFallback>
+   616→          </Avatar>
+   617→          <div>
+   618→            <div className="flex items-center gap-2">
+   619→              <h2 className="text-xl font-bold">{employee.name}</h2>
+   620→              <Badge
+   621→                variant="secondary"
+   622→                className={`text-[10px] ${getStatusColor(employee.status)}`}
+   623→              >
+   624→                {String(
+   625→                  t[
+   626→                    employee.status as keyof typeof t
+   627→                  ]
+   628→                )}
+   629→              </Badge>
+   630→            </div>
+   631→            <p className="text-sm text-muted-foreground">
+   632→              {employee.employeeId} ·{' '}
+   633→              {locale === 'es' ? employee.position : employee.positionEn}
+   634→            </p>
+   635→          </div>
+   636→        </div>
+   637→      </div>
+   638→
+   639→      {/* Top Section: Employee Info Card */}
+   640→      <Card className="py-4">
+   641→        <CardContent className="px-4">
+   642→          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+   643→            <div className="space-y-1">
+   644→              <p className="text-xs text-muted-foreground">
+   645→                {t.property}
+   646→              </p>
+   647→              <p className="text-sm font-medium">{employee.propertyName}</p>
+   648→            </div>
+   649→            <div className="space-y-1">
+   650→              <p className="text-xs text-muted-foreground">{t.hireDate}</p>
+   651→              <p className="text-sm font-medium">{employee.hireDate}</p>
+   652→            </div>
+   653→            <div className="space-y-1">
+   654→              <p className="text-xs text-muted-foreground">
+   655→                {t.department}
+   656→              </p>
+   657→              <p className="text-sm font-medium">
+   658→                {locale === 'es' ? employee.department : employee.departmentEn}
+   659→              </p>
+   660→            </div>
+   661→            <div className="space-y-1">
+   662→              <p className="text-xs text-muted-foreground">
+   663→                {t.careerLevel}
+   664→              </p>
+   665→              <div className="flex items-center gap-1">
+   666→                {Array.from({ length: 5 }).map((_, i) => (
+   667→                  <Star
+   668→                    key={i}
+   669→                    className={`size-4 ${
+   670→                      i < employee.careerLevel
+   671→                        ? 'fill-amber-400 text-amber-400'
+   672→                        : 'fill-muted text-muted'
+   673→                    }`}
+   674→                  />
+   675→                ))}
+   676→                <span className="ml-1 text-sm font-medium">
+   677→                  {employee.careerLevel}/5
+   678→                </span>
+   679→              </div>
+   680→            </div>
+   681→          </div>
+   682→        </CardContent>
+   683→      </Card>
+   684→
+   685→      {/* Score Dashboard */}
+   686→      <Card className="py-4">
+   687→        <CardHeader className="pb-2 pt-0">
+   688→          <CardTitle className="flex items-center gap-2 text-base">
+   689→            <Trophy className="size-4 text-amber-500" />
+   690→            {t.overallScore}
+   691→          </CardTitle>
+   692→        </CardHeader>
+   693→        <CardContent>
+   694→          <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-8">
+   695→            <ScoreCircle
+   696→              score={employee.knowledgeScore}
+   697→              size={90}
+   698→              label={t.knowledge}
+   699→            />
+   700→            <ScoreCircle
+   701→              score={employee.salesScore}
+   702→              size={90}
+   703→              label={t.sales}
+   704→            />
+   705→            <ScoreCircle
+   706→              score={employee.hospitalityScore}
+   707→              size={90}
+   708→              label={t.hospitality}
+   709→            />
+   710→            <div className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 p-4">
+   711→              <ScoreCircle
+   712→                score={employee.overallScore}
+   713→                size={110}
+   714→                strokeWidth={8}
+   715→              />
+   716→              <span className="text-xs font-bold text-primary">
+   717→                {t.overallScore}
+   718→              </span>
+   719→            </div>
+   720→          </div>
+   721→        </CardContent>
+   722→      </Card>
+   723→
+   724→      {/* Career Path */}
+   725→      <Card className="py-4">
+   726→        <CardHeader className="pb-2 pt-0">
+   727→          <CardTitle className="flex items-center gap-2 text-base">
+   728→            <TrendingUp className="size-4 text-primary" />
+   729→            {t.careerPath}
+   730→          </CardTitle>
+   731→        </CardHeader>
+   732→        <CardContent>
+   733→          <div className="flex flex-wrap items-center gap-0">
+   734→            {careerPathSteps.map((step, i) => (
+   735→              <div key={i} className="flex items-center">
+   736→                <div className="flex flex-col items-center">
+   737→                  <div
+   738→                    className={`flex items-center justify-center rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+   739→                      i === currentLevelIndex
+   740→                        ? 'bg-primary text-primary-foreground shadow-sm ring-2 ring-primary/30'
+   741→                        : i < currentLevelIndex
+   742→                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+   743→                          : 'bg-muted text-muted-foreground'
+   744→                    }`}
+   745→                  >
+   746→                    {step}
+   747→                  </div>
+   748→                  {i === currentLevelIndex && (
+   749→                    <span className="mt-1 text-[10px] font-medium text-primary">
+   750→                      {t.currentLevel}
+   751→                    </span>
+   752→                  )}
+   753→                </div>
+   754→                {i < careerPathSteps.length - 1 && (
+   755→                  <ChevronRight className="mx-1 size-4 text-muted-foreground" />
+   756→                )}
+   757→              </div>
+   758→            ))}
+   759→          </div>
+   760→          {currentLevelIndex < careerPathSteps.length - 1 && (
+   761→            <div className="mt-4 rounded-lg border border-dashed border-primary/30 bg-primary/5 p-3">
+   762→              <p className="text-xs font-medium text-primary">
+   763→                {t.nextLevel}:{' '}
+   764→                <span className="font-bold">
+   765→                  {careerPathSteps[currentLevelIndex + 1]}
+   766→                </span>
+   767→              </p>
+   768→              <p className="mt-1 text-xs text-muted-foreground">
+   769→                {t.requiredToAdvance}: {locale === 'es' ? 'Completar cursos asignados y mejorar puntuación general' : 'Complete assigned courses and improve overall score'}
+   770→              </p>
+   771→            </div>
+   772→          )}
+   773→        </CardContent>
+   774→      </Card>
+   775→
+   776→      {/* Training Progress */}
+   777→      <Card className="py-4">
+   778→        <CardHeader className="pb-2 pt-0">
+   779→          <CardTitle className="flex items-center gap-2 text-base">
+   780→            <BookOpen className="size-4 text-sky-500" />
+   781→            {t.trainingProgress}
+   782→          </CardTitle>
+   783→        </CardHeader>
+   784→        <CardContent>
+   785→          {employeeCourses.length === 0 ? (
+   786→            <p className="text-sm text-muted-foreground">{t.noCourses}</p>
+   787→          ) : (
+   788→            <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
+   789→              {employeeCourses.map((ec) => (
+   790→                <div
+   791→                  key={ec.id}
+   792→                  className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
+   793→                >
+   794→                  <div className="min-w-0 flex-1 space-y-1">
+   795→                    <p className="text-sm font-medium truncate">
+   796→                      {locale === 'es'
+   797→                        ? ec.courseTitle
+   798→                        : ec.courseTitleEn}
+   799→                    </p>
+   800→                    <div className="flex items-center gap-2">
+   801→                      <ColoredProgressBar
+   802→                        value={ec.progress}
+   803→                        color={
+   804→                          ec.status === 'completed'
+   805→                            ? '#10b981'
+   806→                            : ec.status === 'in_progress'
+   807→                              ? '#3b82f6'
+   808→                              : '#9ca3af'
+   809→                        }
+   810→                        className="h-1.5 w-20"
+   811→                      />
+   812→                      <span className="text-xs text-muted-foreground">
+   813→                        {ec.progress}%
+   814→                      </span>
+   815→                    </div>
+   816→                  </div>
+   817→                  <div className="flex items-center gap-2">
+   818→                    {ec.score !== undefined && (
+   819→                      <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+   820→                        {ec.score}
+   821→                      </span>
+   822→                    )}
+   823→                    <Badge
+   824→                      variant="secondary"
+   825→                      className={`text-[10px] ${
+   826→                        ec.status === 'completed'
+   827→                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+   828→                          : ec.status === 'in_progress'
+   829→                            ? 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400'
+   830→                            : 'bg-gray-100 text-gray-600 dark:bg-gray-800/30 dark:text-gray-400'
+   831→                      }`}
+   832→                    >
+   833→                      {ec.status === 'completed'
+   834→                        ? translations[locale].training.completed
+   835→                        : ec.status === 'in_progress'
+   836→                          ? translations[locale].training.inProgress
+   837→                          : translations[locale].training.notStarted}
+   838→                    </Badge>
+   839→                  </div>
+   840→                </div>
+   841→              ))}
+   842→            </div>
+   843→          )}
+   844→        </CardContent>
+   845→      </Card>
+   846→
+   847→      {/* Recent Orders */}
+   848→      <Card className="py-4">
+   849→        <CardHeader className="pb-2 pt-0">
+   850→          <CardTitle className="flex items-center gap-2 text-base">
+   851→            <ClipboardList className="size-4 text-orange-500" />
+   852→            {t.recentOrders}
+   853→          </CardTitle>
+   854→        </CardHeader>
+   855→        <CardContent>
+   856→          {employeeOrders.length === 0 ? (
+   857→            <p className="text-sm text-muted-foreground">{t.noOrders}</p>
+   858→          ) : (
+   859→            <div className="overflow-x-auto">
+   860→              <Table>
+   861→                <TableHeader>
+   862→                  <TableRow>
+   863→                    <TableHead>{t.service}</TableHead>
+   864→                    <TableHead className="text-right">{t.quantity}</TableHead>
+   865→                    <TableHead className="text-right">{t.amount}</TableHead>
+   866→                    <TableHead className="text-center">
+   867→                      {t.upselling}
+   868→                    </TableHead>
+   869→                    <TableHead className="text-center">
+   870→                      {t.satisfaction}
+   871→                    </TableHead>
+   872→                    <TableHead>{t.date}</TableHead>
+   873→                  </TableRow>
+   874→                </TableHeader>
+   875→                <TableBody>
+   876→                  {employeeOrders.map((order) => (
+   877→                    <TableRow key={order.id}>
+   878→                      <TableCell className="font-medium">
+   879→                        {order.serviceName}
+   880→                      </TableCell>
+   881→                      <TableCell className="text-right">
+   882→                        {order.quantity}
+   883→                      </TableCell>
+   884→                      <TableCell className="text-right">
+   885→                        ${order.totalAmount.toLocaleString()}
+   886→                      </TableCell>
+   887→                      <TableCell className="text-center">
+   888→                        {order.isUpselling ? (
+   889→                          <Badge
+   890→                            variant="secondary"
+   891→                            className="bg-amber-100 text-amber-700 text-[10px] dark:bg-amber-900/30 dark:text-amber-400"
+   892→                          >
+   893→                            {t.upselling}
+   894→                          </Badge>
+   895→                        ) : (
+   896→                          <span className="text-xs text-muted-foreground">
+   897→                            —
+   898→                          </span>
+   899→                        )}
+   900→                      </TableCell>
+   901→                      <TableCell className="text-center">
+   902→                        {order.customerSatisfaction ? (
+   903→                          <span className="text-xs font-medium">
+   904→                            {order.customerSatisfaction}/10
+   905→                          </span>
+   906→                        ) : (
+   907→                          <span className="text-xs text-muted-foreground">
+   908→                            —
+   909→                          </span>
+   910→                        )}
+   911→                      </TableCell>
+   912→                      <TableCell className="text-xs text-muted-foreground">
+   913→                        {new Date(order.orderDate).toLocaleDateString(
+   914→                          locale === 'es' ? 'es-MX' : 'en-US'
+   915→                        )}
+   916→                      </TableCell>
+   917→                    </TableRow>
+   918→                  ))}
+   919→                </TableBody>
+   920→              </Table>
+   921→            </div>
+   922→          )}
+   923→        </CardContent>
+   924→      </Card>
+   925→
+   926→      {/* NPS History */}
+   927→      <Card className="py-4">
+   928→        <CardHeader className="pb-2 pt-0">
+   929→          <CardTitle className="flex items-center gap-2 text-base">
+   930→            <MessageSquare className="size-4 text-violet-500" />
+   931→            {t.npsHistory}
+   932→          </CardTitle>
+   933→        </CardHeader>
+   934→        <CardContent>
+   935→          {employeeNPS.length === 0 ? (
+   936→            <p className="text-sm text-muted-foreground">{t.noNPS}</p>
+   937→          ) : (
+   938→            <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
+   939→              {employeeNPS.map((nps) => (
+   940→                <div
+   941→                  key={nps.id}
+   942→                  className="flex items-start gap-3 rounded-lg border p-3"
+   943→                >
+   944→                  <div
+   945→                    className={`flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+   946→                      nps.promoter
+   947→                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+   948→                        : nps.score >= 7
+   949→                          ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+   950→                          : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+   951→                    }`}
+   952→                  >
+   953→                    {nps.score}
+   954→                  </div>
+   955→                  <div className="min-w-0 flex-1">
+   956→                    {nps.comment && (
+   957→                      <p className="text-sm text-foreground">
+   958→                        &ldquo;{nps.comment}&rdquo;
+   959→                      </p>
+   960→                    )}
+   961→                    <div className="mt-1 flex items-center gap-2">
+   962→                      <Badge
+   963→                        variant="outline"
+   964→                        className="text-[10px]"
+   965→                      >
+   966→                        {nps.source}
+   967→                      </Badge>
+   968→                      {nps.promoter && (
+   969→                        <Badge
+   970→                          variant="secondary"
+   971→                          className="bg-emerald-100 text-emerald-700 text-[10px] dark:bg-emerald-900/30 dark:text-emerald-400"
+   972→                        >
+   973→                          {t.promoter}
+   974→                        </Badge>
+   975→                      )}
+   976→                      <span className="text-xs text-muted-foreground">
+   977→                        {new Date(nps.createdAt).toLocaleDateString(
+   978→                          locale === 'es' ? 'es-MX' : 'en-US',
+   979→                          {
+   980→                            day: 'numeric',
+   981→                            month: 'short',
+   982→                          }
+   983→                        )}
+   984→                      </span>
+   985→                    </div>
+   986→                  </div>
+   987→                </div>
+   988→              ))}
+   989→            </div>
+   990→          )}
+   991→        </CardContent>
+   992→      </Card>
+   993→    </div>
+   994→  )
+   995→}
+   996→
+   997→// ---- Main Module Component ----
+   998→
+   999→export function EmployeesModule() {
+  1000→  const { selectedEmployee } = useAppStore()
+  1001→
+  1002→  if (selectedEmployee) {
+  1003→    return <EmployeeDetailView employeeId={selectedEmployee} />
+  1004→  }
+  1005→
+  1006→  return <EmployeeListView />
+  1007→}
+  1008→

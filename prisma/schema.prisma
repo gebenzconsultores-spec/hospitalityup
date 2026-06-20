@@ -1,0 +1,224 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Property {
+  id          String     @id @default(cuid())
+  name        String
+  nameEn      String?
+  type        String     // hotel, restaurant, bar
+  location    String
+  region      String     // cancun, puebla, cdmx, etc.
+  logo        String?
+  plan        String     @default("boutique") // boutique, growth, enterprise
+  active      Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  employees   Employee[]
+  services    Service[]
+  courses     Course[]
+  bookings    Booking[]
+}
+
+model Employee {
+  id              String     @id @default(cuid())
+  employeeId      String     // Internal ID like MES-402
+  name            String
+  position        String
+  positionEn      String?
+  department      String
+  departmentEn    String?
+  photo           String?
+  hireDate        DateTime
+  status          String     @default("active") // active, onboarding, offboarding, inactive
+  careerLevel     Int        @default(1)
+  careerPath      String     // e.g. "Mesero Jr. → Mesero Sr. → Capitán → Gerente de Alimentos"
+  careerPathEn    String?
+  knowledgeScore  Float      @default(0)    // 0-100, from courses
+  salesScore      Float      @default(0)    // 0-100, from upselling
+  hospitalityScore Float     @default(0)    // 0-100, from NPS
+  overallScore    Float      @default(0)    // Combined weighted score
+  totalUpselling  Float      @default(0)    // Total upselling revenue
+  avgNPS          Float      @default(0)    // Average NPS from customers
+  coursesCompleted Int       @default(0)
+  coursesInProgress Int      @default(0)
+  happinessIndex  Float      @default(80)   // 0-100
+  turnoverRisk    Float      @default(0)    // 0-100, probability of leaving
+  lastActive      DateTime?
+  offboardingDate DateTime?
+  replacementTargetId String? // ID of employee who replaced this one
+  propertyId      String
+  property        Property   @relation(fields: [propertyId], references: [id])
+  orders          Order[]
+  courseProgress  EmployeeCourse[]
+  npsResponses    NPSResponse[]
+  alerts          TurnoverAlert[]
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+}
+
+model Service {
+  id          String     @id @default(cuid())
+  name        String
+  nameEn      String?
+  description String?
+  descriptionEn String?
+  category    String     // menu, tour, upselling, room_upgrade, experience
+  categoryEn  String?
+  price       Float
+  upsellingTarget Float?  // Suggested upselling price or target
+  image       String?
+  active      Boolean    @default(true)
+  propertyId  String
+  property    Property   @relation(fields: [propertyId], references: [id])
+  orders      Order[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Order {
+  id           String   @id @default(cuid())
+  employeeId   String
+  employee     Employee @relation(fields: [employeeId], references: [id])
+  serviceId    String
+  service      Service  @relation(fields: [serviceId], references: [id])
+  quantity     Int      @default(1)
+  unitPrice    Float
+  totalAmount  Float
+  isUpselling  Boolean  @default(false)
+  customerSatisfaction Int? // 1-10 rating from customer
+  orderDate    DateTime @default(now())
+  createdAt    DateTime @default(now())
+}
+
+model Course {
+  id            String     @id @default(cuid())
+  title         String
+  titleEn       String?
+  description   String
+  descriptionEn String?
+  category      String     // upselling, hospitality, product_knowledge, onboarding, leadership
+  categoryEn    String?
+  modality      String     // virtual, in_person
+  duration      Int        // minutes
+  difficulty    String     @default("beginner") // beginner, intermediate, advanced
+  difficultyEn  String?
+  contentUrl    String?    // Video URL or material link
+  thumbnail     String?
+  position      String?    // Target position/role
+  positionEn    String?
+  points        Int        @default(10) // Points awarded on completion
+  active        Boolean    @default(true)
+  propertyId    String?
+  property      Property?  @relation(fields: [propertyId], references: [id])
+  enrollments   EmployeeCourse[]
+  bookings      Booking[]
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+model EmployeeCourse {
+  id          String   @id @default(cuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  courseId    String
+  course      Course   @relation(fields: [courseId], references: [id])
+  status      String   @default("not_started") // not_started, in_progress, completed
+  progress    Float    @default(0) // 0-100
+  score       Float?   // Quiz/trivia score
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model NPSResponse {
+  id          String   @id @default(cuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  score       Int      // 0-10
+  comment     String?
+  promoter    Boolean  // score >= 9
+  source      String   @default("qr") // qr, sms, email
+  createdAt   DateTime @default(now())
+}
+
+model TurnoverAlert {
+  id          String   @id @default(cuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  type        String   // stagnation, low_nps, inactivity, low_happiness, contract_end
+  typeEn      String?
+  severity    String   @default("medium") // low, medium, high, critical
+  message     String
+  messageEn   String?
+  probability Float    // 0-100
+  isRead      Boolean  @default(false)
+  isResolved  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model Instructor {
+  id          String   @id @default(cuid())
+  name        String
+  specialty   String
+  location    String
+  region      String
+  rating      Float    @default(0)
+  hourlyRate  Float
+  available   Boolean  @default(true)
+  bookings    Booking[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Booking {
+  id            String     @id @default(cuid())
+  courseId      String
+  course        Course     @relation(fields: [courseId], references: [id])
+  instructorId  String?
+  instructor    Instructor? @relation(fields: [instructorId], references: [id])
+  propertyId    String
+  property      Property   @relation(fields: [propertyId], references: [id])
+  date          DateTime
+  endTime       DateTime?
+  modality      String     // virtual, in_person
+  status        String     @default("pending") // pending, confirmed, completed, cancelled
+  participants  Int        @default(1)
+  notes         String?
+  cost          Float?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  type        String   // employee_offboard, booking_request, alert, course_completed
+  title       String
+  titleEn     String?
+  message     String
+  messageEn   String?
+  isRead      Boolean  @default(false)
+  actionUrl   String?
+  propertyId  String?
+  createdAt   DateTime @default(now())
+}
+
+model PricingPlan {
+  id              String   @id @default(cuid())
+  name            String
+  nameEn          String?
+  setupFee        Float
+  monthlyFee      Float
+  features        String   // Comma-separated features
+  featuresEn      String?
+  targetMarket    String
+  targetMarketEn  String?
+  popular         Boolean  @default(false)
+  createdAt       DateTime @default(now())
+}
