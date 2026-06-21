@@ -1,93 +1,226 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    // Total employees
-    const totalEmployees = await db.employee.count()
+    const { searchParams } = new URL(request.url)
+    const propiedadId = searchParams.get('propiedadId')
 
-    // Average NPS across all employees
-    const npsAgg = await db.employee.aggregate({
-      _avg: { avgNPS: true },
+    // Build where clause for property filter
+    const empleadoWhere = propiedadId ? { propiedadId } : {}
+    const ventaWhere = propiedadId ? { propiedadId } : {}
+    const alertaWhere = propiedadId ? { propiedadId } : {}
+
+    // ============================
+    // MÉTRICAS GENERALES
+    // ============================
+    const totalEmpleados = await db.empleado.count({ where: empleadoWhere })
+    const empleadosActivos = await db.empleado.count({ where: { ...empleadoWhere, estado: 'activo' } })
+    const empleadosOnboarding = await db.empleado.count({ where: { ...empleadoWhere, estado: 'onboarding' } })
+    const empleadosOffboarding = await db.empleado.count({ where: { ...empleadoWhere, estado: 'offboarding' } })
+
+    // ============================
+    // NPS Y UPSELLING
+    // ============================
+    const npsAgg = await db.empleado.aggregate({
+      _avg: { npsPromedio: true },
+      where: { ...empleadoWhere, estado: { in: ['activo', 'onboarding'] } },
     })
 
-    // Total upselling revenue
-    const upsellingAgg = await db.employee.aggregate({
+    const upsellingAgg = await db.empleado.aggregate({
       _sum: { totalUpselling: true },
+      where: { ...empleadoWhere, estado: { in: ['activo', 'onboarding'] } },
     })
 
-    // Turnover rate: employees with turnoverRisk > 50 as percentage of total
-    const highRiskEmployees = await db.employee.count({
-      where: { turnoverRisk: { gt: 50 } },
-    })
-    const turnoverRate = totalEmployees > 0
-      ? Math.round((highRiskEmployees / totalEmployees) * 100)
+    // ============================
+    // RIESGO DE ROTACIÓN
+    // ============================
+    const riesgoCritico = await db.empleado.count({ where: { ...empleadoWhere, nivelRiesgoBaja: 'critico' } })
+    const riesgoAlto = await db.empleado.count({ where: { ...empleadoWhere, nivelRiesgoBaja: 'alto' } })
+    const riesgoMedio = await db.empleado.count({ where: { ...empleadoWhere, nivelRiesgoBaja: 'medio' } })
+    const riesgoBajo = await db.empleado.count({ where: { ...empleadoWhere, nivelRiesgoBaja: 'bajo' } })
+
+    const tasaRotacion = totalEmpleados > 0
+      ? Math.round(((riesgoCritico + riesgoAlto) / totalEmpleados) * 100)
       : 0
 
-    // Courses completed
-    const coursesCompleted = await db.employeeCourse.count({
-      where: { status: 'completed' },
+    // ============================
+    // FELICIDAD
+    // ============================
+    const felicidadAgg = await db.empleado.aggregate({
+      _avg: { indiceFelicidad: true },
+      where: { ...empleadoWhere, estado: { in: ['activo', 'onboarding'] } },
     })
 
-    // Cost savings: estimate based on prevented turnover
-    // Average replacement cost ~$3000 MXN per high-risk employee mitigated
-    const resolvedAlerts = await db.turnoverAlert.count({
-      where: { isResolved: true },
+    // ============================
+    // CAPACITACIÓN
+    // ============================
+    const cursosCompletados = await db.empleadoCapacitacion.count({
+      where: { estado: 'completado', empleado: { ...empleadoWhere } },
     })
-    const costSavings = resolvedAlerts * 3000
-
-    // Additional metrics
-    const activeEmployees = await db.employee.count({
-      where: { status: 'active' },
+    const cursosEnProgreso = await db.empleadoCapacitacion.count({
+      where: { estado: 'en_progreso', empleado: { ...empleadoWhere } },
     })
-
-    const onboardingEmployees = await db.employee.count({
-      where: { status: 'onboarding' },
+    const totalCapacitaciones = await db.capacitacion.count({
+      where: { activo: true, ...(propiedadId ? { propiedadId } : {}) },
     })
 
-    const offboardingEmployees = await db.employee.count({
-      where: { status: 'offboarding' },
+    // ============================
+    // VENTAS NPS
+    // ============================
+    const totalVentas = await db.ventaNPS.count({ where: ventaWhere })
+    const ventasUpselling = await db.ventaNPS.count({
+      where: { ...ventaWhere, esUpselling: true },
     })
 
-    const totalOrders = await db.order.count()
-
-    const upsellingOrders = await db.order.count({
-      where: { isUpselling: true },
+    const ventasAgg = await db.ventaNPS.aggregate({
+      _sum: { montoUpselling: true, montoTotal: true },
+      where: ventaWhere,
     })
 
-    const ordersAgg = await db.order.aggregate({
-      _sum: { totalAmount: true },
-      where: { isUpselling: true },
+    const npsVentasAgg = await db.ventaNPS.aggregate({
+      _avg: { calificacionNPS: true },
+      where: { ...ventaWhere, calificacionNPS: { not: null } },
     })
 
-    const totalCourses = await db.course.count({
-      where: { active: true },
+    // ============================
+    // ALERTAS
+    // ============================
+    const alertasCriticas = await db.alertaRiesgo.count({
+      where: { ...alertaWhere, severidad: 'critico', resuelta: false },
+    })
+    const alertasAltas = await db.alertaRiesgo.count({
+      where: { ...alertaWhere, severidad: 'alto', resuelta: false },
+    })
+    const alertasPendientes = await db.alertaRiesgo.count({
+      where: { ...alertaWhere, resuelta: false },
     })
 
-    const avgHappiness = await db.employee.aggregate({
-      _avg: { happinessIndex: true },
+    // ============================
+    // CANDIDATOS
+    // ============================
+    const candidatosDisponibles = await db.candidatoPool.count({
+      where: { estado: 'disponible', ...(propiedadId ? { propiedadId } : {}) },
     })
+    const candidatosEnProceso = await db.candidatoPool.count({
+      where: { estado: 'en_proceso', ...(propiedadId ? { propiedadId } : {}) },
+    })
+
+    // ============================
+    // SCORE INTEGRAL PROMEDIO
+    // ============================
+    const scoresAgg = await db.empleado.aggregate({
+      _avg: {
+        puntuacionConocimiento: true,
+        puntuacionVentas: true,
+        puntuacionHospitalidad: true,
+        puntuacionTotal: true,
+      },
+      where: { ...empleadoWhere, estado: { in: ['activo', 'onboarding'] } },
+    })
+
+    // ============================
+    // TOP PERFORMERS
+    // ============================
+    const topPerformers = await db.empleado.findMany({
+      where: { ...empleadoWhere, estado: 'activo' },
+      select: {
+        id: true,
+        empleadoId: true,
+        nombre: true,
+        posicion: true,
+        departamento: true,
+        puntuacionTotal: true,
+        npsPromedio: true,
+        totalUpselling: true,
+        indiceFelicidad: true,
+        foto: true,
+        propiedad: { select: { nombre: true, region: true } },
+      },
+      orderBy: { puntuacionTotal: 'desc' },
+      take: 5,
+    })
+
+    // ============================
+    // EMPLEADOS EN RIESGO
+    // ============================
+    const empleadosRiesgo = await db.empleado.findMany({
+      where: { ...empleadoWhere, nivelRiesgoBaja: { in: ['critico', 'alto'] } },
+      select: {
+        id: true,
+        empleadoId: true,
+        nombre: true,
+        posicion: true,
+        departamento: true,
+        riesgoBaja: true,
+        nivelRiesgoBaja: true,
+        indiceFelicidad: true,
+        npsPromedio: true,
+        foto: true,
+        propiedad: { select: { nombre: true, region: true } },
+      },
+      orderBy: { riesgoBaja: 'desc' },
+      take: 5,
+    })
+
+    // ============================
+    // AHORRO ESTIMADO
+    // ============================
+    // Costo de reemplazo estimado: ~$15,000 MXN por empleado de alto riesgo mitigado
+    const alertasResueltas = await db.alertaRiesgo.count({
+      where: { ...alertaWhere, resuelta: true, severidad: { in: ['alto', 'critico'] } },
+    })
+    const ahorroEstimado = alertasResueltas * 15000
 
     return NextResponse.json({
-      totalEmployees,
-      activeEmployees,
-      onboardingEmployees,
-      offboardingEmployees,
-      avgNPS: Math.round((npsAgg._avg.avgNPS || 0) * 10) / 10,
-      totalUpsellingRevenue: upsellingAgg._sum.totalUpselling || 0,
-      turnoverRate,
-      coursesCompleted,
-      costSavings,
-      totalOrders,
-      upsellingOrders,
-      upsellingRevenue: ordersAgg._sum.totalAmount || 0,
-      totalCourses,
-      avgHappiness: Math.round((avgHappiness._avg.happinessIndex || 0) * 10) / 10,
+      // Empleados
+      totalEmpleados,
+      empleadosActivos,
+      empleadosOnboarding,
+      empleadosOffboarding,
+      // NPS y Upselling
+      npsPromedio: Math.round((npsAgg._avg.npsPromedio || 0) * 10) / 10,
+      totalUpselling: upsellingAgg._sum.totalUpselling || 0,
+      npsVentasPromedio: Math.round((npsVentasAgg._avg.calificacionNPS || 0) * 10) / 10,
+      // Rotación
+      tasaRotacion,
+      riesgoCritico,
+      riesgoAlto,
+      riesgoMedio,
+      riesgoBajo,
+      // Felicidad
+      felicidadPromedio: Math.round((felicidadAgg._avg.indiceFelicidad || 0) * 10) / 10,
+      // Capacitación
+      cursosCompletados,
+      cursosEnProgreso,
+      totalCapacitaciones,
+      // Ventas
+      totalVentas,
+      ventasUpselling,
+      montoUpsellingTotal: ventasAgg._sum.montoUpselling || 0,
+      montoTotalVentas: ventasAgg._sum.montoTotal || 0,
+      // Alertas
+      alertasCriticas,
+      alertasAltas,
+      alertasPendientes,
+      // Candidatos
+      candidatosDisponibles,
+      candidatosEnProceso,
+      // Score Integral
+      puntuacionConocimientoProm: Math.round((scoresAgg._avg.puntuacionConocimiento || 0) * 10) / 10,
+      puntuacionVentasProm: Math.round((scoresAgg._avg.puntuacionVentas || 0) * 10) / 10,
+      puntuacionHospitalidadProm: Math.round((scoresAgg._avg.puntuacionHospitalidad || 0) * 10) / 10,
+      puntuacionTotalProm: Math.round((scoresAgg._avg.puntuacionTotal || 0) * 10) / 10,
+      // Ahorro
+      ahorroEstimado,
+      // Listas
+      topPerformers,
+      empleadosRiesgo,
     })
   } catch (error) {
     console.error('Dashboard API error:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch dashboard metrics' },
+      { error: 'Error al obtener métricas del dashboard' },
       { status: 500 }
     )
   }

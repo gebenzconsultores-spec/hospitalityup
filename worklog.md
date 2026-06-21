@@ -386,3 +386,152 @@ Stage Summary:
 - Database and API fully functional
 - Zero errors in browser console and lint
 - Project is complete and production-ready
+
+---
+Task ID: 2
+Agent: AI Performance Agent API Developer
+Task: Create AI Performance Analyst Agent API Routes
+
+Work Log:
+- Created `/src/app/api/agents/performance/route.ts` - Core AI agent endpoint
+  - POST handler receives `{ empleadoId, ventaId? }` payload
+  - Fetches full employee data with related records (ventas, NPS responses, courses, alerts)
+  - Builds comprehensive context message for AI with all metrics and trends
+  - Invokes z-ai-web-dev-sdk with strict Spanish system prompt for churn prediction
+  - Parses AI JSON response with fallback extraction from markdown/text
+  - Updates employee with analysis results (riesgoBaja, nivelRiesgoBaja, justificacion, sugerencia)
+  - Creates AlertaRiesgo when severity is alto/critico
+  - Updates VentaNPS with analysis results when ventaId provided
+  - Logs all operations to LogAgenteIA (success and failure)
+  - Full error handling: logs to DB even when agent fails
+- Created `/src/app/api/ventas/route.ts` - Sales/NPS registration endpoint
+  - GET: List ventas with filters (empleadoId, propiedadId, esUpselling, pagination)
+  - POST: Create new VentaNPS record with full validation
+  - Auto-calculates and updates employee metrics (totalUpselling, npsPromedio, scores)
+  - Triggers AI agent asynchronously (fire-and-forget) after sale creation
+- Created `/src/app/api/candidatos/route.ts` - Candidate pool management
+  - GET: List candidates with filters (region, posicion, estado)
+  - POST: Add candidate to pool with validation
+  - PATCH: Update candidate status (contratar, rechazar, etc.) with auto fechaContratacion
+- Created `/src/app/api/alertas/route.ts` - Risk alerts management
+  - GET: List alerts with filters (severidad, empleadoId, leida, resuelta) + summary stats
+  - PATCH: Mark alerts as read/resolved, update severity
+  - POST: Create manual alerts with auto-propiedadId from employee
+
+Stage Summary:
+- 4 new API routes created with full CRUD operations
+- AI Performance Agent integrated with z-ai-web-dev-sdk
+- All routes have comprehensive error handling with try/catch
+- All responses use NextResponse.json() with proper status codes
+- AI response parsing has fallback for non-JSON model outputs
+- Agent failure is logged to LogAgenteIA without blocking
+- Lint passes with zero errors
+- Dev server running without issues
+
+---
+Task ID: 3
+Agent: Seed & API Agent
+Task: Create seed script with realistic data and API routes for HospitalityUP
+
+Work Log:
+- Completely rewrote /api/seed/route.ts with comprehensive realistic data
+- Created 6 Propiedades: Hotel Playa Cancún, Restaurante La Terraza, Gran Hotel CDMX, Bar Mar Azul, Resort Los Cabos, Restaurante Puerto Veracruz
+- Created 12 Empleados with detailed profiles including:
+  - Top performers (Laura Hernández CAP-501, Carmen Delgado GER-001, Juan Pérez MES-401)
+  - At-risk employees (Patricia Ruiz MES-701 offboarding/critical, María García MES-402 high risk)
+  - Onboarding employees with varied risk levels (Diego Flores, Fernando Morales)
+- Created 8 Capacitaciones covering upselling, hospitality, product knowledge, onboarding, leadership
+- Created 18 EmpleadoCapacitacion entries with varied states (completado, en_progreso, no_iniciado)
+- Created 24 VentaNPS with realistic patterns:
+  - High upselling + high NPS for top performers
+  - Aggressive upselling + low NPS for Patricia Ruiz (detected by AI)
+  - Low scores for onboarding employees
+- Created 6 RespuestaNPS entries
+- Created 8 AlertaRiesgo: 2 critical, 2 high, 2 medium, 2 low (2 with generadoPorIA=true)
+- Created 5 Instructores across different regions
+- Created 8 CandidatoPool with Gabriela Ortíz hired as replacement for Patricia Ruiz
+- Created 6 Notificaciones including employee baja, AI alerts, training requests
+- Created 4 SolicitudCapacitacion (2 pendiente, 2 confirmada)
+- Created 4 LogAgenteIA entries for AI analysis tracking
+
+New API Routes Created:
+- /api/propiedades: GET (with filters: region, tipo, plan, activo), POST
+- /api/empleados: GET (with filters: propiedadId, estado, departamento, nivelRiesgoBaja, search), POST
+- /api/empleados/[id]: GET (full detail with relations), PATCH (partial update), DELETE (soft delete/offboarding)
+- /api/capacitaciones: GET (with filters + stats: inscripcionesCount, completadosCount, tasaCompletado), POST
+- /api/dashboard: GET (comprehensive metrics including top performers, at-risk employees, NPS, upselling, training stats)
+- /api/solicitudes: GET (with filters), POST
+
+Key Implementation Details:
+- All deleteMany operations in seed run in reverse dependency order
+- All routes use try/catch with proper error handling
+- Dashboard returns 30+ calculated metrics including tasaRotacion, ahorroEstimado
+- Empleados search supports name, empleadoId, and posicion
+- Capacitaciones include computed tasaCompletado per course
+- Employee DELETE is soft (sets estado='offboarding' + fechaBaja)
+
+Stage Summary:
+- Seed route creates 106+ records across 12 models
+- 6 new API routes with full CRUD/filter capabilities
+- All routes tested and working correctly
+- Lint passes with zero errors
+- db.ts restored to proper singleton pattern
+
+---
+Task ID: 4
+Agent: Frontend Agent
+Task: Rebuild entire HospitalityUP frontend with new architecture
+
+Work Log:
+- Updated store.ts: New ViewMode types (6 views: dashboard, empleados, ventas, capacitacion, bolsa, configuracion)
+- Added dialog states for capacitacion and reemplazo flows
+- Rewrote i18n.ts with complete ES/EN translations for all 6 modules
+- Rebuilt app-sidebar.tsx: 6 nav items, properties from API, language toggle
+- Rebuilt page.tsx: Clean switch-based ContentArea, imports all modules
+- Created dashboard-gerencial.tsx: 6 metric cards, ComposedChart+LineChart, top performers bar chart, alertas de riesgo with color coding, "Activar Reemplazo" dialog with candidate pool, "Solicitar Capacitación Híbrida" dialog
+- Created empleados-module.tsx: List/detail views, search+filters, score bars, career path visualization, "Analizar con IA" button calling /api/agents/performance, AI analysis result dialog
+- Created ventas-module.tsx: 3 metric cards, 2 bar charts (ventas/NPS por empleado), sales table, "Registrar Nueva Venta" form (triggers AI agent)
+- Created capacitacion-module.tsx: 3 tabs (catálogo/progreso/solicitudes), course cards, completion stats, solicitar híbrida dialog
+- Created bolsa-trabajo.tsx: Candidate pool cards, "Contratar" button, reemplazos tab with level tracking
+- Created configuracion.tsx: 3 tabs (propiedades/planes/general), properties from API, 3 pricing tiers, language/region/notifications
+- Seeded DB: 7 candidatos, 6 alertas de riesgo
+- All components fetch data from APIs (no mock-data imports)
+- No z-ai-web-dev-sdk on client side
+- ESLint: 0 errors
+- Prisma logging reduced to errors/warnings only
+
+Stage Summary:
+- Complete frontend rebuild with 6 modules fully functional
+- Dashboard gerencial with real-time API data, charts, alertas, and reemplazo flow
+- All modules use fetch to local APIs, full i18n support (ES default)
+- Color-coded severity/NPS/risk indicators throughout
+- Responsive design with shadcn/ui + Recharts
+- Code passes lint with zero errors
+
+---
+Task ID: 2-7
+Agent: Main
+Task: Reconstruir HospitalityUP con arquitectura de Agente IA, Schema estilo Supabase, y Dashboard Gerencial
+
+Work Log:
+- Rediseñé el schema Prisma con tablas: Propiedad, Empleado, Capacitacion, EmpleadoCapacitacion, VentaNPS, RespuestaNPS, AlertaRiesgo, CandidatoPool, SolicitudCapacitacion, Instructor, Notificacion, LogAgenteIA
+- Creé API Route del Agente de IA (/api/agents/performance) usando z-ai-web-dev-sdk
+  - System Prompt estricto que fuerza respuesta JSON con: nivel_riesgo_baja, justificacion, sugerencia_capacitacion, factores_riesgo, acciones_recomendadas
+  - Actualiza empleado con resultados del análisis
+  - Crea AlertaRiesgo si severidad es alto/crítico
+  - Registra todo en LogAgenteIA
+- Creé API de ventas que dispara el agente IA asíncronamente tras cada venta registrada
+- Creé API de candidatos (bolsa de trabajo) con estados: disponible, en_proceso, contratado
+- Seed con 106+ registros: 6 propiedades, 12 empleados, 8 capacitaciones, 18 inscripciones, 24 ventas, 6 NPS, 8 alertas, 8 candidatos, 5 instructores
+- Dashboard Gerencial con: 6 métricas clave, gráficas de correlación, alertas de riesgo con botón "Activar Reemplazo"
+- Módulos: Empleados, Ventas & NPS, Capacitación, Bolsa de Trabajo, Configuración
+- Agente IA verificado: analizó a María García (MES-402) con respuesta completa en 8 segundos
+- Cero errores de lint, cero errores en servidor
+- Soporte ES/EN verificado
+
+Stage Summary:
+- Agente de IA funcional que predice riesgo de baja con análisis detallado
+- Bolsa de trabajo automatizada para reemplazos
+- Dashboard gerencial con métricas, alertas, y acciones rápidas
+- Toda la app funciona con datos reales desde las APIs
+- Arquitectura lista para migrar a Supabase + Vercel en producción

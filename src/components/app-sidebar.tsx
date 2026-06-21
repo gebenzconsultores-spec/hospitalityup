@@ -1,13 +1,12 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import {
   LayoutDashboard,
   Users,
-  UtensilsCrossed,
+  DollarSign,
   GraduationCap,
-  BarChart3,
-  UserX,
-  Calendar,
+  Briefcase,
   Settings,
   Bell,
   Hotel,
@@ -38,23 +37,36 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { useAppStore } from '@/lib/store'
 import { translations } from '@/lib/i18n'
-import { mockProperties } from '@/lib/mock-data'
 import type { ViewMode } from '@/lib/store'
 
 const navItems: { key: ViewMode; icon: React.ElementType }[] = [
   { key: 'dashboard', icon: LayoutDashboard },
-  { key: 'employees', icon: Users },
-  { key: 'menu', icon: UtensilsCrossed },
-  { key: 'training', icon: GraduationCap },
-  { key: 'analytics', icon: BarChart3 },
-  { key: 'turnover', icon: UserX },
-  { key: 'bookings', icon: Calendar },
-  { key: 'settings', icon: Settings },
+  { key: 'empleados', icon: Users },
+  { key: 'ventas', icon: DollarSign },
+  { key: 'capacitacion', icon: GraduationCap },
+  { key: 'bolsa', icon: Briefcase },
+  { key: 'configuracion', icon: Settings },
 ]
+
+interface Propiedad {
+  id: string
+  nombre: string
+  nombreEn: string | null
+  region: string
+  tipo: string
+}
 
 export function AppSidebar() {
   const { currentView, setCurrentView, locale, setLocale, selectedProperty, setSelectedProperty, unreadNotifications, setShowNotifications } = useAppStore()
   const t = translations[locale]
+  const [propiedades, setPropiedades] = useState<Propiedad[]>([])
+
+  useEffect(() => {
+    fetch('/api/propiedades')
+      .then(r => r.json())
+      .then(data => setPropiedades(Array.isArray(data) ? data : []))
+      .catch(() => {})
+  }, [])
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
@@ -115,9 +127,9 @@ export function AppSidebar() {
               <SelectItem value="all">
                 {locale === 'es' ? 'Todas las Propiedades' : 'All Properties'}
               </SelectItem>
-              {mockProperties.map((property) => (
+              {propiedades.map((property) => (
                 <SelectItem key={property.id} value={property.id}>
-                  {locale === 'es' ? property.name : property.nameEn}
+                  {locale === 'es' ? property.nombre : (property.nombreEn || property.nombre)}
                 </SelectItem>
               ))}
             </SelectContent>
