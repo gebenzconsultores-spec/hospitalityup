@@ -25,23 +25,31 @@ import { VentasModule } from '@/components/ventas/ventas-module'
 import { CapacitacionModule } from '@/components/capacitacion/capacitacion-module'
 import { BolsaTrabajo } from '@/components/bolsa-trabajo/bolsa-trabajo'
 import { ConfiguracionModule } from '@/components/configuracion/configuracion'
+import { VistaTrabajador } from '@/components/trabajador/vista-trabajador'
+import { ServiciosAdmin } from '@/components/servicios/servicios-admin'
 
 const viewLabels: Record<Locale, Record<ViewMode, string>> = {
   es: {
     dashboard: 'Dashboard',
+    trabajadores: 'Vista Trabajador',
+    servicios: 'Menú & Servicios',
     empleados: 'Empleados',
     ventas: 'Ventas & NPS',
     capacitacion: 'Capacitación',
     bolsa: 'Bolsa de Trabajo',
     configuracion: 'Configuración',
+    trabajador: 'Vista Trabajador',
   },
   en: {
     dashboard: 'Dashboard',
+    trabajadores: 'Worker View',
+    servicios: 'Menu & Services',
     empleados: 'Employees',
     ventas: 'Sales & NPS',
     capacitacion: 'Training',
     bolsa: 'Job Pool',
     configuracion: 'Settings',
+    trabajador: 'Worker View',
   },
 }
 
@@ -100,6 +108,10 @@ function ContentArea({ currentView }: { currentView: ViewMode }) {
   switch (currentView) {
     case 'dashboard':
       return <DashboardGerencial />
+    case 'trabajador':
+      return <VistaTrabajador />
+    case 'servicios':
+      return <ServiciosAdmin />
     case 'empleados':
       return <EmpleadosModule />
     case 'ventas':

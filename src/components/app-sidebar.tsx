@@ -11,6 +11,8 @@ import {
   Bell,
   Hotel,
   Globe,
+  ShoppingCart,
+  Package,
 } from 'lucide-react'
 
 import {
@@ -41,6 +43,8 @@ import type { ViewMode } from '@/lib/store'
 
 const navItems: { key: ViewMode; icon: React.ElementType }[] = [
   { key: 'dashboard', icon: LayoutDashboard },
+  { key: 'trabajador', icon: ShoppingCart },
+  { key: 'servicios', icon: Package },
   { key: 'empleados', icon: Users },
   { key: 'ventas', icon: DollarSign },
   { key: 'capacitacion', icon: GraduationCap },

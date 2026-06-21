@@ -18,7 +18,7 @@ model Propiedad {
   id              String   @id @default(cuid())
   nombre          String
   nombreEn        String?
-  tipo            String   // hotel, restaurante, bar
+  tipo            String   // hotel, restaurante, bar, spa, resort, cafe, discoteca, club_playa
   ubicacion       String
   region          String   // cancun, cdmx, puebla, playa_carmen, los_cabos, etc.
   logo            String?
@@ -33,6 +33,7 @@ model Propiedad {
   candidatos      CandidatoPool[]
   alertas         AlertaRiesgo[]
   solicitudesCap  SolicitudCapacitacion[]
+  servicios       Servicio[]
 }
 
 model Empleado {
@@ -247,6 +248,28 @@ model Notificacion {
   propiedadId String?
   prioridad   String   @default("normal") // baja, normal, alta, urgente
   createdAt   DateTime @default(now())
+}
+
+model Servicio {
+  id                String   @id @default(cuid())
+  propiedadId       String
+  propiedad         Propiedad @relation(fields: [propiedadId], references: [id])
+  nombre            String
+  nombreEn          String?
+  descripcion       String?
+  descripcionEn     String?
+  categoria         String   // platillo, bebida, tour, masaje, habitacion, experiencia, paquete, otro
+  categoriaEn       String?
+  esUpselling       Boolean  @default(false)  // Si es item de upselling
+  precioNormal      Float    // Precio regular
+  precioUpselling   Float?   // Precio sugerido de upselling (si aplica)
+  objetivoUpselling String?  // Descripción del objetivo: "Vender maridaje con este platillo"
+  objetivoUpsellingEn String?
+  imagen            String?  // URL de imagen
+  disponible        Boolean  @default(true)
+  orden             Int      @default(0) // Orden de aparición en el menú
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 model LogAgenteIA {

@@ -4,6 +4,7 @@ import { db } from '@/lib/db'
 export async function GET() {
   try {
     // Delete existing data in reverse dependency order
+    await db.servicio.deleteMany()
     await db.logAgenteIA.deleteMany()
     await db.notificacion.deleteMany()
     await db.solicitudCapacitacion.deleteMany()
@@ -1634,6 +1635,519 @@ export async function GET() {
     ])
 
     // ============================
+    // SERVICIOS (35)
+    // ============================
+    const servicios = await Promise.all([
+      // ---- Hotel Playa Cancún ----
+      // Platillos
+      db.servicio.create({
+        data: {
+          nombre: 'Filete de Res a la Parrilla',
+          nombreEn: 'Grilled Beef Fillet',
+          descripcion: 'Corte premium de res a la parrilla con guarnición de vegetales asados y puré de papa trufado.',
+          descripcionEn: 'Premium grilled beef cut with roasted vegetables and truffle mashed potatoes.',
+          categoria: 'platillo', esUpselling: true, precioNormal: 380, precioUpselling: 520,
+          objetivoUpselling: 'Vender maridaje de vino con este platillo para aumentar ticket promedio',
+          objetivoUpsellingEn: 'Sell wine pairing with this dish to increase average ticket',
+          propiedadId: cancun.id, orden: 1,
+        },
+      }),
+      db.servicio.create({
+        data: {
+          nombre: 'Camarones al Mojo de Ajo',
+          nombreEn: 'Garlic Butter Shrimp',
+          descripcion: 'Camarones frescos salteados al mojo de ajo con arroz blanco y ensalada tropical.',
+          descripcionEn: 'Fresh shrimp sautéed in garlic butter with white rice and tropical salad.',
+          categoria: 'platillo', esUpselling: false, precioNormal: 290,
+          propiedadId: cancun.id, orden: 2,
+        },
+      }),
+      db.servicio.create({
+        data: {
+          nombre: 'Ensalada César',
+          nombreEn: 'Caesar Salad',
+          descripcion: 'Ensalada César clásica con crutones, parmesano y aderezo casero.',
+          descripcionEn: 'Classic Caesar salad with croutons, parmesan and house dressing.',
+          categoria: 'platillo', esUpselling: true, precioNormal: 180, precioUpselling: 260,
+          objetivoUpselling: 'Ofrecer upgrade con salmón fresco para incrementar valor del platillo',
+          objetivoUpsellingEn: 'Offer upgrade with fresh salmon to increase dish value',
+          propiedadId: cancun.id, orden: 3,
+        },
+      }),
+      // Bebidas
+      db.servicio.create({
+        data: {
+          nombre: 'Margarita Premium',
+          nombreEn: 'Premium Margarita',
+          descripcion: 'Margarita preparada con tequila 100% agave, licor de naranja y limón fresco.',
+          descripcionEn: 'Margarita made with 100% agave tequila, orange liqueur and fresh lime.',
+          categoria: 'bebida', esUpselling: true, precioNormal: 160, precioUpselling: 220,
+          objetivoUpselling: 'Sugerir versión con tequila reposado premium para experiencia superior',
+          objetivoUpsellingEn: 'Suggest version with premium reposado tequila for superior experience',
+          propiedadId: cancun.id, orden: 10,
+        },
+      }),
+      db.servicio.create({
+        data: {
+          nombre: 'Mojito Cubano',
+          nombreEn: 'Cuban Mojito',
+          descripcion: 'Mojito clásico con ron blanco, menta fresca, limón y soda.',
+          descripcionEn: 'Classic mojito with white rum, fresh mint, lime and soda.',
+          categoria: 'bebida', esUpselling: false, precioNormal: 140,
+          propiedadId: cancun.id, orden: 11,
+        },
+      }),
+      db.servicio.create({
+        data: {
+          nombre: 'Vino Tinto Copa',
+          nombreEn: 'Red Wine by the Glass',
+          descripcion: 'Selección de vinos tintos mexicanos e internacionales por copa.',
+          descripcionEn: 'Selection of Mexican and international red wines by the glass.',
+          categoria: 'bebida', esUpselling: true, precioNormal: 120, precioUpselling: 280,
+          objetivoUpselling: 'Vender botella completa en lugar de copa para mayor margen',
+          objetivoUpsellingEn: 'Sell full bottle instead of glass for higher margin',
+          propiedadId: cancun.id, orden: 12,
+        },
+      }),
+      // Tours
+      db.servicio.create({
+        data: {
+          nombre: 'Tour Isla Mujeres',
+          nombreEn: 'Isla Mujeres Tour',
+          descripcion: 'Excursión en catamarán a Isla Mujeres con snorkel, comida y open bar incluidos.',
+          descripcionEn: 'Catamaran excursion to Isla Mujeres with snorkel, lunch and open bar included.',
+          categoria: 'tour', esUpselling: true, precioNormal: 1200, precioUpselling: 1800,
+          objetivoUpselling: 'Ofrecer upgrade a tour privado para grupos y parejas',
+          objetivoUpsellingEn: 'Offer upgrade to private tour for groups and couples',
+          propiedadId: cancun.id, orden: 20,
+        },
+      }),
+      db.servicio.create({
+        data: {
+          nombre: 'Tour Chichén Itzá VIP',
+          nombreEn: 'Chichén Itzá VIP Tour',
+          descripcion: 'Tour VIP a Chichén Itzá con guía privado, acceso exclusivo y comida gourmet.',
+          descripcionEn: 'VIP tour to Chichén Itzá with private guide, exclusive access and gourmet lunch.',
+          categoria: 'tour', esUpselling: false, precioNormal: 2500,
+          propiedadId: cancun.id, orden: 21,
+        },
+      }),
+      db.servicio.create({
+        data: {
+          nombre: 'Snorkel Arrecife',
+          nombreEn: 'Reef Snorkeling',
+          descripcion: 'Experiencia de snorkel en el segundo arrecife más grande del mundo con equipo incluido.',
+          descripcionEn: "Snorkeling experience on the world's second largest reef with equipment included.",
+          categoria: 'tour', esUpselling: false, precioNormal: 800,
+          propiedadId: cancun.id, orden: 22,
+        },
+      }),
+      // Masajes
+      db.servicio.create({
+        data: {
+          nombre: 'Masaje Relajante 60min',
+          nombreEn: 'Relaxation Massage 60min',
+          descripcion: 'Masaje relajante de cuerpo completo con aceites esenciales y técnica sueca.',
+          descripcionEn: 'Full body relaxation massage with essential oils and Swedish technique.',
+          categoria: 'masaje', esUpselling: true, precioNormal: 900, precioUpselling: 1300,
+          objetivoUpselling: 'Ofrecer upgrade a 90min con aromaterapia para mayor relajación',
+          objetivoUpsellingEn: 'Offer upgrade to 90min with aromatherapy for deeper relaxation',
+          propiedadId: cancun.id, orden: 30,
+        },
+      }),
+      db.servicio.create({
+        data: {
+          nombre: 'Masaje Pareja',
+          nombreEn: 'Couples Massage',
+          descripcion: 'Masaje simultáneo para parejas en suite privada con velas y champagne.',
+          descripcionEn: 'Simultaneous couples massage in private suite with candles and champagne.',
+          categoria: 'masaje', esUpselling: false, precioNormal: 1600,
+          propiedadId: cancun.id, orden: 31,
+        },
+      }),
+      // Habitaciones
+      db.servicio.create({
+        data: {
+          nombre: 'Upgrade Suite Ocean View',
+          nombreEn: 'Ocean View Suite Upgrade',
+          descripcion: 'Upgrade a suite con vista al mar Caribe, balcón privado y minibar premium.',
+          descripcionEn: 'Upgrade to suite with Caribbean Sea view, private balcony and premium minibar.',
+          categoria: 'habitacion', esUpselling: true, precioNormal: 890, precioUpselling: 890,
+          objetivoUpselling: 'Ofrecer upgrade al check-in cuando hay disponibilidad',
+          objetivoUpsellingEn: 'Offer upgrade at check-in when availability exists',
+          propiedadId: cancun.id, orden: 40,
+        },
+      }),
+      db.servicio.create({
+        data: {
+          nombre: 'Upgrade Suite Presidencial',
+          nombreEn: 'Presidential Suite Upgrade',
+          descripcion: 'Upgrade a suite presidencial con terraza panorámica, jacuzzi privado y servicio de mayordomo.',
+          descripcionEn: 'Upgrade to presidential suite with panoramic terrace, private jacuzzi and butler service.',
+          categoria: 'habitacion', esUpselling: false, precioNormal: 2200,
+          propiedadId: cancun.id, orden: 41,
+        },
+      }),
+
+      // ---- Restaurante La Terraza ----
+      // Platillos
+      db.servicio.create({
+        data: {
+          nombre: 'Pasta Trufa',
+          nombreEn: 'Truffle Pasta',
+          descripcion: 'Pasta fresca con salsa de trufa negra, parmesano 24 meses y mantequilla clarificada.',
+          descripcionEn: 'Fresh pasta with black truffle sauce, 24-month parmesan and clarified butter.',
+          categoria: 'platillo', esUpselling: true, precioNormal: 280, precioUpselling: 380,
+          objetivoUpselling: 'Sugerir versión con trufa fresca rallada en mesa para experiencia premium',
+          objetivoUpsellingEn: 'Suggest version with fresh truffle shaved tableside for premium experience',
+          propiedadId: puebla.id, orden: 1,
+        },
+      }),
+      db.servicio.create({
+        data: {
+          nombre: 'Risotto Hongos',
+          nombreEn: 'Mushroom Risotto',
+          descripcion: 'Risotto cremoso con mezcla de hongos silvestres y parmesano.',
+          descripcionEn: 'Creamy risotto with wild mushroom medley and parmesan.',
+          categoria: 'platillo', esUpselling: false, precioNormal: 240,
+          propiedadId: puebla.id, orden: 2,
+        },
+      }),
+      db.servicio.create({
+        data: {
+          nombre: 'Postre del Chef',
+          nombreEn: "Chef's Dessert",
+          descripcion: 'Creación dulce del chef con ingredientes de temporada y presentación artística.',
+          descripcionEn: "Chef's sweet creation with seasonal ingredients and artistic presentation.",
+          categoria: 'platillo', esUpselling: true, precioNormal: 180, precioUpselling: 280,
+          objetivoUpselling: 'Ofrecer maridaje con vino dulce o digestivo para completar la experiencia',
+          objetivoUpsellingEn: 'Offer pairing with dessert wine or digestif to complete the experience',
+          propiedadId: puebla.id, orden: 3,
+        },
+      }),
+      // Bebidas
+      db.servicio.create({
+        data: {
+          nombre: 'Cóctel de la Casa',
+          nombreEn: 'House Cocktail',
+          descripcion: 'Cóctel exclusivo de La Terraza con mezcal, frutas de temporada y hierbas aromáticas.',
+          descripcionEn: 'La Terraza exclusive cocktail with mezcal, seasonal fruits and aromatic herbs.',
+          categoria: 'bebida', esUpselling: true, precioNormal: 150, precioUpselling: 220,
+          objetivoUpselling: 'Ofrecer versión premium con licor artesanal de alta gama',
+          objetivoUpsellingEn: 'Offer premium version with high-end artisanal liquor',
+          propiedadId: puebla.id, orden: 10,
+        },
+      }),
+      db.servicio.create({
+        data: {
+          nombre: 'Cerveza Artesanal',
+          nombreEn: 'Craft Beer',
+          descripcion: 'Selección de cervezas artesanales locales: IPA, Stout y Blonde Ale.',
+          descripcionEn: 'Selection of local craft beers: IPA, Stout and Blonde Ale.',
+          categoria: 'bebida', esUpselling: false, precioNormal: 90,
+          propiedadId: puebla.id, orden: 11,
+        },
+      }),
+      db.servicio.create({
+        data: {
+          nombre: 'Mezcal Reposado',
+          nombreEn: 'Reposado Mezcal',
+          descripcion: 'Mezcal reposado artesanal con notas de madera y agave cocido. Servido con naranja y sal de gusano.',
+          descripcionEn: 'Artisanal reposado mezcal with wood and cooked agave notes. Served with orange and worm salt.',
+          categoria: 'bebida', esUpselling: false, precioNormal: 180,
+          propiedadId: puebla.id, orden: 12,
+        },
+      }),
+
+      // ---- Gran Hotel CDMX ----
+      // Platillos
+      db.servicio.create({
+        data: {
+          nombre: 'Chilaquiles Divorciados',
+          nombreEn: 'Divorced Chilaquiles',
+          descripcion: 'Chilaquiles con salsa roja y verde, coronados con dos huevos estrellados y crema.',
+          descripcionEn: 'Chilaquiles with red and green salsa, topped with two fried eggs and cream.',
+          categoria: 'platillo', esUpselling: true, precioNormal: 190, precioUpselling: 280,
+          objetivoUpselling: 'Sugerir agregar arrachera para convertir en plato fuerte completo',
+          objetivoUpsellingEn: 'Suggest adding arrachera to upgrade to a complete main course',
+          propiedadId: cdmx.id, orden: 1,
+        },
+      }),
+      db.servicio.create({
+        data: {
+          nombre: 'Huevos Benedictinos',
+          nombreEn: 'Eggs Benedict',
+          descripcion: 'Huevos pochados sobre muffin inglés con jamón y salsa holandesa casera.',
+          descripcionEn: 'Poached eggs on English muffin with ham and homemade hollandaise sauce.',
+          categoria: 'platillo', esUpselling: false, precioNormal: 220,
+          propiedadId: cdmx.id, orden: 2,
+        },
+      }),
+      // Bebidas
+      db.servicio.create({
+        data: {
+          nombre: 'Café de Olla',
+          nombreEn: 'Mexican Pot Coffee',
+          descripcion: 'Café de olla tradicional preparado con piloncillo, canela y clavo.',
+          descripcionEn: 'Traditional Mexican pot coffee brewed with piloncillo, cinnamon and clove.',
+          categoria: 'bebida', esUpselling: true, precioNormal: 70, precioUpselling: 120,
+          objetivoUpselling: 'Ofrecer acompañamiento de pan dulce artesanal para experiencia completa',
+          objetivoUpsellingEn: 'Offer artisanal sweet bread pairing for complete experience',
+          propiedadId: cdmx.id, orden: 10,
+        },
+      }),
+      db.servicio.create({
+        data: {
+          nombre: 'Chocolate Abuelita',
+          nombreEn: 'Mexican Hot Chocolate',
+          descripcion: 'Chocolate caliente tradicional con canela, preparado con tabletas Abuelita.',
+          descripcionEn: 'Traditional hot chocolate with cinnamon, made with Abuelita tablets.',
+          categoria: 'bebida', esUpselling: false, precioNormal: 80,
+          propiedadId: cdmx.id, orden: 11,
+        },
+      }),
+      // Tours
+      db.servicio.create({
+        data: {
+          nombre: 'Tour Centro Histórico',
+          nombreEn: 'Historic Center Tour',
+          descripcion: 'Recorrido guiado por el Centro Histórico de la CDMX, Patrimonio de la Humanidad UNESCO.',
+          descripcionEn: 'Guided tour of Mexico City Historic Center, UNESCO World Heritage Site.',
+          categoria: 'tour', esUpselling: true, precioNormal: 650, precioUpselling: 950,
+          objetivoUpselling: 'Ofrecer upgrade a tour privado con guía exclusivo y transporte de lujo',
+          objetivoUpsellingEn: 'Offer upgrade to private tour with exclusive guide and luxury transport',
+          propiedadId: cdmx.id, orden: 20,
+        },
+      }),
+      db.servicio.create({
+        data: {
+          nombre: 'Tour Museos',
+          nombreEn: 'Museum Tour',
+          descripcion: 'Visita a los principales museos de la CDMX incluyendo Museo de Antropología y Museo de Arte Moderno.',
+          descripcionEn: 'Visit to the main museums of Mexico City including Anthropology Museum and Modern Art Museum.',
+          categoria: 'tour', esUpselling: false, precioNormal: 500,
+          propiedadId: cdmx.id, orden: 21,
+        },
+      }),
+      // Masajes
+      db.servicio.create({
+        data: {
+          nombre: 'Masaje Deportivo 45min',
+          nombreEn: 'Sports Massage 45min',
+          descripcion: 'Masaje deportivo enfocado en recuperación muscular y liberación de tensión profunda.',
+          descripcionEn: 'Sports massage focused on muscle recovery and deep tension release.',
+          categoria: 'masaje', esUpselling: true, precioNormal: 700, precioUpselling: 1000,
+          objetivoUpselling: 'Sugerir upgrade a 75min para trabajo más profundo y estiramiento asistido',
+          objetivoUpsellingEn: 'Suggest upgrade to 75min for deeper work and assisted stretching',
+          propiedadId: cdmx.id, orden: 30,
+        },
+      }),
+      // Habitaciones
+      db.servicio.create({
+        data: {
+          nombre: 'Upgrade Executive Floor',
+          nombreEn: 'Executive Floor Upgrade',
+          descripcion: 'Upgrade a piso ejecutivo con acceso a Executive Lounge, desayuno y WiFi premium.',
+          descripcionEn: 'Upgrade to executive floor with Executive Lounge access, breakfast and premium WiFi.',
+          categoria: 'habitacion', esUpselling: false, precioNormal: 450,
+          propiedadId: cdmx.id, orden: 40,
+        },
+      }),
+      db.servicio.create({
+        data: {
+          nombre: 'Upgrade Suite Terraza',
+          nombreEn: 'Terrace Suite Upgrade',
+          descripcion: 'Upgrade a suite con terraza privada y vista a la Alameda Central.',
+          descripcionEn: 'Upgrade to suite with private terrace and view of Alameda Central.',
+          categoria: 'habitacion', esUpselling: false, precioNormal: 780,
+          propiedadId: cdmx.id, orden: 41,
+        },
+      }),
+
+      // ---- Bar Mar Azul ----
+      // Bebidas
+      db.servicio.create({
+        data: {
+          nombre: 'Mezcal Margarita',
+          nombreEn: 'Mezcal Margarita',
+          descripcion: 'Margarita con mezcal joven, licor de naranja y sal de chapulín.',
+          descripcionEn: 'Margarita with young mezcal, orange liqueur and grasshopper salt.',
+          categoria: 'bebida', esUpselling: true, precioNormal: 180, precioUpselling: 280,
+          objetivoUpselling: 'Ofrecer versión con mezcal artesanal de alta gama para experiencia premium',
+          objetivoUpsellingEn: 'Offer version with high-end artisanal mezcal for premium experience',
+          propiedadId: playaCarmen.id, orden: 10,
+        },
+      }),
+      db.servicio.create({
+        data: {
+          nombre: 'Cerveza Premium',
+          nombreEn: 'Premium Beer',
+          descripcion: 'Selección de cervezas premium internacionales: Stella Artois, Heineken y Corona Familiar.',
+          descripcionEn: 'Selection of premium international beers: Stella Artois, Heineken and Corona Familiar.',
+          categoria: 'bebida', esUpselling: true, precioNormal: 100, precioUpselling: 160,
+          objetivoUpselling: 'Ofrecer botana de cortesía con upgrade a presentación premium',
+          objetivoUpsellingEn: 'Offer complimentary snack with upgrade to premium presentation',
+          propiedadId: playaCarmen.id, orden: 11,
+        },
+      }),
+      db.servicio.create({
+        data: {
+          nombre: 'Cuba Libre',
+          nombreEn: 'Cuba Libre',
+          descripcion: 'Ron con Coca-Cola y limón fresco. El clásico que nunca falla.',
+          descripcionEn: 'Rum with Coca-Cola and fresh lime. The classic that never fails.',
+          categoria: 'bebida', esUpselling: false, precioNormal: 120,
+          propiedadId: playaCarmen.id, orden: 12,
+        },
+      }),
+      // Experiencias
+      db.servicio.create({
+        data: {
+          nombre: 'Noche de Catálogo de Mezcal',
+          nombreEn: 'Mezcal Tasting Night',
+          descripcion: 'Experiencia de cata de 5 mezcales artesanales con guía especializado y maridaje de botanas oaxaqueñas.',
+          descripcionEn: 'Tasting experience of 5 artisanal mezcals with expert guide and Oaxacan snack pairing.',
+          categoria: 'experiencia', esUpselling: true, precioNormal: 450, precioUpselling: 750,
+          objetivoUpselling: 'Ofrecer upgrade con maridaje completo de platillos oaxaqueños',
+          objetivoUpsellingEn: 'Offer upgrade with full Oaxacan dish pairing',
+          propiedadId: playaCarmen.id, orden: 20,
+        },
+      }),
+
+      // ---- Resort Los Cabos ----
+      // Platillos
+      db.servicio.create({
+        data: {
+          nombre: 'Tacos de Pescado Gourmet',
+          nombreEn: 'Gourmet Fish Tacos',
+          descripcion: 'Tacos de pescado empapelado con repollo morado, pico de gallo y salsa chipotle aioli.',
+          descripcionEn: 'Battered fish tacos with purple cabbage, pico de gallo and chipotle aioli sauce.',
+          categoria: 'platillo', esUpselling: true, precioNormal: 240, precioUpselling: 380,
+          objetivoUpselling: 'Sugerir mariscada completa para compartir con ceviche y aguachile',
+          objetivoUpsellingEn: 'Suggest complete seafood platter to share with ceviche and aguachile',
+          propiedadId: losCabos.id, orden: 1,
+        },
+      }),
+      db.servicio.create({
+        data: {
+          nombre: 'Ceviche Premium',
+          nombreEn: 'Premium Ceviche',
+          descripcion: 'Ceviche de pescado y camarón con aguacate, mango y chile habanero.',
+          descripcionEn: 'Fish and shrimp ceviche with avocado, mango and habanero pepper.',
+          categoria: 'platillo', esUpselling: false, precioNormal: 280,
+          propiedadId: losCabos.id, orden: 2,
+        },
+      }),
+      // Tours
+      db.servicio.create({
+        data: {
+          nombre: 'Sunset Sailing',
+          nombreEn: 'Sunset Sailing',
+          descripcion: 'Travesía en velero al atardecer con open bar, botanas y música en vivo.',
+          descripcionEn: 'Sunset sailing cruise with open bar, appetizers and live music.',
+          categoria: 'tour', esUpselling: true, precioNormal: 1800, precioUpselling: 2500,
+          objetivoUpselling: 'Ofrecer upgrade a velero privado para experiencia exclusiva',
+          objetivoUpsellingEn: 'Offer upgrade to private sailboat for exclusive experience',
+          propiedadId: losCabos.id, orden: 20,
+        },
+      }),
+      db.servicio.create({
+        data: {
+          nombre: 'Tour El Arco',
+          nombreEn: 'The Arch Tour',
+          descripcion: 'Tour en lancha al famoso Arco de Los Cabos con parada en Playa del Amor.',
+          descripcionEn: "Boat tour to the famous Cabos Arch with stop at Lover's Beach.",
+          categoria: 'tour', esUpselling: true, precioNormal: 900, precioUpselling: 1300,
+          objetivoUpselling: 'Ofrecer upgrade con lunch incluido en restaurante frente al mar',
+          objetivoUpsellingEn: 'Offer upgrade with lunch included at oceanfront restaurant',
+          propiedadId: losCabos.id, orden: 21,
+        },
+      }),
+      // Masajes
+      db.servicio.create({
+        data: {
+          nombre: 'Masaje Hot Stone 90min',
+          nombreEn: 'Hot Stone Massage 90min',
+          descripcion: 'Masaje con piedras volcánicas calientes para liberación profunda de tensión muscular.',
+          descripcionEn: 'Massage with hot volcanic stones for deep muscle tension release.',
+          categoria: 'masaje', esUpselling: true, precioNormal: 1200, precioUpselling: 1800,
+          objetivoUpselling: 'Sugerir combo con facial anti-edad para experiencia spa completa',
+          objetivoUpsellingEn: 'Suggest combo with anti-aging facial for complete spa experience',
+          propiedadId: losCabos.id, orden: 30,
+        },
+      }),
+      db.servicio.create({
+        data: {
+          nombre: 'Spa Day Package',
+          nombreEn: 'Spa Day Package',
+          descripcion: 'Paquete completo de spa: masaje 60min, facial, manicure y acceso a instalaciones.',
+          descripcionEn: 'Complete spa package: 60min massage, facial, manicure and facility access.',
+          categoria: 'paquete', esUpselling: false, precioNormal: 2500,
+          propiedadId: losCabos.id, orden: 31,
+        },
+      }),
+      // Habitaciones
+      db.servicio.create({
+        data: {
+          nombre: 'Upgrade Villa Privada',
+          nombreEn: 'Private Villa Upgrade',
+          descripcion: 'Upgrade a villa privada con alberca, cocina gourmet y servicio de chef personal.',
+          descripcionEn: 'Upgrade to private villa with pool, gourmet kitchen and personal chef service.',
+          categoria: 'habitacion', esUpselling: false, precioNormal: 3500,
+          propiedadId: losCabos.id, orden: 40,
+        },
+      }),
+
+      // ---- Restaurante Puerto Veracruz ----
+      // Platillos
+      db.servicio.create({
+        data: {
+          nombre: 'Huachinango a la Veracruzana',
+          nombreEn: 'Veracruz-Style Red Snapper',
+          descripcion: 'Huachinango entero al horno con salsa de tomate, aceitunas, alcaparras y chile güero.',
+          descripcionEn: 'Whole baked red snapper with tomato sauce, olives, capers and yellow pepper.',
+          categoria: 'platillo', esUpselling: true, precioNormal: 320, precioUpselling: 450,
+          objetivoUpselling: 'Sugerir maridaje con vino blanco para realzar los sabores veracruzanos',
+          objetivoUpsellingEn: 'Suggest white wine pairing to enhance the Veracruz flavors',
+          propiedadId: veracruz.id, orden: 1,
+        },
+      }),
+      db.servicio.create({
+        data: {
+          nombre: 'Arroz a la Tumbada',
+          nombreEn: 'Veracruz Seafood Rice',
+          descripcion: 'Arroz con mariscos veracruzano: camarón, cangrejo, ostión y caldo de pescado.',
+          descripcionEn: 'Veracruz-style seafood rice: shrimp, crab, oyster and fish broth.',
+          categoria: 'platillo', esUpselling: false, precioNormal: 280,
+          propiedadId: veracruz.id, orden: 2,
+        },
+      }),
+      // Bebidas
+      db.servicio.create({
+        data: {
+          nombre: 'Torito de Cacahuete',
+          nombreEn: 'Peanut Torito',
+          descripcion: 'Bebida tradicional veracruzana de cacahuete con leche condensada y aguardiente.',
+          descripcionEn: 'Traditional Veracruz peanut drink with condensed milk and aguardiente.',
+          categoria: 'bebida', esUpselling: true, precioNormal: 110, precioUpselling: 180,
+          objetivoUpselling: 'Ofrecer versión con ron premium añejo para experiencia superior',
+          objetivoUpsellingEn: 'Offer version with premium aged rum for superior experience',
+          propiedadId: veracruz.id, orden: 10,
+        },
+      }),
+      db.servicio.create({
+        data: {
+          nombre: 'Agua de Horchata',
+          nombreEn: 'Horchata Water',
+          descripcion: 'Agua fresca de horchata con arroz, canela y almendra. Refrescante y tradicional.',
+          descripcionEn: 'Fresh horchata water with rice, cinnamon and almond. Refreshing and traditional.',
+          categoria: 'bebida', esUpselling: false, precioNormal: 50,
+          propiedadId: veracruz.id, orden: 11,
+        },
+      }),
+    ])
+
+    // ============================
     // LOG AGENTE IA (4)
     // ============================
     const logsAgenteIA = await Promise.all([
@@ -1711,6 +2225,7 @@ export async function GET() {
         notificaciones: notificaciones.length,
         solicitudesCapacitacion: solicitudes.length,
         logsAgenteIA: logsAgenteIA.length,
+        servicios: servicios.length,
       },
     })
   } catch (error) {

@@ -535,3 +535,100 @@ Stage Summary:
 - Dashboard gerencial con métricas, alertas, y acciones rápidas
 - Toda la app funciona con datos reales desde las APIs
 - Arquitectura lista para migrar a Supabase + Vercel en producción
+
+---
+Task ID: 2
+Agent: Frontend Agent
+Task: Build Worker View (Simplified POS) and Menu/Services Management Module
+
+Work Log:
+- Created `/api/servicios` route (GET + POST) using the Servicio Prisma model
+- Created `/api/servicios/[id]` route (PATCH + DELETE) for update/delete operations
+- Added 24 Servicio seed records across all 6 properties (Cancún, Puebla, CDMX, Playa del Carmen, Los Cabos, Veracruz)
+- Updated `src/lib/store.ts` to add `'trabajador'` and `'servicios'` ViewMode types
+- Updated `src/lib/i18n.ts` with full ES/EN translations for:
+  - `trabajador` section (28 keys): POS labels, sale flow, objectives, daily summary
+  - `serviciosAdmin` section (35 keys): catalog, form, sales, categories
+  - Navigation labels for both new views
+- Created `src/components/trabajador/vista-trabajador.tsx`:
+  - Employee selector dropdown (simulated login)
+  - Header with employee name, ID, property name, and today's scores (normal sales, upselling, NPS)
+  - Category filter buttons (All, Dishes, Drinks, Tours, Massages, Rooms, Experiences, Packages)
+  - Service card grid with bilingual names, prices, upselling badges (🎯 UPS), and VENDER button
+  - Sale dialog: quantity, upselling toggle, editable price, customer rating (1-10), comment
+  - POST to /api/ventas on confirmation, toast feedback, metrics auto-update
+  - Upselling Objectives section with progress bars per service
+  - Sidebar with daily summary: normal sales, upselling sales, total, avg rating, services sold, recent sales
+- Created `src/components/servicios/servicios-admin.tsx`:
+  - Property selector at top
+  - 3 tabs: Catalog, Add/Edit Service, Today's Sales
+  - Tab 1 (Catalog): Grid of service cards with category filters, upselling badges, disponible toggle, edit/delete actions
+  - Tab 2 (Add/Edit): Full form with ES/EN names/descriptions, category dropdown, price, upselling section, save/cancel
+  - Tab 3 (Today's Sales): Summary metrics (total, upselling rate, avg ticket), sales table with employee/service/amount/upselling/NPS/time
+- Updated `src/components/app-sidebar.tsx`:
+  - Added ShoppingCart and Package icons
+  - Added 'trabajador' (ShoppingCart) and 'servicios' (Package) to navItems, placed prominently after Dashboard
+- Updated `src/app/page.tsx`:
+  - Added imports for VistaTrabajador and ServiciosAdmin
+  - Updated viewLabels with new view names in ES/EN
+  - Added cases in ContentArea for 'trabajador' and 'servicios'
+- Ran `bun run db:push` and seeded database (43 servicios total including existing seed data)
+- ESLint passes with no errors
+
+Stage Summary:
+- Complete POS-like Worker View with service catalog, sale flow, and daily tracking
+- Full Services Admin with CRUD operations, category management, and sales analytics
+- Both modules fully bilingual (ES/EN) and integrated with existing APIs
+- Navigation updated with new menu items (Worker View + Menu & Services)
+- All data flows through real API endpoints (no mock data in components)
+- Lint clean, seed verified, all APIs responding correctly
+
+---
+Task ID: 1
+Agent: Servicios API Agent
+Task: Create API de Servicios and update seed with realistic service data
+
+Work Log:
+- Created `/src/app/api/servicios/route.ts` with GET (list with filters) and POST (create with validation)
+- Created `/src/app/api/servicios/[id]/route.ts` with GET, PATCH (partial update), DELETE (soft delete)
+- Updated `/src/app/api/seed/route.ts` replacing old 24-service data with detailed 43-service data
+- Added `db.servicio.deleteMany()` to seed cleanup section
+- All 43 services have bilingual text (ES/EN) including nombre, descripcion, objetivoUpselling
+- Services cover 6 properties across 8 categories (platillo, bebida, tour, masaje, habitacion, experiencia, paquete)
+- 20 of 43 services are marked as upselling with clear objectives and pricing
+- Seed verified: `{"success": true, "counts": {"servicios": 43}}`
+- Lint clean, no errors
+
+Stage Summary:
+- Servicios API fully functional with CRUD operations and filtering
+- Seed data comprehensive with 43 realistic hospitality services
+- All propiedadId references use real database IDs from seed creation
+- Ready for frontend integration
+
+---
+Task ID: 1-4
+Agent: Main
+Task: Agregar tipos de propiedad, gestión de menú/servicios, y vista del trabajador POS
+
+Work Log:
+- Actualicé schema: tipo de propiedad ahora incluye hotel, restaurante, bar, spa, resort, cafe, discoteca, club_playa
+- Agregué modelo Servicio con campos: nombre, categoria, esUpselling, precioNormal, precioUpselling, objetivoUpselling
+- Creé API de servicios: GET/POST /api/servicios, GET/PATCH/DELETE /api/servicios/[id]
+- Seed actualizado con 43 servicios reales por propiedad:
+  - Hotel Playa Cancún: 13 servicios (platillos, bebidas, tours, masajes, habitaciones)
+  - Restaurante La Terraza: 6 servicios
+  - Gran Hotel CDMX: 9 servicios
+  - Bar Mar Azul: 4 servicios
+  - Resort Los Cabos: 7 servicios
+  - Restaurante Puerto Veracruz: 4 servicios
+  - 20 de 43 son upselling con objetivos claros
+- Creé Vista del Trabajador (POS): selector de empleado, menú de servicios, botón VENDER, diálogo de venta, objetivos upselling
+- Creé Admin de Servicios: catálogo, agregar/editar, ventas del día
+- Agregué navegación para ambos módulos nuevos
+- Lint: 0 errores, página renderiza 57KB
+
+Stage Summary:
+- Sistema completo de menú/servicios con categorías (platillo, bebida, tour, masaje, habitacion, experiencia, paquete)
+- Vista del trabajador donde solo ve su menú y puede vender con upselling
+- Objetivos de upselling claros por servicio
+- Todo conectado: empleado → propiedad → servicios → ventas → agente IA
