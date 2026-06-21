@@ -1,0 +1,556 @@
+     1→     1→// Mock data for HospitalityUP SaaS Platform
+     2→     2→
+     3→     3→export interface Property {
+     4→     4→  id: string
+     5→     5→  name: string
+     6→     6→  nameEn: string
+     7→     7→  type: 'hotel' | 'restaurant' | 'bar'
+     8→     8→  location: string
+     9→     9→  region: string
+    10→    10→  logo?: string
+    11→    11→  plan: 'boutique' | 'growth' | 'enterprise'
+    12→    12→  active: boolean
+    13→    13→}
+    14→    14→
+    15→    15→export interface Employee {
+    16→    16→  id: string
+    17→    17→  employeeId: string
+    18→    18→  name: string
+    19→    19→  position: string
+    20→    20→  positionEn: string
+    21→    21→  department: string
+    22→    22→  departmentEn: string
+    23→    23→  photo?: string
+    24→    24→  hireDate: string
+    25→    25→  status: 'active' | 'onboarding' | 'offboarding' | 'inactive'
+    26→    26→  careerLevel: number
+    27→    27→  careerPath: string
+    28→    28→  careerPathEn: string
+    29→    29→  knowledgeScore: number
+    30→    30→  salesScore: number
+    31→    31→  hospitalityScore: number
+    32→    32→  overallScore: number
+    33→    33→  totalUpselling: number
+    34→    34→  avgNPS: number
+    35→    35→  coursesCompleted: number
+    36→    36→  coursesInProgress: number
+    37→    37→  happinessIndex: number
+    38→    38→  turnoverRisk: number
+    39→    39→  lastActive?: string
+    40→    40→  offboardingDate?: string
+    41→    41→  propertyId: string
+    42→    42→  propertyName: string
+    43→    43→}
+    44→    44→
+    45→    45→export interface Service {
+    46→    46→  id: string
+    47→    47→  name: string
+    48→    48→  nameEn: string
+    49→    49→  description: string
+    50→    50→  descriptionEn: string
+    51→    51→  category: 'menu' | 'tour' | 'upselling' | 'room_upgrade' | 'experience'
+    52→    52→  categoryEn: string
+    53→    53→  price: number
+    54→    54→  upsellingTarget?: number
+    55→    55→  image?: string
+    56→    56→  active: boolean
+    57→    57→  propertyId: string
+    58→    58→}
+    59→    59→
+    60→    60→export interface Order {
+    61→    61→  id: string
+    62→    62→  employeeId: string
+    63→    63→  employeeName: string
+    64→    64→  serviceId: string
+    65→    65→  serviceName: string
+    66→    66→  quantity: number
+    67→    67→  unitPrice: number
+    68→    68→  totalAmount: number
+    69→    69→  isUpselling: boolean
+    70→    70→  customerSatisfaction?: number
+    71→    71→  orderDate: string
+    72→    72→}
+    73→    73→
+    74→    74→export interface Course {
+    75→    75→  id: string
+    76→    76→  title: string
+    77→    77→  titleEn: string
+    78→    78→  description: string
+    79→    79→  descriptionEn: string
+    80→    80→  category: string
+    81→    81→  categoryEn: string
+    82→    82→  modality: 'virtual' | 'in_person'
+    83→    83→  duration: number
+    84→    84→  difficulty: string
+    85→    85→  difficultyEn: string
+    86→    86→  contentUrl?: string
+    87→    87→  thumbnail?: string
+    88→    88→  position?: string
+    89→    89→  positionEn?: string
+    90→    90→  points: number
+    91→    91→  active: boolean
+    92→    92→  propertyId?: string
+    93→    93→  enrollmentCount: number
+    94→    94→  completionRate: number
+    95→    95→}
+    96→    96→
+    97→    97→export interface EmployeeCourse {
+    98→    98→  id: string
+    99→    99→  employeeId: string
+   100→   100→  employeeName: string
+   101→   101→  courseId: string
+   102→   102→  courseTitle: string
+   103→   103→  courseTitleEn: string
+   104→   104→  status: 'not_started' | 'in_progress' | 'completed'
+   105→   105→  progress: number
+   106→   106→  score?: number
+   107→   107→  startedAt?: string
+   108→   108→  completedAt?: string
+   109→   109→}
+   110→   110→
+   111→   111→export interface NPSResponse {
+   112→   112→  id: string
+   113→   113→  employeeId: string
+   114→   114→  employeeName: string
+   115→   115→  score: number
+   116→   116→  comment?: string
+   117→   117→  promoter: boolean
+   118→   118→  source: string
+   119→   119→  createdAt: string
+   120→   120→}
+   121→   121→
+   122→   122→export interface TurnoverAlert {
+   123→   123→  id: string
+   124→   124→  employeeId: string
+   125→   125→  employeeName: string
+   126→   126→  employeePosition: string
+   127→   127→  type: string
+   128→   128→  typeEn: string
+   129→   129→  severity: 'low' | 'medium' | 'high' | 'critical'
+   130→   130→  message: string
+   131→   131→  messageEn: string
+   132→   132→  probability: number
+   133→   133→  isRead: boolean
+   134→   134→  isResolved: boolean
+   135→   135→  createdAt: string
+   136→   136→}
+   137→   137→
+   138→   138→export interface Instructor {
+   139→   139→  id: string
+   140→   140→  name: string
+   141→   141→  specialty: string
+   142→   142→  location: string
+   143→   143→  region: string
+   144→   144→  rating: number
+   145→   145→  hourlyRate: number
+   146→   146→  available: boolean
+   147→   147→}
+   148→   148→
+   149→   149→export interface Booking {
+   150→   150→  id: string
+   151→   151→  courseId: string
+   152→   152→  courseTitle: string
+   153→   153→  courseTitleEn: string
+   154→   154→  instructorId?: string
+   155→   155→  instructorName?: string
+   156→   156→  propertyId: string
+   157→   157→  propertyName: string
+   158→   158→  date: string
+   159→   159→  endTime?: string
+   160→   160→  modality: 'virtual' | 'in_person'
+   161→   161→  status: 'pending' | 'confirmed' | 'completed' | 'cancelled'
+   162→   162→  participants: number
+   163→   163→  notes?: string
+   164→   164→  cost?: number
+   165→   165→}
+   166→   166→
+   167→   167→export interface Notification {
+   168→   168→  id: string
+   169→   169→  type: string
+   170→   170→  title: string
+   171→   171→  titleEn: string
+   172→   172→  message: string
+   173→   173→  messageEn: string
+   174→   174→  isRead: boolean
+   175→   175→  propertyId?: string
+   176→   176→  createdAt: string
+   177→   177→}
+   178→   178→
+   179→   179→// ---- MOCK DATA ----
+   180→   180→
+   181→   181→export const mockProperties: Property[] = [
+   182→   182→  { id: 'prop1', name: 'Hotel Playa Cancún', nameEn: 'Cancún Beach Hotel', type: 'hotel', location: 'Cancún, Quintana Roo', region: 'cancun', plan: 'growth', active: true },
+   183→   183→  { id: 'prop2', name: 'Restaurante La Terraza', nameEn: 'La Terraza Restaurant', type: 'restaurant', location: 'Puebla, Puebla', region: 'puebla', plan: 'boutique', active: true },
+   184→   184→  { id: 'prop3', name: 'Gran Hotel CDMX', nameEn: 'Grand Hotel CDMX', type: 'hotel', location: 'Ciudad de México', region: 'cdmx', plan: 'enterprise', active: true },
+   185→   185→  { id: 'prop4', name: 'Bar Mar Azul', nameEn: 'Blue Sea Bar', type: 'bar', location: 'Playa del Carmen, Q. Roo', region: 'playa_carmen', plan: 'boutique', active: true },
+   186→   186→  { id: 'prop5', name: 'Resort Los Cabos', nameEn: 'Los Cabos Resort', type: 'hotel', location: 'Los Cabos, BCS', region: 'los_cabos', plan: 'growth', active: true },
+   187→   187→  { id: 'prop6', name: 'Restaurante Puerto Veracruz', nameEn: 'Veracruz Port Restaurant', type: 'restaurant', location: 'Veracruz, Veracruz', region: 'veracruz', plan: 'boutique', active: true },
+   188→   188→]
+   189→   189→
+   190→   190→export const mockEmployees: Employee[] = [
+   191→   191→  { id: 'emp1', employeeId: 'MES-401', name: 'Juan Pérez', position: 'Mesero Sr.', positionEn: 'Senior Waiter', department: 'Alimentos y Bebidas', departmentEn: 'Food & Beverage', hireDate: '2023-03-15', status: 'active', careerLevel: 3, careerPath: 'Mesero Jr. → Mesero Sr. → Capitán → Gerente A&B', careerPathEn: 'Jr. Waiter → Sr. Waiter → Captain → F&B Manager', knowledgeScore: 85, salesScore: 92, hospitalityScore: 88, overallScore: 88.3, totalUpselling: 4580, avgNPS: 9.2, coursesCompleted: 8, coursesInProgress: 2, happinessIndex: 85, turnoverRisk: 12, lastActive: '2025-01-24', propertyId: 'prop1', propertyName: 'Hotel Playa Cancún' },
+   192→   192→  { id: 'emp2', employeeId: 'MES-402', name: 'María García', position: 'Mesera Jr.', positionEn: 'Jr. Waitress', department: 'Alimentos y Bebidas', departmentEn: 'Food & Beverage', hireDate: '2024-06-01', status: 'onboarding', careerLevel: 1, careerPath: 'Mesero Jr. → Mesero Sr. → Capitán → Gerente A&B', careerPathEn: 'Jr. Waiter → Sr. Waiter → Captain → F&B Manager', knowledgeScore: 45, salesScore: 38, hospitalityScore: 72, overallScore: 51.7, totalUpselling: 820, avgNPS: 7.8, coursesCompleted: 2, coursesInProgress: 3, happinessIndex: 68, turnoverRisk: 78, lastActive: '2025-01-23', propertyId: 'prop1', propertyName: 'Hotel Playa Cancún' },
+   193→   193→  { id: 'emp3', employeeId: 'BEL-101', name: 'Carlos López', position: 'Bellboy Sr.', positionEn: 'Sr. Bellboy', department: 'Conserjería', departmentEn: 'Concierge', hireDate: '2022-11-20', status: 'active', careerLevel: 3, careerPath: 'Bellboy Jr. → Bellboy Sr. → Jefe de Conserjería', careerPathEn: 'Jr. Bellboy → Sr. Bellboy → Head Concierge', knowledgeScore: 90, salesScore: 78, hospitalityScore: 95, overallScore: 87.7, totalUpselling: 3200, avgNPS: 9.5, coursesCompleted: 10, coursesInProgress: 1, happinessIndex: 92, turnoverRisk: 8, lastActive: '2025-01-24', propertyId: 'prop1', propertyName: 'Hotel Playa Cancún' },
+   194→   194→  { id: 'emp4', employeeId: 'REC-201', name: 'Ana Martínez', position: 'Recepcionista', positionEn: 'Receptionist', department: 'Recepción', departmentEn: 'Front Desk', hireDate: '2023-08-10', status: 'active', careerLevel: 2, careerPath: 'Recepcionista Jr. → Recepcionista → Supervisor Recepción', careerPathEn: 'Jr. Receptionist → Receptionist → Front Desk Supervisor', knowledgeScore: 72, salesScore: 65, hospitalityScore: 88, overallScore: 75, totalUpselling: 2100, avgNPS: 8.9, coursesCompleted: 5, coursesInProgress: 2, happinessIndex: 78, turnoverRisk: 35, lastActive: '2025-01-24', propertyId: 'prop3', propertyName: 'Gran Hotel CDMX' },
+   195→   195→  { id: 'emp5', employeeId: 'CAM-301', name: 'Roberto Sánchez', position: 'Camarista', positionEn: 'Housekeeper', department: 'Ama de Llaves', departmentEn: 'Housekeeping', hireDate: '2024-01-15', status: 'active', careerLevel: 2, careerPath: 'Camarista → Supervisor de Piso → Ama de Llaves', careerPathEn: 'Housekeeper → Floor Supervisor → Head Housekeeper', knowledgeScore: 68, salesScore: 30, hospitalityScore: 82, overallScore: 60, totalUpselling: 450, avgNPS: 8.4, coursesCompleted: 4, coursesInProgress: 1, happinessIndex: 72, turnoverRisk: 45, lastActive: '2025-01-22', propertyId: 'prop1', propertyName: 'Hotel Playa Cancún' },
+   196→   196→  { id: 'emp6', employeeId: 'MES-501', name: 'Laura Hernández', position: 'Capitana', positionEn: 'Captain', department: 'Alimentos y Bebidas', departmentEn: 'Food & Beverage', hireDate: '2021-05-01', status: 'active', careerLevel: 4, careerPath: 'Mesero Jr. → Mesero Sr. → Capitán → Gerente A&B', careerPathEn: 'Jr. Waiter → Sr. Waiter → Captain → F&B Manager', knowledgeScore: 95, salesScore: 88, hospitalityScore: 92, overallScore: 91.7, totalUpselling: 6800, avgNPS: 9.6, coursesCompleted: 14, coursesInProgress: 0, happinessIndex: 95, turnoverRisk: 5, lastActive: '2025-01-24', propertyId: 'prop2', propertyName: 'Restaurante La Terraza' },
+   197→   197→  { id: 'emp7', employeeId: 'BAR-601', name: 'Miguel Torres', position: 'Bartender', positionEn: 'Bartender', department: 'Bar', departmentEn: 'Bar', hireDate: '2023-09-01', status: 'active', careerLevel: 2, careerPath: 'Barback → Bartender → Bar Manager', careerPathEn: 'Barback → Bartender → Bar Manager', knowledgeScore: 78, salesScore: 85, hospitalityScore: 80, overallScore: 81, totalUpselling: 3400, avgNPS: 8.7, coursesCompleted: 6, coursesInProgress: 2, happinessIndex: 82, turnoverRisk: 22, lastActive: '2025-01-24', propertyId: 'prop4', propertyName: 'Bar Mar Azul' },
+   198→   198→  { id: 'emp8', employeeId: 'MES-701', name: 'Patricia Ruiz', position: 'Mesera', positionEn: 'Waitress', department: 'Alimentos y Bebidas', departmentEn: 'Food & Beverage', hireDate: '2024-03-20', status: 'offboarding', careerLevel: 2, careerPath: 'Mesero Jr. → Mesero Sr. → Capitán', careerPathEn: 'Jr. Waiter → Sr. Waiter → Captain', knowledgeScore: 55, salesScore: 42, hospitalityScore: 60, overallScore: 52.3, totalUpselling: 1100, avgNPS: 7.2, coursesCompleted: 3, coursesInProgress: 0, happinessIndex: 35, turnoverRisk: 92, offboardingDate: '2025-01-20', lastActive: '2025-01-20', propertyId: 'prop5', propertyName: 'Resort Los Cabos' },
+   199→   199→  { id: 'emp9', employeeId: 'REC-801', name: 'Diego Flores', position: 'Recepcionista Jr.', positionEn: 'Jr. Receptionist', department: 'Recepción', departmentEn: 'Front Desk', hireDate: '2024-10-01', status: 'onboarding', careerLevel: 1, careerPath: 'Recepcionista Jr. → Recepcionista → Supervisor', careerPathEn: 'Jr. Receptionist → Receptionist → Supervisor', knowledgeScore: 30, salesScore: 15, hospitalityScore: 65, overallScore: 36.7, totalUpselling: 200, avgNPS: 7.0, coursesCompleted: 1, coursesInProgress: 4, happinessIndex: 55, turnoverRisk: 65, lastActive: '2025-01-23', propertyId: 'prop3', propertyName: 'Gran Hotel CDMX' },
+   200→   200→  { id: 'emp10', employeeId: 'MES-901', name: 'Sofía Vargas', position: 'Mesera Sr.', positionEn: 'Sr. Waitress', department: 'Alimentos y Bebidas', departmentEn: 'Food & Beverage', hireDate: '2022-07-15', status: 'active', careerLevel: 3, careerPath: 'Mesero Jr. → Mesero Sr. → Capitán → Gerente A&B', careerPathEn: 'Jr. Waiter → Sr. Waiter → Captain → F&B Manager', knowledgeScore: 82, salesScore: 90, hospitalityScore: 86, overallScore: 86, totalUpselling: 5200, avgNPS: 9.1, coursesCompleted: 9, coursesInProgress: 1, happinessIndex: 88, turnoverRisk: 15, lastActive: '2025-01-24', propertyId: 'prop6', propertyName: 'Restaurante Puerto Veracruz' },
+   201→   201→]
+   202→   202→
+   203→   203→export const mockServices: Service[] = [
+   204→   204→  { id: 'srv1', name: 'Maridaje de Vino Premium', nameEn: 'Premium Wine Pairing', description: 'Sugerencia de maridaje de vino premium con cortes de carne', descriptionEn: 'Premium wine pairing suggestion with steak cuts', category: 'upselling', categoryEn: 'upselling', price: 450, upsellingTarget: 680, active: true, propertyId: 'prop1' },
+   205→   205→  { id: 'srv2', name: 'Tour Isla Mujeres', nameEn: 'Isla Mujeres Tour', description: 'Tour privado a Isla Mujeres en lancha', descriptionEn: 'Private boat tour to Isla Mujeres', category: 'tour', categoryEn: 'tour', price: 1200, upsellingTarget: 1800, active: true, propertyId: 'prop1' },
+   206→   206→  { id: 'srv3', name: 'Upgrade Suite Ocean View', nameEn: 'Ocean View Suite Upgrade', description: 'Mejora a suite con vista al mar', descriptionEn: 'Upgrade to ocean view suite', category: 'room_upgrade', categoryEn: 'room_upgrade', price: 890, upsellingTarget: 1200, active: true, propertyId: 'prop1' },
+   207→   207→  { id: 'srv4', name: 'Cocktail de la Casa', nameEn: 'House Cocktail', description: 'Cocktel artesanal del chef', descriptionEn: 'Chef\'s artisan cocktail', category: 'upselling', categoryEn: 'upselling', price: 180, upsellingTarget: 280, active: true, propertyId: 'prop4' },
+   208→   208→  { id: 'srv5', name: 'Experiencia Cenote', nameEn: 'Cenote Experience', description: 'Tour privado a cenote con guía', descriptionEn: 'Private cenote tour with guide', category: 'experience', categoryEn: 'experience', price: 950, upsellingTarget: 1400, active: true, propertyId: 'prop1' },
+   209→   209→  { id: 'srv6', name: 'Postre del Chef', nameEn: 'Chef\'s Dessert', description: 'Postre especial del chef', descriptionEn: 'Chef\'s special dessert', category: 'menu', categoryEn: 'menu', price: 220, upsellingTarget: 320, active: true, propertyId: 'prop2' },
+   210→   210→  { id: 'srv7', name: 'Tour Chichén Itzá VIP', nameEn: 'VIP Chichén Itzá Tour', description: 'Tour VIP a Chichén Itzá con acceso exclusivo', descriptionEn: 'VIP tour to Chichén Itzá with exclusive access', category: 'tour', categoryEn: 'tour', price: 2500, upsellingTarget: 3200, active: true, propertyId: 'prop1' },
+   211→   211→  { id: 'srv8', name: 'Spa & Wellness Package', nameEn: 'Spa & Wellness Package', description: 'Paquete completo de spa y bienestar', descriptionEn: 'Complete spa and wellness package', category: 'experience', categoryEn: 'experience', price: 1500, upsellingTarget: 2200, active: true, propertyId: 'prop5' },
+   212→   212→  { id: 'srv9', name: 'Corte Wagyu A5', nameEn: 'Wagyu A5 Cut', description: 'Corte premium de res Wagyu A5', descriptionEn: 'Premium Wagyu A5 cut', category: 'upselling', categoryEn: 'upselling', price: 850, upsellingTarget: 1200, active: true, propertyId: 'prop6' },
+   213→   213→  { id: 'srv10', name: 'Sunset Sailing', nameEn: 'Sunset Sailing', description: 'Paseo en velero al atardecer', descriptionEn: 'Sunset sailing experience', category: 'experience', categoryEn: 'experience', price: 1800, upsellingTarget: 2500, active: true, propertyId: 'prop5' },
+   214→   214→]
+   215→   215→
+   216→   216→export const mockOrders: Order[] = [
+   217→   217→  { id: 'ord1', employeeId: 'emp1', employeeName: 'Juan Pérez', serviceId: 'srv1', serviceName: 'Maridaje de Vino Premium', quantity: 2, unitPrice: 450, totalAmount: 900, isUpselling: true, customerSatisfaction: 10, orderDate: '2025-01-24T14:30:00' },
+   218→   218→  { id: 'ord2', employeeId: 'emp1', employeeName: 'Juan Pérez', serviceId: 'srv2', serviceName: 'Tour Isla Mujeres', quantity: 1, unitPrice: 1200, totalAmount: 1200, isUpselling: true, customerSatisfaction: 9, orderDate: '2025-01-24T11:00:00' },
+   219→   219→  { id: 'ord3', employeeId: 'emp3', employeeName: 'Carlos López', serviceId: 'srv3', serviceName: 'Upgrade Suite Ocean View', quantity: 1, unitPrice: 890, totalAmount: 890, isUpselling: true, customerSatisfaction: 10, orderDate: '2025-01-24T09:15:00' },
+   220→   220→  { id: 'ord4', employeeId: 'emp6', employeeName: 'Laura Hernández', serviceId: 'srv6', serviceName: 'Postre del Chef', quantity: 4, unitPrice: 220, totalAmount: 880, isUpselling: true, customerSatisfaction: 9, orderDate: '2025-01-24T20:30:00' },
+   221→   221→  { id: 'ord5', employeeId: 'emp7', employeeName: 'Miguel Torres', serviceId: 'srv4', serviceName: 'Cocktail de la Casa', quantity: 6, unitPrice: 180, totalAmount: 1080, isUpselling: true, customerSatisfaction: 8, orderDate: '2025-01-24T22:00:00' },
+   222→   222→  { id: 'ord6', employeeId: 'emp2', employeeName: 'María García', serviceId: 'srv1', serviceName: 'Maridaje de Vino Premium', quantity: 1, unitPrice: 450, totalAmount: 450, isUpselling: true, customerSatisfaction: 7, orderDate: '2025-01-23T15:00:00' },
+   223→   223→  { id: 'ord7', employeeId: 'emp10', employeeName: 'Sofía Vargas', serviceId: 'srv9', serviceName: 'Corte Wagyu A5', quantity: 1, unitPrice: 850, totalAmount: 850, isUpselling: true, customerSatisfaction: 10, orderDate: '2025-01-23T19:45:00' },
+   224→   224→  { id: 'ord8', employeeId: 'emp3', employeeName: 'Carlos López', serviceId: 'srv5', serviceName: 'Experiencia Cenote', quantity: 2, unitPrice: 950, totalAmount: 1900, isUpselling: true, customerSatisfaction: 10, orderDate: '2025-01-23T10:00:00' },
+   225→   225→  { id: 'ord9', employeeId: 'emp1', employeeName: 'Juan Pérez', serviceId: 'srv7', serviceName: 'Tour Chichén Itzá VIP', quantity: 1, unitPrice: 2500, totalAmount: 2500, isUpselling: true, customerSatisfaction: 9, orderDate: '2025-01-22T08:30:00' },
+   226→   226→  { id: 'ord10', employeeId: 'emp4', employeeName: 'Ana Martínez', serviceId: 'srv3', serviceName: 'Upgrade Suite Ocean View', quantity: 1, unitPrice: 890, totalAmount: 890, isUpselling: true, customerSatisfaction: 8, orderDate: '2025-01-22T16:00:00' },
+   227→   227→]
+   228→   228→
+   229→   229→export const mockCourses: Course[] = [
+   230→   230→  { id: 'crs1', title: 'Técnicas de Upselling Avanzado', titleEn: 'Advanced Upselling Techniques', description: 'Aprende las mejores técnicas para aumentar el ticket promedio sin ser invasivo', descriptionEn: 'Learn the best techniques to increase average ticket without being pushy', category: 'upselling', categoryEn: 'upselling', modality: 'virtual', duration: 45, difficulty: 'intermediate', difficultyEn: 'intermediate', points: 25, active: true, enrollmentCount: 28, completionRate: 72 },
+   231→   231→  { id: 'crs2', title: 'Maridaje de Vinos Premium', titleEn: 'Premium Wine Pairing', description: 'Conoce cómo sugerir el maridaje perfecto de vinos con cortes de carne', descriptionEn: 'Learn how to suggest perfect wine pairings with steak cuts', category: 'product_knowledge', categoryEn: 'product_knowledge', modality: 'virtual', duration: 30, difficulty: 'advanced', difficultyEn: 'advanced', points: 30, active: true, enrollmentCount: 15, completionRate: 65 },
+   232→   232→  { id: 'crs3', title: 'Venta Consultiva de Tours', titleEn: 'Consultive Tour Sales', description: 'Vende tours y experiencias locales de manera consultiva y personalizada', descriptionEn: 'Sell tours and local experiences in a consultive and personalized way', category: 'upselling', categoryEn: 'upselling', modality: 'virtual', duration: 35, difficulty: 'beginner', difficultyEn: 'beginner', points: 15, active: true, enrollmentCount: 42, completionRate: 85 },
+   233→   233→  { id: 'crs4', title: 'Servicio al Cliente Premium', titleEn: 'Premium Customer Service', description: 'Estándares de hospitalidad de clase mundial para la industria turística', descriptionEn: 'World-class hospitality standards for the tourism industry', category: 'hospitality', categoryEn: 'hospitality', modality: 'in_person', duration: 480, difficulty: 'intermediate', difficultyEn: 'intermediate', points: 40, active: true, enrollmentCount: 22, completionRate: 90 },
+   234→   234→  { id: 'crs5', title: 'Onboarding: Tu Primer Día', titleEn: 'Onboarding: Your First Day', description: 'Todo lo que necesitas saber para tu primer día en el equipo', descriptionEn: 'Everything you need to know for your first day on the team', category: 'onboarding', categoryEn: 'onboarding', modality: 'virtual', duration: 20, difficulty: 'beginner', difficultyEn: 'beginner', points: 10, active: true, enrollmentCount: 55, completionRate: 95 },
+   235→   235→  { id: 'crs6', title: 'Liderazgo en Piso', titleEn: 'Floor Leadership', description: 'Desarrolla habilidades de liderazgo para dirigir equipos en el restaurante', descriptionEn: 'Develop leadership skills to manage restaurant teams', category: 'leadership', categoryEn: 'leadership', modality: 'in_person', duration: 600, difficulty: 'advanced', difficultyEn: 'advanced', points: 50, active: true, enrollmentCount: 8, completionRate: 75 },
+   236→   236→  { id: 'crs7', title: 'Cocktails y Mixología', titleEn: 'Cocktails and Mixology', description: 'Conoce las técnicas básicas de mixología para sugerir las mejores bebidas', descriptionEn: 'Learn basic mixology techniques to suggest the best drinks', category: 'product_knowledge', categoryEn: 'product_knowledge', modality: 'virtual', duration: 40, difficulty: 'beginner', difficultyEn: 'beginner', points: 20, active: true, enrollmentCount: 18, completionRate: 78 },
+   237→   237→  { id: 'crs8', title: 'Manejo de Quejas y Conflictos', titleEn: 'Complaint and Conflict Management', description: 'Aprende a manejar quejas de clientes de manera profesional', descriptionEn: 'Learn to handle customer complaints professionally', category: 'hospitality', categoryEn: 'hospitality', modality: 'virtual', duration: 25, difficulty: 'intermediate', difficultyEn: 'intermediate', points: 20, active: true, enrollmentCount: 35, completionRate: 82 },
+   238→   238→]
+   239→   239→
+   240→   240→export const mockEmployeeCourses: EmployeeCourse[] = [
+   241→   241→  { id: 'ec1', employeeId: 'emp1', employeeName: 'Juan Pérez', courseId: 'crs1', courseTitle: 'Técnicas de Upselling Avanzado', courseTitleEn: 'Advanced Upselling Techniques', status: 'completed', progress: 100, score: 92, startedAt: '2024-12-01', completedAt: '2024-12-15' },
+   242→   242→  { id: 'ec2', employeeId: 'emp1', employeeName: 'Juan Pérez', courseId: 'crs2', courseTitle: 'Maridaje de Vinos Premium', courseTitleEn: 'Premium Wine Pairing', status: 'completed', progress: 100, score: 88, startedAt: '2024-12-16', completedAt: '2025-01-02' },
+   243→   243→  { id: 'ec3', employeeId: 'emp1', employeeName: 'Juan Pérez', courseId: 'crs3', courseTitle: 'Venta Consultiva de Tours', courseTitleEn: 'Consultive Tour Sales', status: 'in_progress', progress: 65, startedAt: '2025-01-10' },
+   244→   244→  { id: 'ec4', employeeId: 'emp2', employeeName: 'María García', courseId: 'crs5', courseTitle: 'Onboarding: Tu Primer Día', courseTitleEn: 'Onboarding: Your First Day', status: 'completed', progress: 100, score: 75, startedAt: '2024-06-01', completedAt: '2024-06-01' },
+   245→   245→  { id: 'ec5', employeeId: 'emp2', employeeName: 'María García', courseId: 'crs1', courseTitle: 'Técnicas de Upselling Avanzado', courseTitleEn: 'Advanced Upselling Techniques', status: 'in_progress', progress: 40, startedAt: '2025-01-05' },
+   246→   246→  { id: 'ec6', employeeId: 'emp2', employeeName: 'María García', courseId: 'crs8', courseTitle: 'Manejo de Quejas y Conflictos', courseTitleEn: 'Complaint and Conflict Management', status: 'not_started', progress: 0 },
+   247→   247→  { id: 'ec7', employeeId: 'emp3', employeeName: 'Carlos López', courseId: 'crs3', courseTitle: 'Venta Consultiva de Tours', courseTitleEn: 'Consultive Tour Sales', status: 'completed', progress: 100, score: 95, startedAt: '2024-08-01', completedAt: '2024-08-10' },
+   248→   248→  { id: 'ec8', employeeId: 'emp3', employeeName: 'Carlos López', courseId: 'crs4', courseTitle: 'Servicio al Cliente Premium', courseTitleEn: 'Premium Customer Service', status: 'completed', progress: 100, score: 97, startedAt: '2024-09-01', completedAt: '2024-09-02' },
+   249→   249→  { id: 'ec9', employeeId: 'emp6', employeeName: 'Laura Hernández', courseId: 'crs6', courseTitle: 'Liderazgo en Piso', courseTitleEn: 'Floor Leadership', status: 'in_progress', progress: 80, startedAt: '2025-01-01' },
+   250→   250→  { id: 'ec10', employeeId: 'emp9', employeeName: 'Diego Flores', courseId: 'crs5', courseTitle: 'Onboarding: Tu Primer Día', courseTitleEn: 'Onboarding: Your First Day', status: 'completed', progress: 100, score: 80, startedAt: '2024-10-01', completedAt: '2024-10-01' },
+   251→   251→  { id: 'ec11', employeeId: 'emp9', employeeName: 'Diego Flores', courseId: 'crs8', courseTitle: 'Manejo de Quejas y Conflictos', courseTitleEn: 'Complaint and Conflict Management', status: 'in_progress', progress: 30, startedAt: '2025-01-15' },
+   252→   252→]
+   253→   253→
+   254→   254→export const mockTurnoverAlerts: TurnoverAlert[] = [
+   255→   255→  { id: 'ta1', employeeId: 'emp2', employeeName: 'María García', employeePosition: 'Mesera Jr.', type: 'stagnation', typeEn: 'Career Stagnation', severity: 'high', message: 'Estancamiento en el árbol de carrera. No ha completado cursos en 30 días y su puntuación de ventas es baja.', messageEn: 'Career stagnation. No courses completed in 30 days and sales score is low.', probability: 78, isRead: false, isResolved: false, createdAt: '2025-01-23T10:00:00' },
+   256→   256→  { id: 'ta2', employeeId: 'emp2', employeeName: 'María García', employeePosition: 'Mesera Jr.', type: 'low_happiness', typeEn: 'Low Work Happiness', severity: 'critical', message: 'Índice de felicidad laboral en 68/100. Tres meses sin bono de permanencia. Riesgo alto de renuncia.', messageEn: 'Work happiness index at 68/100. Three months without retention bonus. High risk of resignation.', probability: 85, isRead: false, isResolved: false, createdAt: '2025-01-22T14:00:00' },
+   257→   257→  { id: 'ta3', employeeId: 'emp5', employeeName: 'Roberto Sánchez', employeePosition: 'Camarista', type: 'inactivity', typeEn: 'App Inactivity', severity: 'medium', message: 'Sin actividad en la app por 5 días. Posible desmotivación.', messageEn: 'No app activity for 5 days. Possible demotivation.', probability: 45, isRead: true, isResolved: false, createdAt: '2025-01-21T09:00:00' },
+   258→   258→  { id: 'ta4', employeeId: 'emp8', employeeName: 'Patricia Ruiz', employeePosition: 'Mesera', type: 'low_nps', typeEn: 'Consecutive Low NPS', severity: 'high', message: 'NPS promedio cayó a 7.2 en las últimas 2 semanas. Clientes reportan servicio apresurado.', messageEn: 'Average NPS dropped to 7.2 in the last 2 weeks. Customers report rushed service.', probability: 92, isRead: true, isResolved: false, createdAt: '2025-01-19T16:00:00' },
+   259→   259→  { id: 'ta5', employeeId: 'emp4', employeeName: 'Ana Martínez', employeePosition: 'Recepcionista', type: 'contract_end', typeEn: 'Contract Ending Soon', severity: 'medium', message: 'Contrato termina en 45 días. Sin conversación de renovación iniciada.', messageEn: 'Contract ends in 45 days. No renewal conversation started.', probability: 35, isRead: false, isResolved: false, createdAt: '2025-01-20T11:00:00' },
+   260→   260→  { id: 'ta6', employeeId: 'emp9', employeeName: 'Diego Flores', employeePosition: 'Recepcionista Jr.', type: 'stagnation', typeEn: 'Career Stagnation', severity: 'medium', message: 'En fase de onboarding extendida. Progreso lento en cursos asignados.', messageEn: 'Extended onboarding phase. Slow progress on assigned courses.', probability: 65, isRead: false, isResolved: false, createdAt: '2025-01-22T08:00:00' },
+   261→   261→]
+   262→   262→
+   263→   263→export const mockInstructors: Instructor[] = [
+   264→   264→  { id: 'ins1', name: 'Ricardo Mendoza', specialty: 'Upselling y Ventas', location: 'Cancún', region: 'cancun', rating: 4.9, hourlyRate: 45, available: true },
+   265→   265→  { id: 'ins2', name: 'Isabel Navarro', specialty: 'Hospitalidad Premium', location: 'CDMX', region: 'cdmx', rating: 4.8, hourlyRate: 50, available: true },
+   266→   266→  { id: 'ins3', name: 'Fernando Delgado', specialty: 'Liderazgo y Gestión', location: 'Puebla', region: 'puebla', rating: 4.7, hourlyRate: 40, available: true },
+   267→   267→  { id: 'ins4', name: 'Carmen Salinas', specialty: 'Servicio al Cliente', location: 'Los Cabos', region: 'los_cabos', rating: 4.9, hourlyRate: 55, available: false },
+   268→   268→  { id: 'ins5', name: 'Alejandro Vega', specialty: 'Mixología y Bebidas', location: 'Playa del Carmen', region: 'playa_carmen', rating: 4.6, hourlyRate: 35, available: true },
+   269→   269→]
+   270→   270→
+   271→   271→export const mockBookings: Booking[] = [
+   272→   272→  { id: 'bk1', courseId: 'crs4', courseTitle: 'Servicio al Cliente Premium', courseTitleEn: 'Premium Customer Service', instructorId: 'ins1', instructorName: 'Ricardo Mendoza', propertyId: 'prop1', propertyName: 'Hotel Playa Cancún', date: '2025-02-05T09:00:00', endTime: '2025-02-05T17:00:00', modality: 'in_person', status: 'confirmed', participants: 12, cost: 499 },
+   273→   273→  { id: 'bk2', courseId: 'crs1', courseTitle: 'Técnicas de Upselling Avanzado', courseTitleEn: 'Advanced Upselling Techniques', propertyId: 'prop2', propertyName: 'Restaurante La Terraza', date: '2025-02-10T10:00:00', modality: 'virtual', status: 'pending', participants: 8 },
+   274→   274→  { id: 'bk3', courseId: 'crs6', courseTitle: 'Liderazgo en Piso', courseTitleEn: 'Floor Leadership', instructorId: 'ins2', instructorName: 'Isabel Navarro', propertyId: 'prop3', propertyName: 'Gran Hotel CDMX', date: '2025-02-15T09:00:00', endTime: '2025-02-16T17:00:00', modality: 'in_person', status: 'pending', participants: 6, cost: 999 },
+   275→   275→  { id: 'bk4', courseId: 'crs4', courseTitle: 'Servicio al Cliente Premium', courseTitleEn: 'Premium Customer Service', instructorId: 'ins3', instructorName: 'Fernando Delgado', propertyId: 'prop6', propertyName: 'Restaurante Puerto Veracruz', date: '2025-01-20T09:00:00', endTime: '2025-01-20T17:00:00', modality: 'in_person', status: 'completed', participants: 15, cost: 499 },
+   276→   276→]
+   277→   277→
+   278→   278→export const mockNotifications: Notification[] = [
+   279→   279→  { id: 'ntf1', type: 'employee_offboard', title: '¡Empleado dado de baja!', titleEn: 'Employee offboarded!', message: 'Patricia Ruiz (MES-701) se ha dado de baja. Se requiere buscar reemplazo.', messageEn: 'Patricia Ruiz (MES-701) has been offboarded. Replacement needed.', isRead: false, propertyId: 'prop5', createdAt: '2025-01-20T10:00:00' },
+   280→   280→  { id: 'ntf2', type: 'booking_request', title: 'Nueva solicitud de capacitación', titleEn: 'New training request', message: 'Gran Hotel CDMX solicita taller de Liderazgo en Piso para 6 participantes.', messageEn: 'Grand Hotel CDMX requests Floor Leadership workshop for 6 participants.', isRead: false, propertyId: 'prop3', createdAt: '2025-01-22T15:00:00' },
+   281→   281→  { id: 'ntf3', type: 'alert', title: 'Alerta de rotación crítica', titleEn: 'Critical turnover alert', message: 'María García tiene 85% de probabilidad de abandonar en los próximos 30 días.', messageEn: 'María García has 85% probability of leaving in the next 30 days.', isRead: true, propertyId: 'prop1', createdAt: '2025-01-22T14:00:00' },
+   282→   282→  { id: 'ntf4', type: 'course_completed', title: 'Curso completado', titleEn: 'Course completed', message: 'Carlos López completó "Venta Consultiva de Tours" con puntuación de 95.', messageEn: 'Carlos López completed "Consultive Tour Sales" with a score of 95.', isRead: true, createdAt: '2025-01-21T16:00:00' },
+   283→   283→]
+   284→   284→
+   285→   285→export const mockNPSResponses: NPSResponse[] = [
+   286→   286→  { id: 'nps1', employeeId: 'emp1', employeeName: 'Juan Pérez', score: 10, comment: 'Excelente servicio, muy atento', promoter: true, source: 'QR', createdAt: '2025-01-24T15:30:00' },
+   287→   287→  { id: 'nps2', employeeId: 'emp1', employeeName: 'Juan Pérez', score: 9, comment: 'Muy buena recomendación de vino', promoter: true, source: 'SMS', createdAt: '2025-01-23T20:00:00' },
+   288→   288→  { id: 'nps3', employeeId: 'emp1', employeeName: 'Juan Pérez', score: 9, promoter: true, source: 'App', createdAt: '2025-01-22T14:00:00' },
+   289→   289→  { id: 'nps4', employeeId: 'emp2', employeeName: 'María García', score: 7, comment: 'Todavía aprendiendo, pero amable', promoter: false, source: 'QR', createdAt: '2025-01-23T16:00:00' },
+   290→   290→  { id: 'nps5', employeeId: 'emp2', employeeName: 'María García', score: 8, promoter: false, source: 'SMS', createdAt: '2025-01-20T19:30:00' },
+   291→   291→  { id: 'nps6', employeeId: 'emp3', employeeName: 'Carlos López', score: 10, comment: 'Servicio excepcional, nos ayudó con todo', promoter: true, source: 'QR', createdAt: '2025-01-24T10:00:00' },
+   292→   292→  { id: 'nps7', employeeId: 'emp3', employeeName: 'Carlos López', score: 10, comment: 'Siempre dispuesto a ayudar', promoter: true, source: 'App', createdAt: '2025-01-22T12:00:00' },
+   293→   293→  { id: 'nps8', employeeId: 'emp3', employeeName: 'Carlos López', score: 9, promoter: true, source: 'SMS', createdAt: '2025-01-21T11:00:00' },
+   294→   294→  { id: 'nps9', employeeId: 'emp6', employeeName: 'Laura Hernández', score: 10, comment: 'La mejor capitana, excelente liderazgo', promoter: true, source: 'QR', createdAt: '2025-01-24T21:00:00' },
+   295→   295→  { id: 'nps10', employeeId: 'emp6', employeeName: 'Laura Hernández', score: 9, promoter: true, source: 'App', createdAt: '2025-01-23T20:30:00' },
+   296→   296→  { id: 'nps11', employeeId: 'emp7', employeeName: 'Miguel Torres', score: 9, comment: 'Muy buen bartender, cócteles increíbles', promoter: true, source: 'QR', createdAt: '2025-01-24T23:00:00' },
+   297→   297→  { id: 'nps12', employeeId: 'emp7', employeeName: 'Miguel Torres', score: 8, promoter: false, source: 'SMS', createdAt: '2025-01-22T22:30:00' },
+   298→   298→  { id: 'nps13', employeeId: 'emp4', employeeName: 'Ana Martínez', score: 9, comment: 'Muy profesional en recepción', promoter: true, source: 'QR', createdAt: '2025-01-24T08:00:00' },
+   299→   299→  { id: 'nps14', employeeId: 'emp4', employeeName: 'Ana Martínez', score: 8, promoter: false, source: 'App', createdAt: '2025-01-22T09:00:00' },
+   300→   300→  { id: 'nps15', employeeId: 'emp5', employeeName: 'Roberto Sánchez', score: 8, comment: 'Habitación impecable', promoter: false, source: 'QR', createdAt: '2025-01-22T14:00:00' },
+   301→   301→  { id: 'nps16', employeeId: 'emp10', employeeName: 'Sofía Vargas', score: 9, comment: 'Excelente recomendación de corte', promoter: true, source: 'SMS', createdAt: '2025-01-23T21:00:00' },
+   302→   302→  { id: 'nps17', employeeId: 'emp10', employeeName: 'Sofía Vargas', score: 10, promoter: true, source: 'App', createdAt: '2025-01-21T20:00:00' },
+   303→   303→  { id: 'nps18', employeeId: 'emp8', employeeName: 'Patricia Ruiz', score: 7, comment: 'Servicio un poco apresurado', promoter: false, source: 'QR', createdAt: '2025-01-19T18:00:00' },
+   304→   304→  { id: 'nps19', employeeId: 'emp9', employeeName: 'Diego Flores', score: 7, promoter: false, source: 'QR', createdAt: '2025-01-22T10:00:00' },
+   305→   305→  { id: 'nps20', employeeId: 'emp9', employeeName: 'Diego Flores', score: 6, comment: 'Le faltó información sobre el hotel', promoter: false, source: 'SMS', createdAt: '2025-01-20T09:00:00' },
+   306→   306→]
+   307→   307→
+   308→   308→// Chart data
+   309→   309→export const monthlySalesData = [
+   310→   310→  { month: 'Jul', sales: 8200, upselling: 3100, training: 3 },
+   311→   311→  { month: 'Aug', sales: 9100, upselling: 3800, training: 5 },
+   312→   312→  { month: 'Sep', sales: 10500, upselling: 4500, training: 7 },
+   313→   313→  { month: 'Oct', sales: 11200, upselling: 5200, training: 8 },
+   314→   314→  { month: 'Nov', sales: 12800, upselling: 6100, training: 10 },
+   315→   315→  { month: 'Dec', sales: 14500, upselling: 7200, training: 12 },
+   316→   316→  { month: 'Jan', sales: 15200, upselling: 8100, training: 14 },
+   317→   317→]
+   318→   318→
+   319→   319→export const npsTrendData = [
+   320→   320→  { month: 'Jul', nps: 7.2, promoters: 45, passives: 35, detractors: 20 },
+   321→   321→  { month: 'Aug', nps: 7.5, promoters: 48, passives: 34, detractors: 18 },
+   322→   322→  { month: 'Sep', nps: 7.9, promoters: 52, passives: 32, detractors: 16 },
+   323→   323→  { month: 'Oct', nps: 8.2, promoters: 58, passives: 28, detractors: 14 },
+   324→   324→  { month: 'Nov', nps: 8.6, promoters: 62, passives: 26, detractors: 12 },
+   325→   325→  { month: 'Dec', nps: 8.9, promoters: 67, passives: 22, detractors: 11 },
+   326→   326→  { month: 'Jan', nps: 9.1, promoters: 72, passives: 20, detractors: 8 },
+   327→   327→]
+   328→   328→
+   329→   329→export const propertyComparisonData = [
+   330→   330→  { name: 'Cancún', nameEn: 'Cancún', revenue: 15200, nps: 9.1, turnover: 12, trainingCompletion: 85 },
+   331→   331→  { name: 'CDMX', nameEn: 'CDMX', revenue: 12800, nps: 8.4, turnover: 18, trainingCompletion: 72 },
+   332→   332→  { name: 'Puebla', nameEn: 'Puebla', revenue: 8900, nps: 9.3, turnover: 8, trainingCompletion: 90 },
+   333→   333→  { name: 'Playa del Carmen', nameEn: 'Playa del Carmen', revenue: 7200, nps: 8.1, turnover: 22, trainingCompletion: 65 },
+   334→   334→  { name: 'Los Cabos', nameEn: 'Los Cabos', revenue: 11500, nps: 8.7, turnover: 15, trainingCompletion: 78 },
+   335→   335→  { name: 'Veracruz', nameEn: 'Veracruz', revenue: 6500, nps: 8.9, turnover: 10, trainingCompletion: 82 },
+   336→   336→]
+   337→   337→
+   338→   338→export const trainingCorrelationData = [
+   339→   339→  { coursesCompleted: 0, avgUpselling: 200, avgNPS: 7.0 },
+   340→   340→  { coursesCompleted: 1, avgUpselling: 450, avgNPS: 7.3 },
+   341→   341→  { coursesCompleted: 2, avgUpselling: 820, avgNPS: 7.8 },
+   342→   342→  { coursesCompleted: 3, avgUpselling: 1400, avgNPS: 8.2 },
+   343→   343→  { coursesCompleted: 5, avgUpselling: 2800, avgNPS: 8.7 },
+   344→   344→  { coursesCompleted: 7, avgUpselling: 4100, avgNPS: 9.0 },
+   345→   345→  { coursesCompleted: 10, avgUpselling: 5800, avgNPS: 9.3 },
+   346→   346→  { coursesCompleted: 14, avgUpselling: 7200, avgNPS: 9.6 },
+   347→   347→]
+   348→   348→
+   349→   349→// Pricing plans
+   350→   350→export const pricingPlans = [
+   351→   351→  {
+   352→   352→    id: 'plan1',
+   353→   353→    name: 'Boutique Connect',
+   354→   354→    nameEn: 'Boutique Connect',
+   355→   355→    setupFee: 499,
+   356→   356→    monthlyFee: 149,
+   357→   357→    targetMarket: 'Restaurantes locales o Hoteles Boutique',
+   358→   358→    targetMarketEn: 'Local Restaurants or Boutique Hotels',
+   359→   359→    features: [
+   360→   360→      'Taller presencial de arranque de 1 día',
+   361→   361→      'Alta en la App con onboarding digital',
+   362→   362→      'Upselling básico automatizado',
+   363→   363→      'Dashboard de métricas',
+   364→   364→      'Soporte por chat',
+   365→   365→    ],
+   366→   366→    featuresEn: [
+   367→   367→      '1-day kickoff in-person workshop',
+   368→   368→      'App onboarding digital setup',
+   369→   369→      'Basic automated upselling',
+   370→   370→      'Metrics dashboard',
+   371→   371→      'Chat support',
+   372→   372→    ],
+   373→   373→    popular: false,
+   374→   374→  },
+   375→   375→  {
+   376→   376→    id: 'plan2',
+   377→   377→    name: 'Enterprise Growth',
+   378→   378→    nameEn: 'Enterprise Growth',
+   379→   379→    setupFee: 999,
+   380→   380→    monthlyFee: 349,
+   381→   381→    targetMarket: 'Hoteles medianos y Grupos de Restaurantes',
+   382→   382→    targetMarketEn: 'Mid-size Hotels and Restaurant Groups',
+   383→   383→    features: [
+   384→   384→      'Taller de 2 días: Integración de equipos',
+   385→   385→      'Técnicas de venta y mapeo de habilidades',
+   386→   386→      'Integración de APIs con POS',
+   387→   387→      'Dashboard ROI y Analíticas avanzadas',
+   388→   388→      'Alerta temprana de rotación',
+   389→   389→      'Soporte prioritario',
+   390→   390→    ],
+   391→   391→    featuresEn: [
+   392→   392→      '2-day workshop: Team integration',
+   393→   393→      'Sales techniques and skill mapping',
+   394→   394→      'POS API integration',
+   395→   395→      'Advanced ROI & Analytics dashboard',
+   396→   396→      'Early turnover alerts',
+   397→   397→      'Priority support',
+   398→   398→    ],
+   399→   399→    popular: true,
+   400→   400→  },
+   401→   401→  {
+   402→   402→    id: 'plan3',
+   403→   403→    name: 'Global Chains',
+   404→   404→    nameEn: 'Global Chains',
+   405→   405→    setupFee: 0,
+   406→   406→    monthlyFee: 699,
+   407→   407→    targetMarket: 'Cadenas hoteleras o Franquicias transnacionales',
+   408→   408→    targetMarketEn: 'Hotel Chains or Transnational Franchises',
+   409→   409→    features: [
+   410→   410→      'Programa completo de capacitación escalonado',
+   411→   411→      'Comparación multi-propiedad',
+   412→   412→      'Instructores locales en cada región',
+   413→   413→      'API personalizada',
+   414→   414→      'NPS automático por QR/SMS',
+   415→   415→      'Gamificación avanzada',
+   416→   416→      'Soporte dedicado 24/7',
+   417→   417→    ],
+   418→   418→    featuresEn: [
+   419→   419→      'Complete staggered training program',
+   420→   420→      'Multi-property comparison',
+   421→   421→      'Local instructors in each region',
+   422→   422→      'Custom API',
+   423→   423→      'Automatic NPS via QR/SMS',
+   424→   424→      'Advanced gamification',
+   425→   425→      'Dedicated 24/7 support',
+   426→   426→    ],
+   427→   427→    popular: false,
+   428→   428→  },
+   429→   429→]
+   430→   430→
+   431→   431→// Career paths data for training module
+   432→   432→export interface CareerPathLevel {
+   433→   433→  title: string
+   434→   434→  titleEn: string
+   435→   435→  level: number
+   436→   436→  requiredCourses: number
+   437→   437→  minScore: number
+   438→   438→  knowledgeTarget: number
+   439→   439→  salesTarget: number
+   440→   440→  hospitalityTarget: number
+   441→   441→}
+   442→   442→
+   443→   443→export interface CareerPath {
+   444→   444→  id: string
+   445→   445→  department: string
+   446→   446→  departmentEn: string
+   447→   447→  icon: string
+   448→   448→  levels: CareerPathLevel[]
+   449→   449→}
+   450→   450→
+   451→   451→export const mockCareerPaths: CareerPath[] = [
+   452→   452→  {
+   453→   453→    id: 'cp1',
+   454→   454→    department: 'Mesero',
+   455→   455→    departmentEn: 'Waiter',
+   456→   456→    icon: '🍽️',
+   457→   457→    levels: [
+   458→   458→      { title: 'Mesero Jr.', titleEn: 'Jr. Waiter', level: 1, requiredCourses: 2, minScore: 60, knowledgeTarget: 40, salesTarget: 30, hospitalityTarget: 50 },
+   459→   459→      { title: 'Mesero Sr.', titleEn: 'Sr. Waiter', level: 2, requiredCourses: 5, minScore: 75, knowledgeTarget: 65, salesTarget: 60, hospitalityTarget: 70 },
+   460→   460→      { title: 'Capitán', titleEn: 'Captain', level: 3, requiredCourses: 8, minScore: 85, knowledgeTarget: 80, salesTarget: 80, hospitalityTarget: 85 },
+   461→   461→      { title: 'Gerente A&B', titleEn: 'F&B Manager', level: 4, requiredCourses: 12, minScore: 90, knowledgeTarget: 90, salesTarget: 85, hospitalityTarget: 90 },
+   462→   462→    ],
+   463→   463→  },
+   464→   464→  {
+   465→   465→    id: 'cp2',
+   466→   466→    department: 'Bellboy',
+   467→   467→    departmentEn: 'Bellboy',
+   468→   468→    icon: '🧳',
+   469→   469→    levels: [
+   470→   470→      { title: 'Bellboy Jr.', titleEn: 'Jr. Bellboy', level: 1, requiredCourses: 2, minScore: 55, knowledgeTarget: 35, salesTarget: 20, hospitalityTarget: 55 },
+   471→   471→      { title: 'Bellboy Sr.', titleEn: 'Sr. Bellboy', level: 2, requiredCourses: 5, minScore: 70, knowledgeTarget: 60, salesTarget: 45, hospitalityTarget: 75 },
+   472→   472→      { title: 'Jefe de Conserjería', titleEn: 'Head Concierge', level: 3, requiredCourses: 8, minScore: 85, knowledgeTarget: 80, salesTarget: 60, hospitalityTarget: 90 },
+   473→   473→    ],
+   474→   474→  },
+   475→   475→  {
+   476→   476→    id: 'cp3',
+   477→   477→    department: 'Recepcionista',
+   478→   478→    departmentEn: 'Receptionist',
+   479→   479→    icon: '🏨',
+   480→   480→    levels: [
+   481→   481→      { title: 'Recepcionista Jr.', titleEn: 'Jr. Receptionist', level: 1, requiredCourses: 2, minScore: 55, knowledgeTarget: 30, salesTarget: 20, hospitalityTarget: 50 },
+   482→   482→      { title: 'Recepcionista', titleEn: 'Receptionist', level: 2, requiredCourses: 5, minScore: 70, knowledgeTarget: 60, salesTarget: 50, hospitalityTarget: 75 },
+   483→   483→      { title: 'Supervisor Recepción', titleEn: 'Front Desk Supervisor', level: 3, requiredCourses: 9, minScore: 85, knowledgeTarget: 80, salesTarget: 65, hospitalityTarget: 88 },
+   484→   484→    ],
+   485→   485→  },
+   486→   486→  {
+   487→   487→    id: 'cp4',
+   488→   488→    department: 'Camarista',
+   489→   489→    departmentEn: 'Housekeeper',
+   490→   490→    icon: '🛏️',
+   491→   491→    levels: [
+   492→   492→      { title: 'Camarista', titleEn: 'Housekeeper', level: 1, requiredCourses: 2, minScore: 55, knowledgeTarget: 40, salesTarget: 15, hospitalityTarget: 55 },
+   493→   493→      { title: 'Supervisor de Piso', titleEn: 'Floor Supervisor', level: 2, requiredCourses: 5, minScore: 70, knowledgeTarget: 65, salesTarget: 30, hospitalityTarget: 75 },
+   494→   494→      { title: 'Ama de Llaves', titleEn: 'Head Housekeeper', level: 3, requiredCourses: 8, minScore: 85, knowledgeTarget: 80, salesTarget: 40, hospitalityTarget: 90 },
+   495→   495→    ],
+   496→   496→  },
+   497→   497→  {
+   498→   498→    id: 'cp5',
+   499→   499→    department: 'Bartender',
+   500→   500→    departmentEn: 'Bartender',
+   501→   501→    icon: '🍸',
+   502→   502→    levels: [
+   503→   503→      { title: 'Barback', titleEn: 'Barback', level: 1, requiredCourses: 2, minScore: 50, knowledgeTarget: 30, salesTarget: 25, hospitalityTarget: 45 },
+   504→   504→      { title: 'Bartender', titleEn: 'Bartender', level: 2, requiredCourses: 5, minScore: 70, knowledgeTarget: 60, salesTarget: 60, hospitalityTarget: 65 },
+   505→   505→      { title: 'Bar Manager', titleEn: 'Bar Manager', level: 3, requiredCourses: 9, minScore: 85, knowledgeTarget: 80, salesTarget: 80, hospitalityTarget: 80 },
+   506→   506→    ],
+   507→   507→  },
+   508→   508→]
+   509→   509→
+   510→   510→// Position to micro-course mapping for virtual training
+   511→   511→export const positionMicroCourses: Record<string, { courseId: string; order: number }[]> = {
+   512→   512→  mesero: [
+   513→   513→    { courseId: 'crs5', order: 1 },
+   514→   514→    { courseId: 'crs3', order: 2 },
+   515→   515→    { courseId: 'crs1', order: 3 },
+   516→   516→    { courseId: 'crs8', order: 4 },
+   517→   517→    { courseId: 'crs2', order: 5 },
+   518→   518→  ],
+   519→   519→  bellboy: [
+   520→   520→    { courseId: 'crs5', order: 1 },
+   521→   521→    { courseId: 'crs4', order: 2 },
+   522→   522→    { courseId: 'crs3', order: 3 },
+   523→   523→    { courseId: 'crs8', order: 4 },
+   524→   524→  ],
+   525→   525→  recepcionista: [
+   526→   526→    { courseId: 'crs5', order: 1 },
+   527→   527→    { courseId: 'crs8', order: 2 },
+   528→   528→    { courseId: 'crs1', order: 3 },
+   529→   529→    { courseId: 'crs4', order: 4 },
+   530→   530→  ],
+   531→   531→  camarista: [
+   532→   532→    { courseId: 'crs5', order: 1 },
+   533→   533→    { courseId: 'crs4', order: 2 },
+   534→   534→    { courseId: 'crs8', order: 3 },
+   535→   535→  ],
+   536→   536→  bartender: [
+   537→   537→    { courseId: 'crs5', order: 1 },
+   538→   538→    { courseId: 'crs7', order: 2 },
+   539→   539→    { courseId: 'crs1', order: 3 },
+   540→   540→    { courseId: 'crs2', order: 4 },
+   541→   541→  ],
+   542→   542→}
+   543→   543→
+   544→   544→export const regions = [
+   545→   545→  { id: 'cancun', name: 'Cancún', nameEn: 'Cancún' },
+   546→   546→  { id: 'cdmx', name: 'CDMX', nameEn: 'Mexico City' },
+   547→   547→  { id: 'puebla', name: 'Puebla', nameEn: 'Puebla' },
+   548→   548→  { id: 'playa_carmen', name: 'Playa del Carmen', nameEn: 'Playa del Carmen' },
+   549→   549→  { id: 'los_cabos', name: 'Los Cabos', nameEn: 'Los Cabos' },
+   550→   550→  { id: 'baja_california', name: 'Baja California', nameEn: 'Baja California' },
+   551→   551→  { id: 'veracruz', name: 'Veracruz', nameEn: 'Veracruz' },
+   552→   552→  { id: 'acapulco', name: 'Acapulco', nameEn: 'Acapulco' },
+   553→   553→  { id: 'mazatlan', name: 'Mazatlán', nameEn: 'Mazatlán' },
+   554→   554→  { id: 'tlaxcala', name: 'Tlaxcala', nameEn: 'Tlaxcala' },
+   555→   555→]
+   556→   556→

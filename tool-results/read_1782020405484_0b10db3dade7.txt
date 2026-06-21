@@ -1,0 +1,979 @@
+     1→'use client'
+     2→
+     3→import { useState, useMemo } from 'react'
+     4→import { motion, AnimatePresence } from 'framer-motion'
+     5→import {
+     6→  Search,
+     7→  BookOpen,
+     8→  GraduationCap,
+     9→  Calendar,
+    10→  Users,
+    11→  Trophy,
+    12→  TrendingUp,
+    13→  Star,
+    14→  Clock,
+    15→  ChevronRight,
+    16→  ArrowRight,
+    17→  Zap,
+    18→  Monitor,
+    19→  MapPin,
+    20→  StickyNote,
+    21→  CheckCircle2,
+    22→  PlayCircle,
+    23→  RotateCcw,
+    24→} from 'lucide-react'
+    25→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+    26→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+    27→import { Badge } from '@/components/ui/badge'
+    28→import { Button } from '@/components/ui/button'
+    29→import { Input } from '@/components/ui/input'
+    30→import { Progress } from '@/components/ui/progress'
+    31→import {
+    32→  Select,
+    33→  SelectContent,
+    34→  SelectItem,
+    35→  SelectTrigger,
+    36→  SelectValue,
+    37→} from '@/components/ui/select'
+    38→import { Calendar as CalendarComponent } from '@/components/ui/calendar'
+    39→import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+    40→import { Textarea } from '@/components/ui/textarea'
+    41→import { Label } from '@/components/ui/label'
+    42→import { useAppStore } from '@/lib/store'
+    43→import { translations } from '@/lib/i18n'
+    44→import type { Locale } from '@/lib/i18n'
+    45→import {
+    46→  mockCourses,
+    47→  mockEmployeeCourses,
+    48→  mockCareerPaths,
+    49→  mockInstructors,
+    50→  mockProperties,
+    51→  positionMicroCourses,
+    52→} from '@/lib/mock-data'
+    53→
+    54→// ---- Category Color Map ----
+    55→const categoryColors: Record<string, string> = {
+    56→  upselling: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+    57→  hospitality: 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300',
+    58→  product_knowledge: 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300',
+    59→  onboarding: 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300',
+    60→  leadership: 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
+    61→}
+    62→
+    63→const categoryDotColors: Record<string, string> = {
+    64→  upselling: 'bg-emerald-500',
+    65→  hospitality: 'bg-teal-500',
+    66→  product_knowledge: 'bg-purple-500',
+    67→  onboarding: 'bg-sky-500',
+    68→  leadership: 'bg-orange-500',
+    69→}
+    70→
+    71→const difficultyColors: Record<string, string> = {
+    72→  beginner: 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
+    73→  intermediate: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
+    74→  advanced: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
+    75→}
+    76→
+    77→// ---- Helper: Format Duration ----
+    78→function formatDuration(minutes: number, locale: Locale): string {
+    79→  if (minutes < 60) return `${minutes} min`
+    80→  const hrs = Math.floor(minutes / 60)
+    81→  const mins = minutes % 60
+    82→  if (mins === 0) return `${hrs} ${locale === 'es' ? 'hrs' : 'hrs'}`
+    83→  return `${hrs} ${locale === 'es' ? 'hrs' : 'hrs'} ${mins} min`
+    84→}
+    85→
+    86→// ---- Stat Card Component ----
+    87→function StatCard({
+    88→  icon: Icon,
+    89→  label,
+    90→  value,
+    91→  color,
+    92→}: {
+    93→  icon: React.ElementType
+    94→  label: string
+    95→  value: string | number
+    96→  color: string
+    97→}) {
+    98→  return (
+    99→    <motion.div
+   100→      initial={{ opacity: 0, y: 12 }}
+   101→      animate={{ opacity: 1, y: 0 }}
+   102→      transition={{ duration: 0.3 }}
+   103→    >
+   104→      <Card className="relative overflow-hidden">
+   105→        <CardContent className="p-4">
+   106→          <div className="flex items-center gap-3">
+   107→            <div className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${color}`}>
+   108→              <Icon className="size-5 text-white" />
+   109→            </div>
+   110→            <div className="min-w-0">
+   111→              <p className="text-sm text-muted-foreground truncate">{label}</p>
+   112→              <p className="text-2xl font-bold tracking-tight">{value}</p>
+   113→            </div>
+   114→          </div>
+   115→        </CardContent>
+   116→      </Card>
+   117→    </motion.div>
+   118→  )
+   119→}
+   120→
+   121→// ---- Course Card Component ----
+   122→function CourseCard({
+   123→  course,
+   124→  enrollmentStatus,
+   125→  locale,
+   126→  t,
+   127→}: {
+   128→  course: (typeof mockCourses)[0]
+   129→  enrollmentStatus: 'not_started' | 'in_progress' | 'completed' | null
+   130→  locale: Locale
+   131→  t: (typeof translations)['es']
+   132→}) {
+   133→  const title = locale === 'en' ? course.titleEn : course.title
+   134→  const description = locale === 'en' ? course.descriptionEn : course.description
+   135→  const category = locale === 'en' ? course.categoryEn : course.category
+   136→  const difficulty = locale === 'en' ? course.difficultyEn : course.difficulty
+   137→
+   138→  const categoryKey = course.category as keyof typeof t.categories
+   139→  const difficultyKey = course.difficulty as keyof typeof t.difficultyLevels
+   140→
+   141→  const actionButton = enrollmentStatus ? (
+   142→    enrollmentStatus === 'completed' ? (
+   143→      <Button size="sm" variant="outline" className="gap-1.5 text-xs" disabled>
+   144→        <CheckCircle2 className="size-3.5" />
+   145→        {t.completed}
+   146→      </Button>
+   147→    ) : enrollmentStatus === 'in_progress' ? (
+   148→      <Button size="sm" variant="default" className="gap-1.5 text-xs">
+   149→        <RotateCcw className="size-3.5" />
+   150→        {t.continueCourse}
+   151→      </Button>
+   152→    ) : (
+   153→      <Button size="sm" variant="default" className="gap-1.5 text-xs">
+   154→        <PlayCircle className="size-3.5" />
+   155→        {t.startCourse}
+   156→      </Button>
+   157→    )
+   158→  ) : (
+   159→    <Button size="sm" variant="default" className="gap-1.5 text-xs">
+   160→      <Zap className="size-3.5" />
+   161→      {t.enroll}
+   162→    </Button>
+   163→  )
+   164→
+   165→  return (
+   166→    <motion.div
+   167→      initial={{ opacity: 0, y: 16 }}
+   168→      animate={{ opacity: 1, y: 0 }}
+   169→      whileHover={{ y: -2, boxShadow: '0 8px 30px rgba(0,0,0,0.08)' }}
+   170→      transition={{ duration: 0.25 }}
+   171→    >
+   172→      <Card className="flex h-full flex-col overflow-hidden">
+   173→        <CardContent className="flex flex-1 flex-col gap-3 p-4">
+   174→          {/* Category badge + Modality */}
+   175→          <div className="flex items-center justify-between gap-2">
+   176→            <Badge variant="secondary" className={`text-xs ${categoryColors[course.category] || ''}`}>
+   177→              <span className={`mr-1.5 inline-block size-1.5 rounded-full ${categoryDotColors[course.category] || 'bg-gray-400'}`} />
+   178→              {t.categories[categoryKey] || category}
+   179→            </Badge>
+   180→            <Badge
+   181→              variant="outline"
+   182→              className={`text-xs ${
+   183→                course.modality === 'virtual'
+   184→                  ? 'border-sky-300 text-sky-700 dark:border-sky-700 dark:text-sky-400'
+   185→                  : 'border-orange-300 text-orange-700 dark:border-orange-700 dark:text-orange-400'
+   186→              }`}
+   187→            >
+   188→              {course.modality === 'virtual' ? (
+   189→                <Monitor className="mr-1 size-3" />
+   190→              ) : (
+   191→                <MapPin className="mr-1 size-3" />
+   192→              )}
+   193→              {course.modality === 'virtual' ? t.virtual : t.inPerson}
+   194→            </Badge>
+   195→          </div>
+   196→
+   197→          {/* Title */}
+   198→          <h3 className="text-sm font-semibold leading-snug line-clamp-2">{title}</h3>
+   199→
+   200→          {/* Description */}
+   201→          <p className="text-xs text-muted-foreground line-clamp-2">{description}</p>
+   202→
+   203→          {/* Meta row */}
+   204→          <div className="mt-auto flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+   205→            <span className="flex items-center gap-1">
+   206→              <Clock className="size-3" />
+   207→              {formatDuration(course.duration, locale)}
+   208→            </span>
+   209→            <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${difficultyColors[course.difficulty] || ''}`}>
+   210→              {t.difficultyLevels[difficultyKey] || difficulty}
+   211→            </Badge>
+   212→            <span className="flex items-center gap-1">
+   213→              <Trophy className="size-3 text-amber-500" />
+   214→              {course.points} {t.points}
+   215→            </span>
+   216→          </div>
+   217→
+   218→          {/* Enrollment + Completion */}
+   219→          <div className="space-y-1.5">
+   220→            <div className="flex items-center justify-between text-xs text-muted-foreground">
+   221→              <span>
+   222→                {course.enrollmentCount} {t.enrollments}
+   223→              </span>
+   224→              <span className="font-medium">{course.completionRate}%</span>
+   225→            </div>
+   226→            <Progress value={course.completionRate} className="h-1.5" />
+   227→          </div>
+   228→
+   229→          {/* Action */}
+   230→          <div className="pt-1">{actionButton}</div>
+   231→        </CardContent>
+   232→      </Card>
+   233→    </motion.div>
+   234→  )
+   235→}
+   236→
+   237→// ---- Career Path Node ----
+   238→function CareerNode({
+   239→  levelData,
+   240→  isCurrent,
+   241→  isLast,
+   242→  locale,
+   243→  t,
+   244→}: {
+   245→  levelData: (typeof mockCareerPaths)[0]['levels'][0]
+   246→  isCurrent: boolean
+   247→  isLast: boolean
+   248→  locale: Locale
+   249→  t: (typeof translations)['es']
+   250→}) {
+   251→  const title = locale === 'en' ? levelData.titleEn : levelData.title
+   252→  const skillAvg = Math.round(
+   253→    (levelData.knowledgeTarget + levelData.salesTarget + levelData.hospitalityTarget) / 3
+   254→  )
+   255→
+   256→  return (
+   257→    <div className="flex flex-col items-center">
+   258→      <motion.div
+   259→        initial={{ opacity: 0, scale: 0.9 }}
+   260→        animate={{ opacity: 1, scale: 1 }}
+   261→        transition={{ duration: 0.3, delay: levelData.level * 0.1 }}
+   262→        className={`relative rounded-xl border-2 p-4 w-full max-w-[220px] transition-shadow ${
+   263→          isCurrent
+   264→            ? 'border-primary bg-primary/5 shadow-lg shadow-primary/20'
+   265→            : 'border-border bg-card'
+   266→        }`}
+   267→      >
+   268→        {isCurrent && (
+   269→          <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] px-2">
+   270→            {t.currentLevel}
+   271→          </Badge>
+   272→        )}
+   273→        <div className="space-y-2.5 text-center">
+   274→          <div className="flex items-center justify-center gap-1.5">
+   275→            <span className="flex size-6 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+   276→              {levelData.level}
+   277→            </span>
+   278→            <h4 className="text-sm font-semibold">{title}</h4>
+   279→          </div>
+   280→
+   281→          {/* Requirements */}
+   282→          <div className="space-y-1 text-xs text-muted-foreground">
+   283→            <div className="flex items-center justify-between">
+   284→              <span>{t.requiredCourses}</span>
+   285→              <span className="font-medium text-foreground">{levelData.requiredCourses}</span>
+   286→            </div>
+   287→            <div className="flex items-center justify-between">
+   288→              <span>{t.minScore}</span>
+   289→              <span className="font-medium text-foreground">{levelData.minScore}%</span>
+   290→            </div>
+   291→          </div>
+   292→
+   293→          {/* Skill bars */}
+   294→          <div className="space-y-1.5">
+   295→            <SkillBar label={t.knowledge} value={levelData.knowledgeTarget} color="bg-teal-500" />
+   296→            <SkillBar label={t.sales} value={levelData.salesTarget} color="bg-amber-500" />
+   297→            <SkillBar label={t.hospitality} value={levelData.hospitalityTarget} color="bg-rose-500" />
+   298→          </div>
+   299→
+   300→          <div className="flex items-center justify-center gap-1 text-xs font-medium text-primary">
+   301→            <TrendingUp className="size-3" />
+   302→            {skillAvg}%
+   303→          </div>
+   304→        </div>
+   305→      </motion.div>
+   306→
+   307→      {/* Connector */}
+   308→      {!isLast && (
+   309→        <div className="flex flex-col items-center py-1">
+   310→          <div className="h-6 w-0.5 bg-primary/30" />
+   311→          <ArrowRight className="size-4 -rotate-90 text-primary/50" />
+   312→        </div>
+   313→      )}
+   314→    </div>
+   315→  )
+   316→}
+   317→
+   318→function SkillBar({ label, value, color }: { label: string; value: number; color: string }) {
+   319→  return (
+   320→    <div className="flex items-center gap-2">
+   321→      <span className="w-2 text-[10px] text-muted-foreground truncate">{label.charAt(0)}</span>
+   322→      <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
+   323→        <div className={`h-full rounded-full ${color}`} style={{ width: `${value}%` }} />
+   324→      </div>
+   325→      <span className="text-[10px] text-muted-foreground w-6 text-right">{value}</span>
+   326→    </div>
+   327→  )
+   328→}
+   329→
+   330→// ---- Radial Skill Chart (CSS-based) ----
+   331→function RadialChart({
+   332→  knowledge,
+   333→  sales,
+   334→  hospitality,
+   335→  size = 80,
+   336→}: {
+   337→  knowledge: number
+   338→  sales: number
+   339→  hospitality: number
+   340→  size?: number
+   341→}) {
+   342→  const r = (size - 12) / 2
+   343→  const c = Math.PI * 2 * r
+   344→  const offset = (pct: number) => c - (c * pct) / 100
+   345→
+   346→  return (
+   347→    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="shrink-0">
+   348→      {/* Background circles */}
+   349→      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor" strokeWidth="3" className="text-muted/30" />
+   350→      {/* Knowledge */}
+   351→      <circle
+   352→        cx={size / 2} cy={size / 2} r={r}
+   353→        fill="none" stroke="currentColor" strokeWidth="3"
+   354→        strokeDasharray={c} strokeDashoffset={offset(knowledge)}
+   355→        strokeLinecap="round"
+   356→        className="text-teal-500"
+   357→        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+   358→      />
+   359→    </svg>
+   360→  )
+   361→}
+   362→
+   363→// ---- Tab 1: Courses ----
+   364→function CoursesTab({ locale }: { locale: Locale }) {
+   365→  const t = translations[locale].training
+   366→  const [search, setSearch] = useState('')
+   367→  const [categoryFilter, setCategoryFilter] = useState('all')
+   368→  const [modalityFilter, setModalityFilter] = useState('all')
+   369→
+   370→  // Compute stats
+   371→  const stats = useMemo(() => {
+   372→    const totalCourses = mockCourses.length
+   373→    const avgCompletion = Math.round(
+   374→      mockCourses.reduce((sum, c) => sum + c.completionRate, 0) / totalCourses
+   375→    )
+   376→    const activeEnrollments = mockEmployeeCourses.filter(
+   377→      (ec) => ec.status === 'in_progress'
+   378→    ).length
+   379→    const totalPoints = mockEmployeeCourses
+   380→      .filter((ec) => ec.status === 'completed')
+   381→      .reduce((sum, _ec) => {
+   382→        const course = mockCourses.find((c) => c.id === _ec.courseId)
+   383→        return sum + (course?.points || 0)
+   384→      }, 0)
+   385→    return { totalCourses, avgCompletion, activeEnrollments, totalPoints }
+   386→  }, [])
+   387→
+   388→  // Filter courses
+   389→  const filteredCourses = useMemo(() => {
+   390→    return mockCourses.filter((course) => {
+   391→      const matchesSearch =
+   392→        !search ||
+   393→        course.title.toLowerCase().includes(search.toLowerCase()) ||
+   394→        course.titleEn.toLowerCase().includes(search.toLowerCase()) ||
+   395→        course.description.toLowerCase().includes(search.toLowerCase())
+   396→      const matchesCategory =
+   397→        categoryFilter === 'all' || course.category === categoryFilter
+   398→      const matchesModality =
+   399→        modalityFilter === 'all' || course.modality === modalityFilter
+   400→      return matchesSearch && matchesCategory && matchesModality
+   401→    })
+   402→  }, [search, categoryFilter, modalityFilter])
+   403→
+   404→  // Build enrollment lookup
+   405→  const enrollmentMap = useMemo(() => {
+   406→    const map: Record<string, 'not_started' | 'in_progress' | 'completed'> = {}
+   407→    mockEmployeeCourses.forEach((ec) => {
+   408→      map[ec.courseId] = ec.status
+   409→    })
+   410→    return map
+   411→  }, [])
+   412→
+   413→  return (
+   414→    <div className="space-y-6">
+   415→      {/* Header */}
+   416→      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+   417→        <h2 className="text-xl font-bold">{t.courses}</h2>
+   418→        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+   419→          <div className="relative">
+   420→            <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+   421→            <Input
+   422→              placeholder={t.searchCourses}
+   423→              value={search}
+   424→              onChange={(e) => setSearch(e.target.value)}
+   425→              className="h-9 pl-8 w-full sm:w-56"
+   426→            />
+   427→          </div>
+   428→          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+   429→            <SelectTrigger className="h-9 w-full sm:w-40">
+   430→              <SelectValue placeholder={t.allCategories} />
+   431→            </SelectTrigger>
+   432→            <SelectContent>
+   433→              <SelectItem value="all">{t.allCategories}</SelectItem>
+   434→              <SelectItem value="upselling">{t.categories.upselling}</SelectItem>
+   435→              <SelectItem value="hospitality">{t.categories.hospitality}</SelectItem>
+   436→              <SelectItem value="product_knowledge">{t.categories.product_knowledge}</SelectItem>
+   437→              <SelectItem value="onboarding">{t.categories.onboarding}</SelectItem>
+   438→              <SelectItem value="leadership">{t.categories.leadership}</SelectItem>
+   439→            </SelectContent>
+   440→          </Select>
+   441→          <Select value={modalityFilter} onValueChange={setModalityFilter}>
+   442→            <SelectTrigger className="h-9 w-full sm:w-36">
+   443→              <SelectValue placeholder={t.allModalities} />
+   444→            </SelectTrigger>
+   445→            <SelectContent>
+   446→              <SelectItem value="all">{t.allModalities}</SelectItem>
+   447→              <SelectItem value="virtual">{t.virtual}</SelectItem>
+   448→              <SelectItem value="in_person">{t.inPerson}</SelectItem>
+   449→            </SelectContent>
+   450→          </Select>
+   451→        </div>
+   452→      </div>
+   453→
+   454→      {/* Stats Row */}
+   455→      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+   456→        <StatCard
+   457→          icon={BookOpen}
+   458→          label={t.totalCourses}
+   459→          value={stats.totalCourses}
+   460→          color="bg-teal-600"
+   461→        />
+   462→        <StatCard
+   463→          icon={TrendingUp}
+   464→          label={t.completionRate}
+   465→          value={`${stats.avgCompletion}%`}
+   466→          color="bg-emerald-600"
+   467→        />
+   468→        <StatCard
+   469→          icon={Users}
+   470→          label={t.activeEnrollments}
+   471→          value={stats.activeEnrollments}
+   472→          color="bg-amber-600"
+   473→        />
+   474→        <StatCard
+   475→          icon={Trophy}
+   476→          label={t.pointsAwarded}
+   477→          value={stats.totalPoints}
+   478→          color="bg-purple-600"
+   479→        />
+   480→      </div>
+   481→
+   482→      {/* Course Grid */}
+   483→      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+   484→        <AnimatePresence mode="popLayout">
+   485→          {filteredCourses.map((course) => (
+   486→            <CourseCard
+   487→              key={course.id}
+   488→              course={course}
+   489→              enrollmentStatus={enrollmentMap[course.id] || null}
+   490→              locale={locale}
+   491→              t={translations[locale].training}
+   492→            />
+   493→          ))}
+   494→        </AnimatePresence>
+   495→      </div>
+   496→      {filteredCourses.length === 0 && (
+   497→        <div className="py-12 text-center text-muted-foreground">
+   498→          {locale === 'es' ? 'No se encontraron cursos' : 'No courses found'}
+   499→        </div>
+   500→      )}
+   501→    </div>
+   502→  )
+   503→}
+   504→
+   505→// ---- Tab 2: Career Path ----
+   506→function CareerPathTab({ locale }: { locale: Locale }) {
+   507→  const t = translations[locale].training
+   508→  const [selectedPath, setSelectedPath] = useState(mockCareerPaths[0].id)
+   509→
+   510→  const currentPath = mockCareerPaths.find((p) => p.id === selectedPath)!
+   511→  const currentLevel = 2 // simulate employee at level 2
+   512→
+   513→  return (
+   514→    <div className="space-y-6">
+   515→      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+   516→        <h2 className="text-xl font-bold">{t.careerProgression}</h2>
+   517→        <Select value={selectedPath} onValueChange={setSelectedPath}>
+   518→          <SelectTrigger className="h-9 w-full sm:w-52">
+   519→            <SelectValue />
+   520→          </SelectTrigger>
+   521→          <SelectContent>
+   522→            {mockCareerPaths.map((path) => (
+   523→              <SelectItem key={path.id} value={path.id}>
+   524→                <span className="mr-1.5">{path.icon}</span>
+   525→                {locale === 'en' ? path.departmentEn : path.department}
+   526→              </SelectItem>
+   527→            ))}
+   528→          </SelectContent>
+   529→        </Select>
+   530→      </div>
+   531→
+   532→      {/* Career path visualization */}
+   533→      <Card>
+   534→        <CardHeader className="pb-3">
+   535→          <CardTitle className="flex items-center gap-2 text-base">
+   536→            <span className="text-xl">{currentPath.icon}</span>
+   537→            {locale === 'en' ? currentPath.departmentEn : currentPath.department}
+   538→            <Badge variant="secondary" className="ml-2 text-xs">
+   539→              {t.level} {currentLevel}/{currentPath.levels.length}
+   540→            </Badge>
+   541→          </CardTitle>
+   542→        </CardHeader>
+   543→        <CardContent>
+   544→          <div className="flex flex-col items-center gap-0 py-4">
+   545→            {currentPath.levels.map((level, idx) => (
+   546→              <CareerNode
+   547→                key={level.level}
+   548→                levelData={level}
+   549→                isCurrent={level.level === currentLevel}
+   550→                isLast={idx === currentPath.levels.length - 1}
+   551→                locale={locale}
+   552→                t={t}
+   553→              />
+   554→            ))}
+   555→          </div>
+   556→
+   557→          {/* Radial skill summary */}
+   558→          <div className="mt-4 flex flex-wrap items-center justify-center gap-6 border-t pt-4">
+   559→            {currentPath.levels.map((level) => {
+   560→              const title = locale === 'en' ? level.titleEn : level.title
+   561→              const isCurrent = level.level === currentLevel
+   562→              return (
+   563→                <div
+   564→                  key={level.level}
+   565→                  className={`flex flex-col items-center gap-1 rounded-lg p-3 transition-colors ${
+   566→                    isCurrent ? 'bg-primary/5 ring-1 ring-primary/20' : ''
+   567→                  }`}
+   568→                >
+   569→                  <RadialChart
+   570→                    knowledge={level.knowledgeTarget}
+   571→                    sales={level.salesTarget}
+   572→                    hospitality={level.hospitalityTarget}
+   573→                    size={64}
+   574→                  />
+   575→                  <span className="text-[11px] font-medium text-center">{title}</span>
+   576→                  <div className="flex gap-2 text-[10px]">
+   577→                    <span className="text-teal-600">{level.knowledgeTarget}</span>
+   578→                    <span className="text-amber-600">{level.salesTarget}</span>
+   579→                    <span className="text-rose-600">{level.hospitalityTarget}</span>
+   580→                  </div>
+   581→                </div>
+   582→              )
+   583→            })}
+   584→          </div>
+   585→          <div className="mt-3 flex items-center justify-center gap-4 text-[10px] text-muted-foreground">
+   586→            <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-teal-500" /> {t.knowledge}</span>
+   587→            <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-amber-500" /> {t.sales}</span>
+   588→            <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-rose-500" /> {t.hospitality}</span>
+   589→          </div>
+   590→        </CardContent>
+   591→      </Card>
+   592→
+   593→      {/* All paths overview */}
+   594→      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+   595→        {mockCareerPaths.map((path) => {
+   596→          const deptName = locale === 'en' ? path.departmentEn : path.department
+   597→          return (
+   598→            <motion.div
+   599→              key={path.id}
+   600→              whileHover={{ scale: 1.02 }}
+   601→              whileTap={{ scale: 0.98 }}
+   602→            >
+   603→              <Card
+   604→                className={`cursor-pointer transition-shadow ${
+   605→                  selectedPath === path.id ? 'ring-2 ring-primary shadow-md' : ''
+   606→                }`}
+   607→                onClick={() => setSelectedPath(path.id)}
+   608→              >
+   609→                <CardContent className="p-4">
+   610→                  <div className="flex items-center gap-2 mb-2">
+   611→                    <span className="text-xl">{path.icon}</span>
+   612→                    <h4 className="text-sm font-semibold">{deptName}</h4>
+   613→                  </div>
+   614→                  <div className="flex flex-wrap gap-1">
+   615→                    {path.levels.map((level, idx) => {
+   616→                      const lt = locale === 'en' ? level.titleEn : level.title
+   617→                      return (
+   618→                        <span key={level.level} className="flex items-center text-xs text-muted-foreground">
+   619→                          {idx > 0 && <ChevronRight className="size-3 mx-0.5" />}
+   620→                          <span className={level.level === 2 ? 'font-semibold text-primary' : ''}>
+   621→                            {lt}
+   622→                          </span>
+   623→                        </span>
+   624→                      )
+   625→                    })}
+   626→                  </div>
+   627→                </CardContent>
+   628→              </Card>
+   629→            </motion.div>
+   630→          )
+   631→        })}
+   632→      </div>
+   633→    </div>
+   634→  )
+   635→}
+   636→
+   637→// ---- Tab 3: Schedule Training ----
+   638→function ScheduleTrainingTab({ locale }: { locale: Locale }) {
+   639→  const t = translations[locale].training
+   640→  const [selectedPosition, setSelectedPosition] = useState('')
+   641→  const [topic, setTopic] = useState('')
+   642→  const [date, setDate] = useState<Date | undefined>(undefined)
+   643→  const [participants, setParticipants] = useState('')
+   644→  const [selectedProperty, setSelectedProperty] = useState('')
+   645→  const [notes, setNotes] = useState('')
+   646→
+   647→  // Position options
+   648→  const positions = [
+   649→    { id: 'mesero', label: locale === 'en' ? 'Waiter' : 'Mesero' },
+   650→    { id: 'bellboy', label: locale === 'en' ? 'Bellboy' : 'Bellboy' },
+   651→    { id: 'recepcionista', label: locale === 'en' ? 'Receptionist' : 'Recepcionista' },
+   652→    { id: 'camarista', label: locale === 'en' ? 'Housekeeper' : 'Camarista' },
+   653→    { id: 'bartender', label: locale === 'en' ? 'Bartender' : 'Bartender' },
+   654→  ]
+   655→
+   656→  // Get micro-courses for selected position
+   657→  const microCourses = useMemo(() => {
+   658→    if (!selectedPosition) return []
+   659→    const mapping = positionMicroCourses[selectedPosition] || []
+   660→    return mapping
+   661→      .map((m) => {
+   662→        const course = mockCourses.find((c) => c.id === m.courseId)
+   663→        return course ? { ...course, order: m.order } : null
+   664→      })
+   665→      .filter(Boolean) as (typeof mockCourses[0] & { order: number })[]
+   666→  }, [selectedPosition])
+   667→
+   668→  // Filter instructors by property region
+   669→  const filteredInstructors = useMemo(() => {
+   670→    if (!selectedProperty) return mockInstructors
+   671→    const prop = mockProperties.find((p) => p.id === selectedProperty)
+   672→    if (!prop) return mockInstructors
+   673→    return mockInstructors.filter((ins) => ins.region === prop.region)
+   674→  }, [selectedProperty])
+   675→
+   676→  return (
+   677→    <div className="space-y-6">
+   678→      {/* Virtual Section */}
+   679→      <Card>
+   680→        <CardHeader className="pb-3">
+   681→          <CardTitle className="flex items-center gap-2 text-base">
+   682→            <Monitor className="size-5 text-sky-600" />
+   683→            {t.virtual}{' '}
+   684→            <Badge variant="secondary" className="text-xs font-normal">
+   685→              {t.saasAutomated}
+   686→            </Badge>
+   687→          </CardTitle>
+   688→        </CardHeader>
+   689→        <CardContent className="space-y-4">
+   690→          <div>
+   691→            <Label className="text-sm mb-1.5 block">{t.selectPosition}</Label>
+   692→            <Select value={selectedPosition} onValueChange={setSelectedPosition}>
+   693→              <SelectTrigger className="w-full sm:w-64">
+   694→                <SelectValue placeholder={t.selectPosition} />
+   695→              </SelectTrigger>
+   696→              <SelectContent>
+   697→                {positions.map((pos) => (
+   698→                  <SelectItem key={pos.id} value={pos.id}>
+   699→                    {pos.label}
+   700→                  </SelectItem>
+   701→                ))}
+   702→              </SelectContent>
+   703→            </Select>
+   704→          </div>
+   705→
+   706→          {selectedPosition && microCourses.length > 0 && (
+   707→            <motion.div
+   708→              initial={{ opacity: 0, height: 0 }}
+   709→              animate={{ opacity: 1, height: 'auto' }}
+   710→              transition={{ duration: 0.3 }}
+   711→              className="space-y-3"
+   712→            >
+   713→              <div className="flex items-center gap-2 text-sm font-medium">
+   714→                <GraduationCap className="size-4 text-primary" />
+   715→                {t.skillTree}
+   716→              </div>
+   717→
+   718→              <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+   719→                {microCourses.map((course, idx) => {
+   720→                  const title = locale === 'en' ? course.titleEn : course.title
+   721→                  const catKey = course.category as keyof typeof t.categories
+   722→                  return (
+   723→                    <div
+   724→                      key={course.id}
+   725→                      className="flex items-center gap-3 rounded-md bg-background px-3 py-2"
+   726→                    >
+   727→                      <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+   728→                        {course.order}
+   729→                      </span>
+   730→                      <div className="min-w-0 flex-1">
+   731→                        <p className="text-sm font-medium truncate">{title}</p>
+   732→                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+   733→                          <span>{formatDuration(course.duration, locale)}</span>
+   734→                          <span>·</span>
+   735→                          <span>{t.categories[catKey]}</span>
+   736→                          <span>·</span>
+   737→                          <span>{course.points} {t.points}</span>
+   738→                        </div>
+   739→                      </div>
+   740→                      {idx < microCourses.length - 1 && (
+   741→                        <ArrowRight className="size-3 text-muted-foreground hidden sm:block" />
+   742→                      )}
+   743→                    </div>
+   744→                  )
+   745→                })}
+   746→              </div>
+   747→
+   748→              <Button className="gap-2">
+   749→                <Zap className="size-4" />
+   750→                {t.activatePath}
+   751→              </Button>
+   752→            </motion.div>
+   753→          )}
+   754→        </CardContent>
+   755→      </Card>
+   756→
+   757→      {/* In-Person Section */}
+   758→      <Card>
+   759→        <CardHeader className="pb-3">
+   760→          <CardTitle className="flex items-center gap-2 text-base">
+   761→            <MapPin className="size-5 text-orange-600" />
+   762→            {t.inPerson}{' '}
+   763→            <Badge variant="secondary" className="text-xs font-normal">
+   764→              {t.onDemand}
+   765→            </Badge>
+   766→          </CardTitle>
+   767→        </CardHeader>
+   768→        <CardContent className="space-y-5">
+   769→          <div className="grid gap-4 sm:grid-cols-2">
+   770→            {/* Topic */}
+   771→            <div className="space-y-1.5">
+   772→              <Label className="text-sm">{t.selectTopic}</Label>
+   773→              <Select value={topic} onValueChange={setTopic}>
+   774→                <SelectTrigger>
+   775→                  <SelectValue placeholder={t.selectTopic} />
+   776→                </SelectTrigger>
+   777→                <SelectContent>
+   778→                  <SelectItem value="upselling">{t.categories.upselling}</SelectItem>
+   779→                  <SelectItem value="hospitality">{t.categories.hospitality}</SelectItem>
+   780→                  <SelectItem value="product_knowledge">{t.categories.product_knowledge}</SelectItem>
+   781→                  <SelectItem value="onboarding">{t.categories.onboarding}</SelectItem>
+   782→                  <SelectItem value="leadership">{t.categories.leadership}</SelectItem>
+   783→                </SelectContent>
+   784→              </Select>
+   785→            </div>
+   786→
+   787→            {/* Date */}
+   788→            <div className="space-y-1.5">
+   789→              <Label className="text-sm">{t.selectDate}</Label>
+   790→              <Popover>
+   791→                <PopoverTrigger asChild>
+   792→                  <Button
+   793→                    variant="outline"
+   794→                    className="w-full justify-start text-left font-normal"
+   795→                  >
+   796→                    <Calendar className="mr-2 size-4" />
+   797→                    {date ? date.toLocaleDateString(locale === 'es' ? 'es-MX' : 'en-US') : t.selectDate}
+   798→                  </Button>
+   799→                </PopoverTrigger>
+   800→                <PopoverContent className="w-auto p-0" align="start">
+   801→                  <CalendarComponent
+   802→                    mode="single"
+   803→                    selected={date}
+   804→                    onSelect={setDate}
+   805→                    disabled={{ before: new Date() }}
+   806→                  />
+   807→                </PopoverContent>
+   808→              </Popover>
+   809→            </div>
+   810→
+   811→            {/* Participants */}
+   812→            <div className="space-y-1.5">
+   813→              <Label className="text-sm">{t.participants}</Label>
+   814→              <Input
+   815→                type="number"
+   816→                min={1}
+   817→                max={50}
+   818→                placeholder="10"
+   819→                value={participants}
+   820→                onChange={(e) => setParticipants(e.target.value)}
+   821→              />
+   822→            </div>
+   823→
+   824→            {/* Property */}
+   825→            <div className="space-y-1.5">
+   826→              <Label className="text-sm">{t.property}</Label>
+   827→              <Select value={selectedProperty} onValueChange={setSelectedProperty}>
+   828→                <SelectTrigger>
+   829→                  <SelectValue placeholder={t.property} />
+   830→                </SelectTrigger>
+   831→                <SelectContent>
+   832→                  {mockProperties.map((prop) => (
+   833→                    <SelectItem key={prop.id} value={prop.id}>
+   834→                      {locale === 'en' ? prop.nameEn : prop.name}
+   835→                    </SelectItem>
+   836→                  ))}
+   837→                </SelectContent>
+   838→              </Select>
+   839→            </div>
+   840→          </div>
+   841→
+   842→          {/* Notes */}
+   843→          <div className="space-y-1.5">
+   844→            <Label className="text-sm">{t.notes}</Label>
+   845→            <Textarea
+   846→              placeholder={t.notesPlaceholder}
+   847→              value={notes}
+   848→              onChange={(e) => setNotes(e.target.value)}
+   849→              rows={3}
+   850→            />
+   851→          </div>
+   852→
+   853→          {/* Instructors */}
+   854→          <div>
+   855→            <h4 className="mb-3 text-sm font-medium flex items-center gap-2">
+   856→              <Users className="size-4" />
+   857→              {t.availableInstructors}
+   858→            </h4>
+   859→            <div className="grid gap-3 sm:grid-cols-2">
+   860→              {filteredInstructors.map((instructor) => (
+   861→                <motion.div
+   862→                  key={instructor.id}
+   863→                  initial={{ opacity: 0, y: 8 }}
+   864→                  animate={{ opacity: 1, y: 0 }}
+   865→                  whileHover={{ y: -1 }}
+   866→                  transition={{ duration: 0.2 }}
+   867→                >
+   868→                  <Card className={`overflow-hidden ${!instructor.available ? 'opacity-60' : ''}`}>
+   869→                    <CardContent className="p-3">
+   870→                      <div className="flex items-start gap-3">
+   871→                        <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+   872→                          {instructor.name.split(' ').map((n) => n[0]).join('')}
+   873→                        </div>
+   874→                        <div className="min-w-0 flex-1">
+   875→                          <div className="flex items-center gap-2">
+   876→                            <h5 className="text-sm font-semibold truncate">{instructor.name}</h5>
+   877→                            {instructor.available ? (
+   878→                              <Badge variant="secondary" className="text-[10px] bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 shrink-0">
+   879→                                {t.available}
+   880→                              </Badge>
+   881→                            ) : (
+   882→                              <Badge variant="secondary" className="text-[10px] bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 shrink-0">
+   883→                                {t.unavailable}
+   884→                              </Badge>
+   885→                            )}
+   886→                          </div>
+   887→                          <p className="text-xs text-muted-foreground">{instructor.specialty}</p>
+   888→                          <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
+   889→                            <span className="flex items-center gap-1">
+   890→                              <Star className="size-3 fill-amber-400 text-amber-400" />
+   891→                              {instructor.rating}
+   892→                            </span>
+   893→                            <span className="flex items-center gap-1">
+   894→                              <StickyNote className="size-3" />
+   895→                              ${instructor.hourlyRate}/{locale === 'es' ? 'hr' : 'hr'}
+   896→                            </span>
+   897→                            <span className="flex items-center gap-1">
+   898→                              <MapPin className="size-3" />
+   899→                              {instructor.location}
+   900→                            </span>
+   901→                          </div>
+   902→                        </div>
+   903→                      </div>
+   904→                    </CardContent>
+   905→                  </Card>
+   906→                </motion.div>
+   907→              ))}
+   908→            </div>
+   909→            {filteredInstructors.length === 0 && (
+   910→              <p className="py-6 text-center text-sm text-muted-foreground">
+   911→                {locale === 'es'
+   912→                  ? 'No hay instructores disponibles para esta región'
+   913→                  : 'No instructors available for this region'}
+   914→              </p>
+   915→            )}
+   916→          </div>
+   917→
+   918→          {/* Confirm button */}
+   919→          <Button className="gap-2 w-full sm:w-auto" disabled={!topic || !date || !selectedProperty}>
+   920→            <CheckCircle2 className="size-4" />
+   921→            {t.confirmBooking}
+   922→          </Button>
+   923→        </CardContent>
+   924→      </Card>
+   925→    </div>
+   926→  )
+   927→}
+   928→
+   929→// ---- Main Training Module ----
+   930→export function TrainingModule() {
+   931→  const { locale } = useAppStore()
+   932→  const t = translations[locale].training
+   933→
+   934→  return (
+   935→    <div className="space-y-4">
+   936→      <div>
+   937→        <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
+   938→        <p className="text-sm text-muted-foreground mt-1">
+   939→          {locale === 'es'
+   940→            ? 'Gestiona cursos, rutas de carrera y programa capacitaciones'
+   941→            : 'Manage courses, career paths and schedule trainings'}
+   942→        </p>
+   943→      </div>
+   944→
+   945→      <Tabs defaultValue="courses" className="w-full">
+   946→        <TabsList className="w-full sm:w-auto">
+   947→          <TabsTrigger value="courses" className="gap-1.5">
+   948→            <BookOpen className="size-4" />
+   949→            <span className="hidden sm:inline">{t.courses}</span>
+   950→            <span className="sm:hidden">{t.courses}</span>
+   951→          </TabsTrigger>
+   952→          <TabsTrigger value="career" className="gap-1.5">
+   953→            <GraduationCap className="size-4" />
+   954→            <span className="hidden sm:inline">{t.careerPaths}</span>
+   955→            <span className="sm:hidden">{t.careerPaths}</span>
+   956→          </TabsTrigger>
+   957→          <TabsTrigger value="schedule" className="gap-1.5">
+   958→            <Calendar className="size-4" />
+   959→            <span className="hidden sm:inline">{t.schedule}</span>
+   960→            <span className="sm:hidden">{t.schedule}</span>
+   961→          </TabsTrigger>
+   962→        </TabsList>
+   963→
+   964→        <TabsContent value="courses">
+   965→          <CoursesTab locale={locale} />
+   966→        </TabsContent>
+   967→
+   968→        <TabsContent value="career">
+   969→          <CareerPathTab locale={locale} />
+   970→        </TabsContent>
+   971→
+   972→        <TabsContent value="schedule">
+   973→          <ScheduleTrainingTab locale={locale} />
+   974→        </TabsContent>
+   975→      </Tabs>
+   976→    </div>
+   977→  )
+   978→}
+   979→

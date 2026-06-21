@@ -1,0 +1,286 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// HOSPITALITYUP - Schema Relacional (estilo Supabase/Postgres)
+// DDL adaptado para SQLite con Prisma ORM
+// ============================================================
+
+// Enums simulados via String con restricciones a nivel app
+
+model Propiedad {
+  id              String   @id @default(cuid())
+  nombre          String
+  nombreEn        String?
+  tipo            String   // hotel, restaurante, bar, spa, resort, cafe, discoteca, club_playa
+  ubicacion       String
+  region          String   // cancun, cdmx, puebla, playa_carmen, los_cabos, etc.
+  logo            String?
+  plan            String   @default("boutique") // boutique, growth, enterprise
+  moneda          String   @default("USD")
+  activo          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  empleados       Empleado[]
+  capacitaciones  Capacitacion[]
+  ventasNps       VentaNPS[]
+  candidatos      CandidatoPool[]
+  alertas         AlertaRiesgo[]
+  solicitudesCap  SolicitudCapacitacion[]
+  servicios       Servicio[]
+}
+
+model Empleado {
+  id                  String   @id @default(cuid())
+  empleadoId          String   @unique // ID interno: MES-401, BEL-101, etc.
+  nombre              String
+  posicion            String
+  posicionEn          String?
+  departamento        String
+  departamentoEn      String?
+  foto                String?
+  fechaIngreso        DateTime
+  estado              String   @default("activo") // activo, onboarding, offboarding, inactivo
+  nivelCarrera        Int      @default(1)
+  rutaCarrera         String?  // "Mesero Jr. → Mesero Sr. → Capitán → Gerente A&B"
+  rutaCarreraEn       String?
+  // Scores del "Score Integral" del Empleado
+  puntuacionConocimiento Float @default(0)  // 0-100, desde cursos
+  puntuacionVentas       Float @default(0)  // 0-100, desde upselling
+  puntuacionHospitalidad Float @default(0)  // 0-100, desde NPS
+  puntuacionTotal        Float @default(0)  // Ponderado combinado
+  // Métricas de desempeño
+  totalUpselling        Float  @default(0)
+  npsPromedio           Float  @default(0)
+  cursosCompletados     Int    @default(0)
+  cursosEnProgreso      Int    @default(0)
+  // Sistema de retención
+  indiceFelicidad       Float  @default(80)  // 0-100
+  riesgoBaja            Float  @default(0)   // 0-100, probabilidad de abandono
+  nivelRiesgoBaja       String @default("bajo") // bajo, medio, alto, critico
+  justificacionRiesgo   String?  // Generada por el Agente de IA
+  sugerenciaCapacitacion String? // Generada por el Agente de IA
+  ultimaActividad       DateTime?
+  fechaBaja             DateTime?
+  reemplazoTargetId     String?  // ID del empleado que lo reemplaza
+  // Relación con propiedad
+  propiedadId          String
+  propiedad           Propiedad @relation(fields: [propiedadId], references: [id])
+  // Relaciones
+  ventas               VentaNPS[]
+  cursos               EmpleadoCapacitacion[]
+  alertas              AlertaRiesgo[]
+  respuestasNps        RespuestaNPS[]
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+}
+
+model Capacitacion {
+  id              String   @id @default(cuid())
+  titulo          String
+  tituloEn        String?
+  descripcion     String
+  descripcionEn   String?
+  categoria       String   // upselling, hospitalidad, conocimiento_producto, onboarding, liderazgo
+  categoriaEn     String?
+  modalidad       String   // virtual, presencial
+  duracion        Int      // minutos
+  dificultad      String   @default("principiante") // principiante, intermedio, avanzado
+  dificultadEn    String?
+  urlContenido    String?
+  miniatura       String?
+  posicion        String?  // Puesto objetivo
+  posicionEn      String?
+  puntos          Int      @default(10)
+  activo          Boolean  @default(true)
+  propiedadId     String?
+  propiedad       Propiedad? @relation(fields: [propiedadId], references: [id])
+  inscripciones   EmpleadoCapacitacion[]
+  solicitudes     SolicitudCapacitacion[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model EmpleadoCapacitacion {
+  id            String   @id @default(cuid())
+  empleadoId    String
+  capacitacionId String
+  estado        String   @default("no_iniciado") // no_iniciado, en_progreso, completado
+  progreso      Float    @default(0) // 0-100
+  puntuacion    Float?
+  fechaInicio   DateTime?
+  fechaCompletado DateTime?
+  empleado      Empleado     @relation(fields: [empleadoId], references: [id])
+  capacitacion  Capacitacion @relation(fields: [capacitacionId], references: [id])
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model VentaNPS {
+  id                String   @id @default(cuid())
+  empleadoId        String
+  propiedadId       String
+  montoUpselling    Float    @default(0)
+  esUpselling       Boolean  @default(false)
+  nombreServicio    String?
+  cantidad          Int      @default(1)
+  precioUnitario    Float
+  montoTotal        Float
+  // NPS del cliente
+  calificacionNPS   Int?     // 0-10
+  esPromotor        Boolean? // calificacion >= 9
+  comentario        String?
+  fuenteNPS         String?  // qr, sms, email, app
+  // Contexto de venta
+  categoriaServicio String?  // menu, tour, upselling, upgrade_habitacion, experiencia
+  fechaVenta        DateTime @default(now())
+  // Análisis del Agente IA (llenado por webhook)
+  analizadoPorIA    Boolean  @default(false)
+  resultadoIA       String?  // JSON con resultado del análisis
+  // Relaciones
+  empleado          Empleado  @relation(fields: [empleadoId], references: [id])
+  propiedad         Propiedad @relation(fields: [propiedadId], references: [id])
+  createdAt         DateTime  @default(now())
+}
+
+model RespuestaNPS {
+  id          String   @id @default(cuid())
+  empleadoId  String
+  puntuacion  Int      // 0-10
+  comentario  String?
+  esPromotor  Boolean  // puntuacion >= 9
+  fuente      String   @default("qr") // qr, sms, email, app
+  empleado    Empleado @relation(fields: [empleadoId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+model AlertaRiesgo {
+  id              String   @id @default(cuid())
+  empleadoId      String
+  propiedadId     String?  // Para filtrar por propiedad
+  tipo            String   // estancamiento, nps_bajo, inactividad, baja_felicidad, fin_contrato
+  tipoEn          String?
+  severidad       String   @default("medio") // bajo, medio, alto, critico
+  mensaje         String
+  mensajeEn       String?
+  probabilidad    Float    // 0-100
+  generadoPorIA   Boolean  @default(false)
+  leida           Boolean  @default(false)
+  resuelta        Boolean  @default(false)
+  empleado        Empleado  @relation(fields: [empleadoId], references: [id])
+  propiedad       Propiedad? @relation(fields: [propiedadId], references: [id])
+  createdAt       DateTime  @default(now())
+}
+
+model CandidatoPool {
+  id              String   @id @default(cuid())
+  nombre          String
+  email           String?
+  telefono        String?
+  posicion        String   // Puesto al que aspira
+  posicionEn      String?
+  region          String   // Región donde puede trabajar
+  experiencia     Int      @default(0) // Años
+  habilidades     String?  // JSON con skills
+  estado          String   @default("disponible") // disponible, en_proceso, contratado, rechazado
+  puntuacionEntrevista Float?
+  notas           String?
+  fuente          String   @default("referido") // referido, portal, agencia, spontaneous
+  propiedadId     String?
+  propiedad       Propiedad? @relation(fields: [propiedadId], references: [id])
+  empleadoReemplazaId String? // Si fue contratado para reemplazar a alguien
+  fechaContratacion   DateTime?
+  onboardingCompletado Boolean @default(false)
+  nivelAlcanzado      Float  @default(0) // 0-100, qué tan cerca está del predecesor
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model SolicitudCapacitacion {
+  id              String   @id @default(cuid())
+  propiedadId     String
+  capacitacionId  String?
+  capacitacion    Capacitacion? @relation(fields: [capacitacionId], references: [id])
+  propiedad       Propiedad @relation(fields: [propiedadId], references: [id])
+  modalidad       String   // virtual, presencial
+  tema            String?  // Para solicitudes abiertas
+  fechaSolicitada DateTime
+  fechaConfirmada DateTime?
+  participantes   Int      @default(1)
+  instructorId    String?
+  nombreInstructor String?
+  estado          String   @default("pendiente") // pendiente, confirmada, completada, cancelada
+  costo           Float?
+  notas           String?
+  creadoPor       String?  // ID del gerente que solicitó
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Instructor {
+  id            String   @id @default(cuid())
+  nombre        String
+  especialidad  String
+  ubicacion     String
+  region        String
+  calificacion  Float    @default(0)
+  tarifaHora    Float
+  disponible    Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Notificacion {
+  id          String   @id @default(cuid())
+  tipo        String   // empleado_baja, solicitud_capacitacion, alerta_ia, curso_completado, reemplazo_necesario
+  titulo      String
+  tituloEn    String?
+  mensaje     String
+  mensajeEn   String?
+  leida       Boolean  @default(false)
+  accionUrl   String?
+  propiedadId String?
+  prioridad   String   @default("normal") // baja, normal, alta, urgente
+  createdAt   DateTime @default(now())
+}
+
+model Servicio {
+  id                String   @id @default(cuid())
+  propiedadId       String
+  propiedad         Propiedad @relation(fields: [propiedadId], references: [id])
+  nombre            String
+  nombreEn          String?
+  descripcion       String?
+  descripcionEn     String?
+  categoria         String   // platillo, bebida, tour, masaje, habitacion, experiencia, paquete, otro
+  categoriaEn       String?
+  esUpselling       Boolean  @default(false)  // Si es item de upselling
+  precioNormal      Float    // Precio regular
+  precioUpselling   Float?   // Precio sugerido de upselling (si aplica)
+  objetivoUpselling String?  // Descripción del objetivo: "Vender maridaje con este platillo"
+  objetivoUpsellingEn String?
+  imagen            String?  // URL de imagen
+  disponible        Boolean  @default(true)
+  orden             Int      @default(0) // Orden de aparición en el menú
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model LogAgenteIA {
+  id              String   @id @default(cuid())
+  tipo            String   // analisis_venta, prediccion_churn, sugerencia_capacitacion
+  empleadoId      String?
+  ventaId         String?
+  inputPayload    String?  // JSON del payload recibido
+  outputResultado String?  // JSON del resultado del agente
+  nivelRiesgo     String?  // bajo, medio, alto, critico
+  procesado       Boolean  @default(true)
+  error           String?
+  createdAt       DateTime @default(now())
+}
