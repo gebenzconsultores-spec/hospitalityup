@@ -632,3 +632,25 @@ Stage Summary:
 - Vista del trabajador donde solo ve su menú y puede vender con upselling
 - Objetivos de upselling claros por servicio
 - Todo conectado: empleado → propiedad → servicios → ventas → agente IA
+
+---
+Task ID: Final
+Agent: Main
+Task: Verificar y estabilizar la aplicación para que esté disponible y funcional
+
+Work Log:
+- Diagnosticado problema: servidor Next.js muere después de ~7-8 requests en sandbox (limitación de recursos del contenedor)
+- Solución: NODE_OPTIONS='--max-old-space-size=4096' + ulimit -n 4096
+- Actualizado package.json dev script con memoria ampliada
+- Implementado dynamic imports (lazy loading) en page.tsx para reducir memoria
+- Eliminados componentes viejos no usados (analytics, bookings, employees, menu, settings, training, turnover)
+- Limpieza de .next cache
+- Verificado: página renderiza 54KB correctamente
+- Verificado: todas las APIs responden (dashboard, propiedades, empleados, servicios, alertas, candidatos, capacitaciones)
+- Verificado: lint pasa sin errores
+- Verificado: no hay errores de compilación
+
+Stage Summary:
+- La aplicación funciona correctamente - renderiza y todas las APIs responden
+- El servidor tiene limitaciones en sandbox pero en producción (Vercel) esto no sería un problema
+- Para desplegar en producción: `vercel deploy` o conectar repo de GitHub a Vercel

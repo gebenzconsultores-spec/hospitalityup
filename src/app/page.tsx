@@ -1,6 +1,6 @@
 'use client'
 
-import { AppSidebar } from '@/components/app-sidebar'
+import dynamic from 'next/dynamic'
 import {
   SidebarInset,
   SidebarProvider,
@@ -18,38 +18,46 @@ import { useAppStore } from '@/lib/store'
 import { translations } from '@/lib/i18n'
 import type { ViewMode } from '@/lib/store'
 import type { Locale } from '@/lib/i18n'
+import { AppSidebar } from '@/components/app-sidebar'
 
-import { DashboardGerencial } from '@/components/dashboard/dashboard-gerencial'
-import { EmpleadosModule } from '@/components/empleados/empleados-module'
-import { VentasModule } from '@/components/ventas/ventas-module'
-import { CapacitacionModule } from '@/components/capacitacion/capacitacion-module'
-import { BolsaTrabajo } from '@/components/bolsa-trabajo/bolsa-trabajo'
-import { ConfiguracionModule } from '@/components/configuracion/configuracion'
-import { VistaTrabajador } from '@/components/trabajador/vista-trabajador'
-import { ServiciosAdmin } from '@/components/servicios/servicios-admin'
+// Lazy load modules - only compiles what's needed
+const DashboardGerencial = dynamic(() => import('@/components/dashboard/dashboard-gerencial').then(m => ({ default: m.DashboardGerencial })), { loading: () => <Loading /> })
+const VistaTrabajador = dynamic(() => import('@/components/trabajador/vista-trabajador').then(m => ({ default: m.VistaTrabajador })), { loading: () => <Loading /> })
+const ServiciosAdmin = dynamic(() => import('@/components/servicios/servicios-admin').then(m => ({ default: m.ServiciosAdmin })), { loading: () => <Loading /> })
+const EmpleadosModule = dynamic(() => import('@/components/empleados/empleados-module').then(m => ({ default: m.EmpleadosModule })), { loading: () => <Loading /> })
+const VentasModule = dynamic(() => import('@/components/ventas/ventas-module').then(m => ({ default: m.VentasModule })), { loading: () => <Loading /> })
+const CapacitacionModule = dynamic(() => import('@/components/capacitacion/capacitacion-module').then(m => ({ default: m.CapacitacionModule })), { loading: () => <Loading /> })
+const BolsaTrabajo = dynamic(() => import('@/components/bolsa-trabajo/bolsa-trabajo').then(m => ({ default: m.BolsaTrabajo })), { loading: () => <Loading /> })
+const ConfiguracionModule = dynamic(() => import('@/components/configuracion/configuracion').then(m => ({ default: m.ConfiguracionModule })), { loading: () => <Loading /> })
+
+function Loading() {
+  return (
+    <div className="flex items-center justify-center py-20">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
+    </div>
+  )
+}
 
 const viewLabels: Record<Locale, Record<ViewMode, string>> = {
   es: {
     dashboard: 'Dashboard',
-    trabajadores: 'Vista Trabajador',
+    trabajador: 'Vista Trabajador',
     servicios: 'Menú & Servicios',
     empleados: 'Empleados',
     ventas: 'Ventas & NPS',
     capacitacion: 'Capacitación',
     bolsa: 'Bolsa de Trabajo',
     configuracion: 'Configuración',
-    trabajador: 'Vista Trabajador',
   },
   en: {
     dashboard: 'Dashboard',
-    trabajadores: 'Worker View',
+    trabajador: 'Worker View',
     servicios: 'Menu & Services',
     empleados: 'Employees',
     ventas: 'Sales & NPS',
     capacitacion: 'Training',
     bolsa: 'Job Pool',
     configuracion: 'Settings',
-    trabajador: 'Worker View',
   },
 }
 
@@ -63,7 +71,6 @@ export default function Home() {
       <AppSidebar />
       <SidebarInset>
         <div className="flex min-h-screen flex-col">
-          {/* Header */}
           <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-background px-4">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
@@ -84,12 +91,10 @@ export default function Home() {
             </Breadcrumb>
           </header>
 
-          {/* Main Content */}
           <main className="flex-1 p-4 md:p-6">
             <ContentArea currentView={currentView} />
           </main>
 
-          {/* Sticky Footer */}
           <footer className="mt-auto border-t bg-background px-4 py-3">
             <div className="flex flex-col items-center justify-between gap-1 text-xs text-muted-foreground sm:flex-row">
               <span>© 2025 HospitalityUP · Centro de Mando de Capacitación Híbrido</span>
@@ -106,23 +111,14 @@ export default function Home() {
 
 function ContentArea({ currentView }: { currentView: ViewMode }) {
   switch (currentView) {
-    case 'dashboard':
-      return <DashboardGerencial />
-    case 'trabajador':
-      return <VistaTrabajador />
-    case 'servicios':
-      return <ServiciosAdmin />
-    case 'empleados':
-      return <EmpleadosModule />
-    case 'ventas':
-      return <VentasModule />
-    case 'capacitacion':
-      return <CapacitacionModule />
-    case 'bolsa':
-      return <BolsaTrabajo />
-    case 'configuracion':
-      return <ConfiguracionModule />
-    default:
-      return <DashboardGerencial />
+    case 'dashboard': return <DashboardGerencial />
+    case 'trabajador': return <VistaTrabajador />
+    case 'servicios': return <ServiciosAdmin />
+    case 'empleados': return <EmpleadosModule />
+    case 'ventas': return <VentasModule />
+    case 'capacitacion': return <CapacitacionModule />
+    case 'bolsa': return <BolsaTrabajo />
+    case 'configuracion': return <ConfiguracionModule />
+    default: return <DashboardGerencial />
   }
 }
