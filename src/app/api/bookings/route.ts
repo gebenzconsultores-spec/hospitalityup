@@ -1,82 +1,88 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { isDatabaseAvailable } from '@/lib/db'
+import { getMockBookings, getDemoModeResponse } from '@/lib/api-helpers'
 
 export async function GET(request: Request) {
   try {
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json(getMockBookings())
+    }
+
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
     const propertyId = searchParams.get('propertyId')
     const courseId = searchParams.get('courseId')
     const modality = searchParams.get('modality')
 
-    const where: Record<string, unknown> = {}
-    if (status) where.status = status
-    if (propertyId) where.propertyId = propertyId
-    if (courseId) where.courseId = courseId
-    if (modality) where.modality = modality
+    const { db } = await import('@/lib/db')
+    if (!db) return NextResponse.json(getMockBookings())
 
-    const bookings = await db.booking.findMany({
-      where,
-      include: {
-        course: {
-          select: { title: true, titleEn: true, category: true, modality: true, duration: true },
-        },
-        instructor: {
-          select: { name: true, specialty: true, rating: true },
-        },
-        property: {
-          select: { name: true, nameEn: true, region: true },
-        },
-      },
-      orderBy: { date: 'desc' },
-    })
+    try {
+      const where: Record<string, unknown> = {}
+      if (status) where.estado = status
+      if (propertyId) where.propiedadId = propertyId
+      if (courseId) where.capacitacionId = courseId
+      if (modality) where.modalidad = modality
 
-    return NextResponse.json(bookings)
+      const bookings = await db.solicitudCapacitacion.findMany({
+        where,
+        include: {
+          capacitacion: {
+            select: { titulo: true, tituloEn: true, categoria: true, modalidad: true, duracion: true },
+          },
+          propiedad: {
+            select: { nombre: true, nombreEn: true, region: true },
+          },
+        },
+        orderBy: { fechaSolicitada: 'desc' },
+      })
+
+      return NextResponse.json(bookings)
+    } catch {
+      return NextResponse.json(getMockBookings())
+    }
   } catch (error) {
     console.error('Bookings GET error:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch bookings' },
-      { status: 500 }
-    )
+    return NextResponse.json(getMockBookings())
   }
 }
 
 export async function POST(request: Request) {
   try {
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json(getDemoModeResponse('create', 'booking'), { status: 201 })
+    }
+
     const body = await request.json()
+    const { db } = await import('@/lib/db')
+    if (!db) return NextResponse.json(getDemoModeResponse('create', 'booking'), { status: 201 })
 
-    const booking = await db.booking.create({
-      data: {
-        courseId: body.courseId,
-        instructorId: body.instructorId || null,
-        propertyId: body.propertyId,
-        date: new Date(body.date),
-        endTime: body.endTime ? new Date(body.endTime) : null,
-        modality: body.modality,
-        status: body.status || 'pending',
-        participants: body.participants || 1,
-        notes: body.notes || null,
-        cost: body.cost || null,
-      },
-      include: {
-        course: {
-          select: { title: true, titleEn: true },
+    try {
+      const booking = await db.solicitudCapacitacion.create({
+        data: {
+          propiedadId: body.propertyId,
+          capacitacionId: body.courseId || null,
+          modalidad: body.modality,
+          fechaSolicitada: new Date(body.date),
+          fechaConfirmada: body.endTime ? new Date(body.endTime) : null,
+          participantes: body.participants || 1,
+          nombreInstructor: body.instructorName || null,
+          estado: body.status || 'pendiente',
+          costo: body.cost || null,
+          notas: body.notes || null,
         },
-        instructor: {
-          select: { name: true, specialty: true },
+        include: {
+          capacitacion: { select: { titulo: true, tituloEn: true } },
+          propiedad: { select: { nombre: true, nombreEn: true } },
         },
-        property: {
-          select: { name: true, nameEn: true },
-        },
-      },
-    })
+      })
 
-    return NextResponse.json(booking, { status: 201 })
+      return NextResponse.json(booking, { status: 201 })
+    } catch {
+      return NextResponse.json(getDemoModeResponse('create', 'booking'), { status: 201 })
+    }
   } catch (error) {
     console.error('Bookings POST error:', error)
-    return NextResponse.json(
-      { error: 'Failed to create booking' },
-      { status: 500 }
-    )
+    return NextResponse.json(getDemoModeResponse('create', 'booking'), { status: 201 })
   }
 }

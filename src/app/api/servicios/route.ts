@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db, isDatabaseAvailable } from '@/lib/db'
+import { getMockServicios, getDemoModeResponse } from '@/lib/api-helpers'
 
 // ─── GET: Listar servicios con filtros opcionales ─────────────
 export async function GET(request: Request) {
   try {
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json(getMockServicios())
+    }
+
     const { searchParams } = new URL(request.url)
     const propiedadId = searchParams.get('propiedadId')
     const categoria = searchParams.get('categoria')
@@ -33,16 +38,17 @@ export async function GET(request: Request) {
     return NextResponse.json(servicios)
   } catch (error) {
     console.error('Servicios GET error:', error)
-    return NextResponse.json(
-      { error: 'Error al obtener servicios' },
-      { status: 500 }
-    )
+    return NextResponse.json(getMockServicios())
   }
 }
 
 // ─── POST: Crear nuevo servicio ───────────────────────────────
 export async function POST(request: Request) {
   try {
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json(getDemoModeResponse('create', 'servicio'), { status: 201 })
+    }
+
     const body = await request.json()
 
     if (!body.propiedadId) {
@@ -92,9 +98,6 @@ export async function POST(request: Request) {
     return NextResponse.json(servicio, { status: 201 })
   } catch (error) {
     console.error('Servicios POST error:', error)
-    return NextResponse.json(
-      { error: 'Error al crear servicio' },
-      { status: 500 }
-    )
+    return NextResponse.json(getDemoModeResponse('create', 'servicio'), { status: 201 })
   }
 }

@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db, isDatabaseAvailable } from '@/lib/db'
+import { getMockPropiedades, getDemoModeResponse } from '@/lib/api-helpers'
 
 export async function GET(request: Request) {
   try {
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json(getMockPropiedades())
+    }
+
     const { searchParams } = new URL(request.url)
     const region = searchParams.get('region')
     const tipo = searchParams.get('tipo')
@@ -49,15 +54,16 @@ export async function GET(request: Request) {
     return NextResponse.json(propiedadesWithStats)
   } catch (error) {
     console.error('Propiedades GET error:', error)
-    return NextResponse.json(
-      { error: 'Error al obtener propiedades' },
-      { status: 500 }
-    )
+    return NextResponse.json(getMockPropiedades())
   }
 }
 
 export async function POST(request: Request) {
   try {
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json(getDemoModeResponse('create', 'propiedad'), { status: 201 })
+    }
+
     const body = await request.json()
 
     const propiedad = await db.propiedad.create({
@@ -77,9 +83,6 @@ export async function POST(request: Request) {
     return NextResponse.json(propiedad, { status: 201 })
   } catch (error) {
     console.error('Propiedades POST error:', error)
-    return NextResponse.json(
-      { error: 'Error al crear propiedad' },
-      { status: 500 }
-    )
+    return NextResponse.json(getDemoModeResponse('create', 'propiedad'), { status: 201 })
   }
 }

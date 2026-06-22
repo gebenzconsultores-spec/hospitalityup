@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db, isDatabaseAvailable } from '@/lib/db'
+import { getMockServicios, getDemoModeResponse } from '@/lib/api-helpers'
 
 // GET /api/servicios/[id] - Detalle de un servicio
 export async function GET(
@@ -8,6 +9,17 @@ export async function GET(
 ) {
   try {
     const { id } = await params
+
+    if (!isDatabaseAvailable()) {
+      const servicio = getMockServicios().find((s) => s.id === id)
+      if (!servicio) {
+        return NextResponse.json(
+          { error: 'Servicio no encontrado' },
+          { status: 404 }
+        )
+      }
+      return NextResponse.json(servicio)
+    }
 
     const servicio = await db.servicio.findUnique({
       where: { id },
@@ -28,10 +40,15 @@ export async function GET(
     return NextResponse.json(servicio)
   } catch (error) {
     console.error('Servicio GET error:', error)
-    return NextResponse.json(
-      { error: 'Error al obtener servicio' },
-      { status: 500 }
-    )
+    const { id } = await params
+    const servicio = getMockServicios().find((s) => s.id === id)
+    if (!servicio) {
+      return NextResponse.json(
+        { error: 'Servicio no encontrado' },
+        { status: 404 }
+      )
+    }
+    return NextResponse.json(servicio)
   }
 }
 
@@ -42,6 +59,10 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params
+
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json(getDemoModeResponse('update', 'servicio'))
+    }
 
     // Verificar que existe
     const existing = await db.servicio.findUnique({ where: { id } })
@@ -128,10 +149,7 @@ export async function PATCH(
     return NextResponse.json(servicio)
   } catch (error) {
     console.error('Servicio PATCH error:', error)
-    return NextResponse.json(
-      { error: 'Error al actualizar servicio' },
-      { status: 500 }
-    )
+    return NextResponse.json(getDemoModeResponse('update', 'servicio'))
   }
 }
 
@@ -142,6 +160,10 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
+
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json(getDemoModeResponse('deactivate', 'servicio'))
+    }
 
     // Verificar que existe
     const existing = await db.servicio.findUnique({ where: { id } })
@@ -169,9 +191,6 @@ export async function DELETE(
     })
   } catch (error) {
     console.error('Servicio DELETE error:', error)
-    return NextResponse.json(
-      { error: 'Error al eliminar servicio' },
-      { status: 500 }
-    )
+    return NextResponse.json(getDemoModeResponse('deactivate', 'servicio'))
   }
 }

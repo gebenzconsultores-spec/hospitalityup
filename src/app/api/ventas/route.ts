@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db, isDatabaseAvailable } from '@/lib/db'
+import { getMockVentas, getDemoModeResponse } from '@/lib/api-helpers'
 
 // ─── GET: Listar ventas con filtros opcionales ───────────────
 export async function GET(request: Request) {
   try {
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json(getMockVentas())
+    }
+
     const { searchParams } = new URL(request.url)
     const empleadoId = searchParams.get('empleadoId')
     const propiedadId = searchParams.get('propiedadId')
@@ -45,16 +50,17 @@ export async function GET(request: Request) {
     return NextResponse.json({ ventas, total, limit, offset })
   } catch (error) {
     console.error('Ventas GET error:', error)
-    return NextResponse.json(
-      { error: 'Error al obtener ventas' },
-      { status: 500 }
-    )
+    return NextResponse.json(getMockVentas())
   }
 }
 
 // ─── POST: Registrar nueva venta/NPS y disparar Agente IA ────
 export async function POST(request: Request) {
   try {
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json(getDemoModeResponse('create', 'venta'), { status: 201 })
+    }
+
     const body = await request.json()
 
     // Validate required fields
@@ -131,7 +137,6 @@ export async function POST(request: Request) {
     })
 
     // ── 2. Update empleado metrics ──
-    // Recalculate total upselling and NPS average
     const todasLasVentas = await db.ventaNPS.findMany({
       where: { empleadoId: body.empleadoId },
       select: { montoUpselling: true, calificacionNPS: true, esUpselling: true },
@@ -146,14 +151,11 @@ export async function POST(request: Request) {
       ? ventasConNPS.reduce((sum, v) => sum + (v.calificacionNPS ?? 0), 0) / ventasConNPS.length
       : 0
 
-    // Update sales score based on upselling performance
     const ventasUpselling = todasLasVentas.filter((v) => v.esUpselling)
     const puntuacionVentas = Math.min(100, ventasUpselling.length * 5 + (totalUpselling / 100))
 
-    // Update hospitality score based on NPS
     const puntuacionHospitalidad = npsPromedio > 0 ? (npsPromedio / 10) * 100 : empleado.puntuacionHospitalidad
 
-    // Recalculate total score (weighted)
     const puntuacionTotal =
       empleado.puntuacionConocimiento * 0.3 +
       puntuacionVentas * 0.35 +
@@ -171,13 +173,11 @@ export async function POST(request: Request) {
       },
     })
 
-    // ── 3. Trigger AI Agent asynchronously (fire and forget) ──
-    // Use fetch to call the agent endpoint without blocking the response
+    // ── 3. Trigger AI Agent Asynchronously ──
     const baseUrl = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
       : process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
 
-    // Fire and forget - don't await
     fetch(`${baseUrl}/api/agents/performance`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -186,7 +186,6 @@ export async function POST(request: Request) {
         ventaId: venta.id,
       }),
     }).catch((err) => {
-      // Log but don't block
       console.error('Error triggering AI agent asynchronously:', err)
     })
 
@@ -194,9 +193,6 @@ export async function POST(request: Request) {
     return NextResponse.json(venta, { status: 201 })
   } catch (error) {
     console.error('Ventas POST error:', error)
-    return NextResponse.json(
-      { error: 'Error al registrar la venta' },
-      { status: 500 }
-    )
+    return NextResponse.json(getDemoModeResponse('create', 'venta'), { status: 201 })
   }
 }

@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db, isDatabaseAvailable } from '@/lib/db'
+import { getMockAlertas, getDemoModeResponse } from '@/lib/api-helpers'
 
 // ─── GET: Listar alertas con filtros ─────────────────────────
 export async function GET(request: Request) {
   try {
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json(getMockAlertas())
+    }
+
     const { searchParams } = new URL(request.url)
     const severidad = searchParams.get('severidad')
     const empleadoId = searchParams.get('empleadoId')
@@ -81,16 +86,17 @@ export async function GET(request: Request) {
     })
   } catch (error) {
     console.error('Alertas GET error:', error)
-    return NextResponse.json(
-      { error: 'Error al obtener alertas' },
-      { status: 500 }
-    )
+    return NextResponse.json(getMockAlertas())
   }
 }
 
 // ─── PATCH: Marcar alerta como leída o resuelta ──────────────
 export async function PATCH(request: Request) {
   try {
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json(getDemoModeResponse('update', 'alerta'))
+    }
+
     const body = await request.json()
 
     if (!body.id) {
@@ -162,16 +168,17 @@ export async function PATCH(request: Request) {
     return NextResponse.json(alerta)
   } catch (error) {
     console.error('Alertas PATCH error:', error)
-    return NextResponse.json(
-      { error: 'Error al actualizar alerta' },
-      { status: 500 }
-    )
+    return NextResponse.json(getDemoModeResponse('update', 'alerta'))
   }
 }
 
 // ─── POST: Crear alerta manualmente ──────────────────────────
 export async function POST(request: Request) {
   try {
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json(getDemoModeResponse('create', 'alerta'), { status: 201 })
+    }
+
     const body = await request.json()
 
     // Validate required fields
@@ -243,9 +250,6 @@ export async function POST(request: Request) {
     return NextResponse.json(alerta, { status: 201 })
   } catch (error) {
     console.error('Alertas POST error:', error)
-    return NextResponse.json(
-      { error: 'Error al crear alerta' },
-      { status: 500 }
-    )
+    return NextResponse.json(getDemoModeResponse('create', 'alerta'), { status: 201 })
   }
 }

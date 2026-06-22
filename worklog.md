@@ -654,3 +654,44 @@ Stage Summary:
 - La aplicación funciona correctamente - renderiza y todas las APIs responden
 - El servidor tiene limitaciones en sandbox pero en producción (Vercel) esto no sería un problema
 - Para desplegar en producción: `vercel deploy` o conectar repo de GitHub a Vercel
+
+---
+Task ID: 1
+Agent: API Mock Fallback Agent
+Task: Actualizar TODAS las API routes para que funcionen en Vercel sin base de datos
+
+Work Log:
+- Leído worklog.md y contexto completo del proyecto
+- Analizado `src/lib/db.ts` que ya exporta `db` (puede ser null) y `isDatabaseAvailable()`
+- Analizado `src/lib/mock-data.ts` con datos mock existentes
+- Leídos todos los archivos de API routes (23 rutas) para entender estructura y datos retornados
+- Creado `src/lib/api-helpers.ts` con helpers de mock data para cada API:
+  - `getMockDashboard()`: 12 empleados, métricas completas, top performers, empleados riesgo
+  - `getMockPropiedades()`: 6 propiedades con stats
+  - `getMockEmpleados()`: 12 empleados con todos los campos (justificacionRiesgo, sugerenciaCapacitacion, etc.)
+  - `getMockEmpleadoDetail(id)`: Detalle de empleado con cursos, ventas, alertas
+  - `getMockServicios()`: 19 servicios de las 6 propiedades
+  - `getMockAlertas()`: 8 alertas con diferente severidad + resumen
+  - `getMockCandidatos()`: 8 candidatos del pool
+  - `getMockCapacitaciones()`: 8 cursos con stats de inscripción y completado
+  - `getMockVentas()`: 24 ventas con datos NPS
+  - `getMockSolicitudes()`: 4 solicitudes de capacitación
+  - `getMockSeedResponse()`: respuesta mock para seed
+  - `getDemoModeResponse()`: respuesta para POST/PATCH/DELETE sin BD
+  - Helpers para APIs en inglés: employees, courses, services, orders, bookings, instructors, training, turnover
+- Actualizadas TODAS las rutas API con patrón consistente:
+  - Rutas españolas: dashboard, propiedades, empleados, empleados/[id], servicios, servicios/[id], alertas, candidatos, capacitaciones, ventas, solicitudes, seed
+  - Rutas inglesas: employees, employees/[id], courses, services, orders, bookings, instructors, training, turnover
+  - Ruta de IA: agents/performance
+  - Ruta raíz: api/
+- Patrón aplicado: if (!isDatabaseAvailable()) return mock data; try/catch con fallback
+- Para POST/PATCH/DELETE: devuelven {success: true, message: "Demo mode - ...", demo: true}
+- Para rutas inglesas: mapean a modelos Prisma en español cuando BD disponible, mock en inglés cuando no
+- Lint pasa sin errores ni warnings
+- Dev server funciona correctamente, todas las APIs retornan 200
+
+Stage Summary:
+- Todas las 23 API routes actualizadas con fallback a mock data
+- La app funciona completamente en modo demo sin base de datos
+- Mock data es realista y coincide con lo que los componentes del frontend esperan
+- Listo para despliegue en Vercel

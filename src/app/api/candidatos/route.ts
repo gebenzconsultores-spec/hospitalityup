@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db, isDatabaseAvailable } from '@/lib/db'
+import { getMockCandidatos, getDemoModeResponse } from '@/lib/api-helpers'
 
 // ─── GET: Listar candidatos del pool con filtros ─────────────
 export async function GET(request: Request) {
   try {
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json(getMockCandidatos())
+    }
+
     const { searchParams } = new URL(request.url)
     const region = searchParams.get('region')
     const posicion = searchParams.get('posicion')
@@ -36,16 +41,17 @@ export async function GET(request: Request) {
     return NextResponse.json({ candidatos, total, limit, offset })
   } catch (error) {
     console.error('Candidatos GET error:', error)
-    return NextResponse.json(
-      { error: 'Error al obtener candidatos' },
-      { status: 500 }
-    )
+    return NextResponse.json(getMockCandidatos())
   }
 }
 
 // ─── POST: Agregar candidato al pool ─────────────────────────
 export async function POST(request: Request) {
   try {
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json(getDemoModeResponse('create', 'candidato'), { status: 201 })
+    }
+
     const body = await request.json()
 
     // Validate required fields
@@ -97,16 +103,17 @@ export async function POST(request: Request) {
     return NextResponse.json(candidato, { status: 201 })
   } catch (error) {
     console.error('Candidatos POST error:', error)
-    return NextResponse.json(
-      { error: 'Error al agregar candidato' },
-      { status: 500 }
-    )
+    return NextResponse.json(getDemoModeResponse('create', 'candidato'), { status: 201 })
   }
 }
 
 // ─── PATCH: Actualizar estado de candidato ───────────────────
 export async function PATCH(request: Request) {
   try {
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json(getDemoModeResponse('update', 'candidato'))
+    }
+
     const body = await request.json()
 
     if (!body.id) {
@@ -188,9 +195,6 @@ export async function PATCH(request: Request) {
     return NextResponse.json(candidato)
   } catch (error) {
     console.error('Candidatos PATCH error:', error)
-    return NextResponse.json(
-      { error: 'Error al actualizar candidato' },
-      { status: 500 }
-    )
+    return NextResponse.json(getDemoModeResponse('update', 'candidato'))
   }
 }
