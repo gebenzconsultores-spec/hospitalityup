@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db, isDatabaseAvailable } from '@/lib/db'
+import { getMockEmpleados, getDemoModeResponse } from '@/lib/api-helpers'
 
 export async function GET(request: Request) {
   try {
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json(getMockEmpleados())
+    }
+
     const { searchParams } = new URL(request.url)
     const propiedadId = searchParams.get('propiedadId')
     const estado = searchParams.get('estado')
@@ -41,15 +46,16 @@ export async function GET(request: Request) {
     return NextResponse.json(empleados)
   } catch (error) {
     console.error('Empleados GET error:', error)
-    return NextResponse.json(
-      { error: 'Error al obtener empleados' },
-      { status: 500 }
-    )
+    return NextResponse.json(getMockEmpleados())
   }
 }
 
 export async function POST(request: Request) {
   try {
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json(getDemoModeResponse('create', 'empleado'), { status: 201 })
+    }
+
     const body = await request.json()
 
     const empleado = await db.empleado.create({
@@ -91,9 +97,6 @@ export async function POST(request: Request) {
     return NextResponse.json(empleado, { status: 201 })
   } catch (error) {
     console.error('Empleados POST error:', error)
-    return NextResponse.json(
-      { error: 'Error al crear empleado' },
-      { status: 500 }
-    )
+    return NextResponse.json(getDemoModeResponse('create', 'empleado'), { status: 201 })
   }
 }

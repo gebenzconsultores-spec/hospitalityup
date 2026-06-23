@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db, isDatabaseAvailable } from '@/lib/db'
+import { getMockEmpleadoDetail, getDemoModeResponse } from '@/lib/api-helpers'
 
 export async function GET(
   request: Request,
@@ -7,6 +8,17 @@ export async function GET(
 ) {
   try {
     const { id } = await params
+
+    if (!isDatabaseAvailable()) {
+      const mockDetail = getMockEmpleadoDetail(id)
+      if (!mockDetail) {
+        return NextResponse.json(
+          { error: 'Empleado no encontrado' },
+          { status: 404 }
+        )
+      }
+      return NextResponse.json(mockDetail)
+    }
 
     const empleado = await db.empleado.findUnique({
       where: { id },
@@ -55,10 +67,15 @@ export async function GET(
     return NextResponse.json(empleado)
   } catch (error) {
     console.error('Empleado GET error:', error)
-    return NextResponse.json(
-      { error: 'Error al obtener empleado' },
-      { status: 500 }
-    )
+    const { id } = await params
+    const mockDetail = getMockEmpleadoDetail(id)
+    if (!mockDetail) {
+      return NextResponse.json(
+        { error: 'Empleado no encontrado' },
+        { status: 404 }
+      )
+    }
+    return NextResponse.json(mockDetail)
   }
 }
 
@@ -68,6 +85,11 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params
+
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json(getDemoModeResponse('update', 'empleado'))
+    }
+
     const body = await request.json()
 
     const empleado = await db.empleado.update({
@@ -109,10 +131,7 @@ export async function PATCH(
     return NextResponse.json(empleado)
   } catch (error) {
     console.error('Empleado PATCH error:', error)
-    return NextResponse.json(
-      { error: 'Error al actualizar empleado' },
-      { status: 500 }
-    )
+    return NextResponse.json(getDemoModeResponse('update', 'empleado'))
   }
 }
 
@@ -122,6 +141,10 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
+
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json(getDemoModeResponse('deactivate', 'empleado'))
+    }
 
     // Soft delete: marca como offboarding en lugar de eliminar
     const empleado = await db.empleado.update({
@@ -135,9 +158,6 @@ export async function DELETE(
     return NextResponse.json(empleado)
   } catch (error) {
     console.error('Empleado DELETE error:', error)
-    return NextResponse.json(
-      { error: 'Error al dar de baja empleado' },
-      { status: 500 }
-    )
+    return NextResponse.json(getDemoModeResponse('deactivate', 'empleado'))
   }
 }

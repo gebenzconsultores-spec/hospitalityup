@@ -1,0 +1,2002 @@
+     1→import { NextResponse } from 'next/server'
+     2→import { db } from '@/lib/db'
+     3→
+     4→export async function GET() {
+     5→  try {
+     6→    // Delete existing data in reverse dependency order
+     7→    await db.servicio.deleteMany()
+     8→    await db.logAgenteIA.deleteMany()
+     9→    await db.notificacion.deleteMany()
+    10→    await db.solicitudCapacitacion.deleteMany()
+    11→    await db.respuestaNPS.deleteMany()
+    12→    await db.alertaRiesgo.deleteMany()
+    13→    await db.ventaNPS.deleteMany()
+    14→    await db.empleadoCapacitacion.deleteMany()
+    15→    await db.candidatoPool.deleteMany()
+    16→    await db.instructor.deleteMany()
+    17→    await db.capacitacion.deleteMany()
+    18→    await db.empleado.deleteMany()
+    19→    await db.propiedad.deleteMany()
+    20→
+    21→    // ============================
+    22→    // PROPIEDADES (6)
+    23→    // ============================
+    24→    const propiedades = await Promise.all([
+    25→      db.propiedad.create({
+    26→        data: {
+    27→          nombre: 'Hotel Playa Cancún',
+    28→          nombreEn: 'Cancún Beach Hotel',
+    29→          tipo: 'hotel',
+    30→          ubicacion: 'Blvd. Kukulcán KM 12.5, Cancún, Q. Roo',
+    31→          region: 'cancun',
+    32→          plan: 'growth',
+    33→          moneda: 'MXN',
+    34→          activo: true,
+    35→        },
+    36→      }),
+    37→      db.propiedad.create({
+    38→        data: {
+    39→          nombre: 'Restaurante La Terraza',
+    40→          nombreEn: 'La Terraza Restaurant',
+    41→          tipo: 'restaurante',
+    42→          ubicacion: 'Calle 5 de Mayo 208, Puebla, Pue.',
+    43→          region: 'puebla',
+    44→          plan: 'boutique',
+    45→          moneda: 'MXN',
+    46→          activo: true,
+    47→        },
+    48→      }),
+    49→      db.propiedad.create({
+    50→        data: {
+    51→          nombre: 'Gran Hotel CDMX',
+    52→          nombreEn: 'Grand Hotel Mexico City',
+    53→          tipo: 'hotel',
+    54→          ubicacion: 'Av. Juárez 70, Col. Centro, CDMX',
+    55→          region: 'cdmx',
+    56→          plan: 'enterprise',
+    57→          moneda: 'MXN',
+    58→          activo: true,
+    59→        },
+    60→      }),
+    61→      db.propiedad.create({
+    62→        data: {
+    63→          nombre: 'Bar Mar Azul',
+    64→          nombreEn: 'Blue Sea Bar',
+    65→          tipo: 'bar',
+    66→          ubicacion: 'Av. 10 entre Calle 1 y 5, Playa del Carmen',
+    67→          region: 'playa_carmen',
+    68→          plan: 'boutique',
+    69→          moneda: 'MXN',
+    70→          activo: true,
+    71→        },
+    72→      }),
+    73→      db.propiedad.create({
+    74→        data: {
+    75→          nombre: 'Resort Los Cabos',
+    76→          nombreEn: 'Los Cabos Resort',
+    77→          tipo: 'hotel',
+    78→          ubicacion: 'Carretera Transpeninsular KM 7, Los Cabos, BCS',
+    79→          region: 'los_cabos',
+    80→          plan: 'growth',
+    81→          moneda: 'USD',
+    82→          activo: true,
+    83→        },
+    84→      }),
+    85→      db.propiedad.create({
+    86→        data: {
+    87→          nombre: 'Restaurante Puerto Veracruz',
+    88→          nombreEn: 'Veracruz Port Restaurant',
+    89→          tipo: 'restaurante',
+    90→          ubicacion: 'Boulevard Manuel Ávila Camacho 1200, Veracruz',
+    91→          region: 'veracruz',
+    92→          plan: 'boutique',
+    93→          moneda: 'MXN',
+    94→          activo: true,
+    95→        },
+    96→      }),
+    97→    ])
+    98→
+    99→    const [cancun, puebla, cdmx, playaCarmen, losCabos, veracruz] = propiedades
+   100→
+   101→    // ============================
+   102→    // EMPLEADOS (12)
+   103→    // ============================
+   104→    const empleados = await Promise.all([
+   105→      // 1. Juan Pérez - Top performer, Mesero Sr.
+   106→      db.empleado.create({
+   107→        data: {
+   108→          empleadoId: 'MES-401',
+   109→          nombre: 'Juan Pérez',
+   110→          posicion: 'Mesero Sr.',
+   111→          posicionEn: 'Senior Waiter',
+   112→          departamento: 'A&B',
+   113→          departamentoEn: 'Food & Beverage',
+   114→          fechaIngreso: new Date('2021-03-15'),
+   115→          estado: 'activo',
+   116→          nivelCarrera: 3,
+   117→          rutaCarrera: 'Mesero Jr. → Mesero Sr. → Capitán → Gerente A&B',
+   118→          rutaCarreraEn: 'Jr. Waiter → Sr. Waiter → Captain → F&B Manager',
+   119→          puntuacionConocimiento: 85,
+   120→          puntuacionVentas: 92,
+   121→          puntuacionHospitalidad: 88,
+   122→          puntuacionTotal: 88.3,
+   123→          totalUpselling: 4580,
+   124→          npsPromedio: 9.2,
+   125→          cursosCompletados: 5,
+   126→          cursosEnProgreso: 1,
+   127→          indiceFelicidad: 85,
+   128→          riesgoBaja: 12,
+   129→          nivelRiesgoBaja: 'bajo',
+   130→          justificacionRiesgo: 'Empleado estable con alto desempeño y satisfacción. Bajo riesgo de rotación.',
+   131→          sugerenciaCapacitacion: 'Candidato para curso de Liderazgo en Piso - siguiente paso en su ruta de carrera.',
+   132→          ultimaActividad: new Date('2025-01-20'),
+   133→          propiedadId: cancun.id,
+   134→        },
+   135→      }),
+   136→      // 2. María García - Onboarding, alto riesgo
+   137→      db.empleado.create({
+   138→        data: {
+   139→          empleadoId: 'MES-402',
+   140→          nombre: 'María García',
+   141→          posicion: 'Mesera Jr.',
+   142→          posicionEn: 'Jr. Waitress',
+   143→          departamento: 'A&B',
+   144→          departamentoEn: 'Food & Beverage',
+   145→          fechaIngreso: new Date('2024-12-01'),
+   146→          estado: 'onboarding',
+   147→          nivelCarrera: 1,
+   148→          rutaCarrera: 'Mesera Jr. → Mesera Sr. → Capitana → Gerente A&B',
+   149→          rutaCarreraEn: 'Jr. Waitress → Sr. Waitress → Captain → F&B Manager',
+   150→          puntuacionConocimiento: 45,
+   151→          puntuacionVentas: 38,
+   152→          puntuacionHospitalidad: 52,
+   153→          puntuacionTotal: 45.0,
+   154→          totalUpselling: 320,
+   155→          npsPromedio: 7.1,
+   156→          cursosCompletados: 1,
+   157→          cursosEnProgreso: 2,
+   158→          indiceFelicidad: 68,
+   159→          riesgoBaja: 78,
+   160→          nivelRiesgoBaja: 'alto',
+   161→          justificacionRiesgo: 'Empleado en onboarding con scores bajos y felicidad decreciente. Señales de desmotivación y posible abandono durante período de prueba.',
+   162→          sugerenciaCapacitacion: 'Asignar mentoría con Laura Hernández (CAP-501). Refuerzo en Onboarding y Técnicas de Upselling Básico.',
+   163→          ultimaActividad: new Date('2025-01-15'),
+   164→          propiedadId: cancun.id,
+   165→        },
+   166→      }),
+   167→      // 3. Carlos López - Bellboy Sr., bajo riesgo
+   168→      db.empleado.create({
+   169→        data: {
+   170→          empleadoId: 'BEL-101',
+   171→          nombre: 'Carlos López',
+   172→          posicion: 'Bellboy Sr.',
+   173→          posicionEn: 'Sr. Bellboy',
+   174→          departamento: 'Conserjería',
+   175→          departamentoEn: 'Concierge',
+   176→          fechaIngreso: new Date('2020-06-20'),
+   177→          estado: 'activo',
+   178→          nivelCarrera: 3,
+   179→          rutaCarrera: 'Bellboy Jr. → Bellboy Sr. → Jefe de Conserjería → Gerente de Operaciones',
+   180→          rutaCarreraEn: 'Jr. Bellboy → Sr. Bellboy → Head Concierge → Operations Manager',
+   181→          puntuacionConocimiento: 78,
+   182→          puntuacionVentas: 65,
+   183→          puntuacionHospitalidad: 90,
+   184→          puntuacionTotal: 77.7,
+   185→          totalUpselling: 1820,
+   186→          npsPromedio: 9.0,
+   187→          cursosCompletados: 4,
+   188→          cursosEnProgreso: 0,
+   189→          indiceFelicidad: 92,
+   190→          riesgoBaja: 8,
+   191→          nivelRiesgoBaja: 'bajo',
+   192→          justificacionRiesgo: 'Empleado con antigüedad sólida, alta hospitalidad y felicidad. Muy bajo riesgo.',
+   193→          sugerenciaCapacitacion: 'Candidato para Liderazgo en Piso para transición a Jefe de Conserjería.',
+   194→          ultimaActividad: new Date('2025-01-19'),
+   195→          propiedadId: cancun.id,
+   196→        },
+   197→      }),
+   198→      // 4. Ana Martínez - Recepcionista, riesgo medio
+   199→      db.empleado.create({
+   200→        data: {
+   201→          empleadoId: 'REC-201',
+   202→          nombre: 'Ana Martínez',
+   203→          posicion: 'Recepcionista',
+   204→          posicionEn: 'Receptionist',
+   205→          departamento: 'Recepción',
+   206→          departamentoEn: 'Front Desk',
+   207→          fechaIngreso: new Date('2022-09-10'),
+   208→          estado: 'activo',
+   209→          nivelCarrera: 2,
+   210→          rutaCarrera: 'Recepcionista Jr. → Recepcionista Sr. → Supervisora de Recepción → Gerente Front Office',
+   211→          rutaCarreraEn: 'Jr. Receptionist → Sr. Receptionist → Front Desk Supervisor → Front Office Manager',
+   212→          puntuacionConocimiento: 72,
+   213→          puntuacionVentas: 60,
+   214→          puntuacionHospitalidad: 80,
+   215→          puntuacionTotal: 70.7,
+   216→          totalUpselling: 2100,
+   217→          npsPromedio: 8.3,
+   218→          cursosCompletados: 3,
+   219→          cursosEnProgreso: 1,
+   220→          indiceFelicidad: 72,
+   221→          riesgoBaja: 35,
+   222→          nivelRiesgoBaja: 'medio',
+   223→          justificacionRiesgo: 'Riesgo moderado. Felicidad en tendencia descendente en los últimos 2 meses. Solicitó cambio de turno sin éxito.',
+   224→          sugerenciaCapacitacion: 'Revisar satisfacción laboral. Asignar Venta Consultiva de Tours para mejorar scores de ventas.',
+   225→          ultimaActividad: new Date('2025-01-17'),
+   226→          propiedadId: cdmx.id,
+   227→        },
+   228→      }),
+   229→      // 5. Roberto Sánchez - Camarista, riesgo medio-alto
+   230→      db.empleado.create({
+   231→        data: {
+   232→          empleadoId: 'CAM-301',
+   233→          nombre: 'Roberto Sánchez',
+   234→          posicion: 'Camarista',
+   235→          posicionEn: 'Housekeeper',
+   236→          departamento: 'Ama de Llaves',
+   237→          departamentoEn: 'Housekeeping',
+   238→          fechaIngreso: new Date('2023-02-14'),
+   239→          estado: 'activo',
+   240→          nivelCarrera: 2,
+   241→          rutaCarrera: 'Camarista → Camarista Sr. → Supervisora de Piso → Ama de Llaves',
+   242→          rutaCarreraEn: 'Housekeeper → Sr. Housekeeper → Floor Supervisor → Head Housekeeper',
+   243→          puntuacionConocimiento: 60,
+   244→          puntuacionVentas: 30,
+   245→          puntuacionHospitalidad: 70,
+   246→          puntuacionTotal: 53.3,
+   247→          totalUpselling: 0,
+   248→          npsPromedio: 7.8,
+   249→          cursosCompletados: 1,
+   250→          cursosEnProgreso: 1,
+   251→          indiceFelicidad: 58,
+   252→          riesgoBaja: 45,
+   253→          nivelRiesgoBaja: 'medio',
+   254→          justificacionRiesgo: 'Felicidad decreciente. Inasistencias incrementadas en el último mes. Comentarios negativos sobre carga de trabajo.',
+   255→          sugerenciaCapacitacion: 'Evaluar carga de trabajo. Asignar Servicio al Cliente Premium para mejorar engagement.',
+   256→          ultimaActividad: new Date('2025-01-12'),
+   257→          propiedadId: puebla.id,
+   258→        },
+   259→      }),
+   260→      // 6. Laura Hernández - Capitana, top performer, muy bajo riesgo
+   261→      db.empleado.create({
+   262→        data: {
+   263→          empleadoId: 'CAP-501',
+   264→          nombre: 'Laura Hernández',
+   265→          posicion: 'Capitana',
+   266→          posicionEn: 'Captain',
+   267→          departamento: 'A&B',
+   268→          departamentoEn: 'Food & Beverage',
+   269→          fechaIngreso: new Date('2019-05-01'),
+   270→          estado: 'activo',
+   271→          nivelCarrera: 4,
+   272→          rutaCarrera: 'Mesera Jr. → Mesera Sr. → Capitana → Gerente A&B → Directora A&B',
+   273→          rutaCarreraEn: 'Jr. Waitress → Sr. Waitress → Captain → F&B Manager → F&B Director',
+   274→          puntuacionConocimiento: 95,
+   275→          puntuacionVentas: 98,
+   276→          puntuacionHospitalidad: 96,
+   277→          puntuacionTotal: 96.3,
+   278→          totalUpselling: 8920,
+   279→          npsPromedio: 9.8,
+   280→          cursosCompletados: 8,
+   281→          cursosEnProgreso: 0,
+   282→          indiceFelicidad: 95,
+   283→          riesgoBaja: 5,
+   284→          nivelRiesgoBaja: 'bajo',
+   285→          justificacionRiesgo: 'Top performer excepcional. Comprometida, líder natural. Sin riesgo de rotación.',
+   286→          sugerenciaCapacitacion: 'Promover a Gerente A&B. Asignar Liderazgo en Piso como preparación.',
+   287→          ultimaActividad: new Date('2025-01-20'),
+   288→          propiedadId: cancun.id,
+   289→        },
+   290→      }),
+   291→      // 7. Miguel Torres - Bartender, riesgo bajo-medio
+   292→      db.empleado.create({
+   293→        data: {
+   294→          empleadoId: 'BAR-601',
+   295→          nombre: 'Miguel Torres',
+   296→          posicion: 'Bartender',
+   297→          posicionEn: 'Bartender',
+   298→          departamento: 'Bar',
+   299→          departamentoEn: 'Bar',
+   300→          fechaIngreso: new Date('2023-07-01'),
+   301→          estado: 'activo',
+   302→          nivelCarrera: 2,
+   303→          rutaCarrera: 'Barback → Bartender Jr. → Bartender Sr. → Bar Manager',
+   304→          rutaCarreraEn: 'Barback → Jr. Bartender → Sr. Bartender → Bar Manager',
+   305→          puntuacionConocimiento: 70,
+   306→          puntuacionVentas: 75,
+   307→          puntuacionHospitalidad: 72,
+   308→          puntuacionTotal: 72.3,
+   309→          totalUpselling: 2650,
+   310→          npsPromedio: 8.0,
+   311→          cursosCompletados: 2,
+   312→          cursosEnProgreso: 1,
+   313→          indiceFelicidad: 76,
+   314→          riesgoBaja: 22,
+   315→          nivelRiesgoBaja: 'bajo',
+   316→          justificacionRiesgo: 'Desempeño estable. Riesgo bajo aunque podría mejorar en hospitalidad.',
+   317→          sugerenciaCapacitacion: 'Cocktails y Mixología para certificación avanzada.',
+   318→          ultimaActividad: new Date('2025-01-18'),
+   319→          propiedadId: playaCarmen.id,
+   320→        },
+   321→      }),
+   322→      // 8. Patricia Ruiz - Offboarding, riesgo CRÍTICO
+   323→      db.empleado.create({
+   324→        data: {
+   325→          empleadoId: 'MES-701',
+   326→          nombre: 'Patricia Ruiz',
+   327→          posicion: 'Mesera',
+   328→          posicionEn: 'Waitress',
+   329→          departamento: 'A&B',
+   330→          departamentoEn: 'Food & Beverage',
+   331→          fechaIngreso: new Date('2022-01-15'),
+   332→          estado: 'offboarding',
+   333→          nivelCarrera: 2,
+   334→          rutaCarrera: 'Mesera Jr. → Mesera → Mesera Sr. → Capitana',
+   335→          rutaCarreraEn: 'Jr. Waitress → Waitress → Sr. Waitress → Captain',
+   336→          puntuacionConocimiento: 55,
+   337→          puntuacionVentas: 40,
+   338→          puntuacionHospitalidad: 35,
+   339→          puntuacionTotal: 43.3,
+   340→          totalUpselling: 580,
+   341→          npsPromedio: 5.8,
+   342→          cursosCompletados: 1,
+   343→          cursosEnProgreso: 0,
+   344→          indiceFelicidad: 35,
+   345→          riesgoBaja: 92,
+   346→          nivelRiesgoBaja: 'critico',
+   347→          justificacionRiesgo: 'ALERTA CRÍTICA: Empleada en proceso de baja. NPS muy bajo (5.8), quejas recurrentes de clientes. Felicidad en nivel crítico (35%). Se recomienda acelerar transición y preparar reemplazo.',
+   348→          sugerenciaCapacitacion: 'Priorizar selección de reemplazo del pool de candidatos. Asegurar handover documentado.',
+   349→          ultimaActividad: new Date('2025-01-10'),
+   350→          fechaBaja: new Date('2025-01-22'),
+   351→          propiedadId: losCabos.id,
+   352→        },
+   353→      }),
+   354→      // 9. Diego Flores - Recepcionista Jr., onboarding, riesgo alto
+   355→      db.empleado.create({
+   356→        data: {
+   357→          empleadoId: 'REC-801',
+   358→          nombre: 'Diego Flores',
+   359→          posicion: 'Recepcionista Jr.',
+   360→          posicionEn: 'Jr. Receptionist',
+   361→          departamento: 'Recepción',
+   362→          departamentoEn: 'Front Desk',
+   363→          fechaIngreso: new Date('2024-11-15'),
+   364→          estado: 'onboarding',
+   365→          nivelCarrera: 1,
+   366→          rutaCarrera: 'Recepcionista Jr. → Recepcionista → Recepcionista Sr. → Supervisora',
+   367→          rutaCarreraEn: 'Jr. Receptionist → Receptionist → Sr. Receptionist → Supervisor',
+   368→          puntuacionConocimiento: 42,
+   369→          puntuacionVentas: 35,
+   370→          puntuacionHospitalidad: 55,
+   371→          puntuacionTotal: 44.0,
+   372→          totalUpselling: 150,
+   373→          npsPromedio: 7.0,
+   374→          cursosCompletados: 0,
+   375→          cursosEnProgreso: 2,
+   376→          indiceFelicidad: 65,
+   377→          riesgoBaja: 65,
+   378→          nivelRiesgoBaja: 'alto',
+   379→          justificacionRiesgo: 'Empleado en onboarding con adaptación lenta. Scores bajos en todas las áreas. Necesita soporte adicional.',
+   380→          sugerenciaCapacitacion: 'Asignar Onboarding: Tu Primer Día y mentoría con recepcionista senior.',
+   381→          ultimaActividad: new Date('2025-01-16'),
+   382→          propiedadId: cdmx.id,
+   383→        },
+   384→      }),
+   385→      // 10. Sofía Vargas - Mesera Sr., bajo riesgo
+   386→      db.empleado.create({
+   387→        data: {
+   388→          empleadoId: 'MES-901',
+   389→          nombre: 'Sofía Vargas',
+   390→          posicion: 'Mesera Sr.',
+   391→          posicionEn: 'Sr. Waitress',
+   392→          departamento: 'A&B',
+   393→          departamentoEn: 'Food & Beverage',
+   394→          fechaIngreso: new Date('2021-08-20'),
+   395→          estado: 'activo',
+   396→          nivelCarrera: 3,
+   397→          rutaCarrera: 'Mesera Jr. → Mesera Sr. → Capitana → Gerente A&B',
+   398→          rutaCarreraEn: 'Jr. Waitress → Sr. Waitress → Captain → F&B Manager',
+   399→          puntuacionConocimiento: 82,
+   400→          puntuacionVentas: 88,
+   401→          puntuacionHospitalidad: 85,
+   402→          puntuacionTotal: 85.0,
+   403→          totalUpselling: 3950,
+   404→          npsPromedio: 9.0,
+   405→          cursosCompletados: 4,
+   406→          cursosEnProgreso: 1,
+   407→          indiceFelicidad: 88,
+   408→          riesgoBaja: 15,
+   409→          nivelRiesgoBaja: 'bajo',
+   410→          justificacionRiesgo: 'Buena performer con trayectoria ascendente. Riesgo bajo.',
+   411→          sugerenciaCapacitacion: 'Técnicas de Upselling Avanzado para consolidar habilidades de venta.',
+   412→          ultimaActividad: new Date('2025-01-19'),
+   413→          propiedadId: cancun.id,
+   414→        },
+   415→      }),
+   416→      // 11. Fernando Morales - Bellboy Jr., onboarding, riesgo alto
+   417→      db.empleado.create({
+   418→        data: {
+   419→          empleadoId: 'BEL-102',
+   420→          nombre: 'Fernando Morales',
+   421→          posicion: 'Bellboy Jr.',
+   422→          posicionEn: 'Jr. Bellboy',
+   423→          departamento: 'Conserjería',
+   424→          departamentoEn: 'Concierge',
+   425→          fechaIngreso: new Date('2024-12-10'),
+   426→          estado: 'onboarding',
+   427→          nivelCarrera: 1,
+   428→          rutaCarrera: 'Bellboy Jr. → Bellboy → Bellboy Sr. → Jefe de Conserjería',
+   429→          rutaCarreraEn: 'Jr. Bellboy → Bellboy → Sr. Bellboy → Head Concierge',
+   430→          puntuacionConocimiento: 40,
+   431→          puntuacionVentas: 30,
+   432→          puntuacionHospitalidad: 50,
+   433→          puntuacionTotal: 40.0,
+   434→          totalUpselling: 80,
+   435→          npsPromedio: 6.8,
+   436→          cursosCompletados: 0,
+   437→          cursosEnProgreso: 1,
+   438→          indiceFelicidad: 62,
+   439→          riesgoBaja: 55,
+   440→          nivelRiesgoBaja: 'alto',
+   441→          justificacionRiesgo: 'Onboarding lento con scores bajos. Potencial desmotivación en primer mes.',
+   442→          sugerenciaCapacitacion: 'Asignar Onboarding: Tu Primer Día y mentoría con Carlos López (BEL-101).',
+   443→          ultimaActividad: new Date('2025-01-14'),
+   444→          propiedadId: cancun.id,
+   445→        },
+   446→      }),
+   447→      // 12. Carmen Delgado - Gerente A&B, riesgo mínimo
+   448→      db.empleado.create({
+   449→        data: {
+   450→          empleadoId: 'GER-001',
+   451→          nombre: 'Carmen Delgado',
+   452→          posicion: 'Gerente A&B',
+   453→          posicionEn: 'F&B Manager',
+   454→          departamento: 'Gerencia',
+   455→          departamentoEn: 'Management',
+   456→          fechaIngreso: new Date('2018-01-10'),
+   457→          estado: 'activo',
+   458→          nivelCarrera: 5,
+   459→          rutaCarrera: 'Mesera → Capitana → Subgerente A&B → Gerente A&B → Directora Operaciones',
+   460→          rutaCarreraEn: 'Waitress → Captain → Asst. F&B Manager → F&B Manager → Operations Director',
+   461→          puntuacionConocimiento: 96,
+   462→          puntuacionVentas: 94,
+   463→          puntuacionHospitalidad: 98,
+   464→          puntuacionTotal: 96.0,
+   465→          totalUpselling: 12500,
+   466→          npsPromedio: 9.5,
+   467→          cursosCompletados: 10,
+   468→          cursosEnProgreso: 0,
+   469→          indiceFelicidad: 98,
+   470→          riesgoBaja: 3,
+   471→          nivelRiesgoBaja: 'bajo',
+   472→          justificacionRiesgo: 'Gerente con más de 7 años de antigüedad. Máximo compromiso. Sin riesgo.',
+   473→          sugerenciaCapacitacion: 'Desarrollo ejecutivo para transición a Dirección de Operaciones.',
+   474→          ultimaActividad: new Date('2025-01-20'),
+   475→          propiedadId: cancun.id,
+   476→        },
+   477→      }),
+   478→    ])
+   479→
+   480→    const [
+   481→      juanPerez, mariaGarcia, carlosLopez, anaMartinez,
+   482→      robertoSanchez, lauraHernandez, miguelTorres, patriciaRuiz,
+   483→      diegoFlores, sofiaVargas, fernandoMorales, carmenDelgado,
+   484→    ] = empleados
+   485→
+   486→    // ============================
+   487→    // CAPACITACIONES (8)
+   488→    // ============================
+   489→    const capacitaciones = await Promise.all([
+   490→      db.capacitacion.create({
+   491→        data: {
+   492→          titulo: 'Técnicas de Upselling Avanzado',
+   493→          tituloEn: 'Advanced Upselling Techniques',
+   494→          descripcion: 'Aprende estrategias avanzadas para incrementar el ticket promedio a través de sugerencias de venta inteligentes y personalizadas.',
+   495→          descripcionEn: 'Learn advanced strategies to increase average ticket through smart and personalized selling suggestions.',
+   496→          categoria: 'upselling',
+   497→          categoriaEn: 'upselling',
+   498→          modalidad: 'virtual',
+   499→          duracion: 45,
+   500→          dificultad: 'intermedio',
+   501→          dificultadEn: 'intermediate',
+   502→          urlContenido: '/cursos/upselling-avanzado',
+   503→          posicion: 'Mesero Sr.',
+   504→          posicionEn: 'Sr. Waiter',
+   505→          puntos: 20,
+   506→          activo: true,
+   507→          propiedadId: cancun.id,
+   508→        },
+   509→      }),
+   510→      db.capacitacion.create({
+   511→        data: {
+   512→          titulo: 'Maridaje de Vinos Premium',
+   513→          tituloEn: 'Premium Wine Pairing',
+   514→          descripcion: 'Domina el arte del maridaje de vinos con platillos para ofrecer experiencias gastronómicas excepcionales a los comensales.',
+   515→          descripcionEn: 'Master the art of wine pairing with dishes to offer exceptional gastronomic experiences to diners.',
+   516→          categoria: 'conocimiento_producto',
+   517→          categoriaEn: 'product_knowledge',
+   518→          modalidad: 'virtual',
+   519→          duracion: 30,
+   520→          dificultad: 'avanzado',
+   521→          dificultadEn: 'advanced',
+   522→          urlContenido: '/cursos/maridaje-vinos',
+   523→          posicion: 'Mesero Sr.',
+   524→          posicionEn: 'Sr. Waiter',
+   525→          puntos: 25,
+   526→          activo: true,
+   527→          propiedadId: cancun.id,
+   528→        },
+   529→      }),
+   530→      db.capacitacion.create({
+   531→        data: {
+   532→          titulo: 'Venta Consultiva de Tours',
+   533→          tituloEn: 'Consultative Tour Selling',
+   534→          descripcion: 'Aprende a identificar las necesidades del huésped y recomendar tours y experiencias que superen sus expectativas.',
+   535→          descripcionEn: 'Learn to identify guest needs and recommend tours and experiences that exceed their expectations.',
+   536→          categoria: 'upselling',
+   537→          categoriaEn: 'upselling',
+   538→          modalidad: 'virtual',
+   539→          duracion: 35,
+   540→          dificultad: 'principiante',
+   541→          dificultadEn: 'beginner',
+   542→          urlContenido: '/cursos/venta-tours',
+   543→          posicion: 'Recepcionista',
+   544→          posicionEn: 'Receptionist',
+   545→          puntos: 15,
+   546→          activo: true,
+   547→        },
+   548→      }),
+   549→      db.capacitacion.create({
+   550→        data: {
+   551→          titulo: 'Servicio al Cliente Premium',
+   552→          tituloEn: 'Premium Customer Service',
+   553→          descripcion: 'Desarrolla habilidades de servicio al cliente de clase mundial, incluyendo manejo de situaciones difíciles y creación de momentos memorables.',
+   554→          descripcionEn: 'Develop world-class customer service skills, including handling difficult situations and creating memorable moments.',
+   555→          categoria: 'hospitalidad',
+   556→          categoriaEn: 'hospitality',
+   557→          modalidad: 'presencial',
+   558→          duracion: 480,
+   559→          dificultad: 'intermedio',
+   560→          dificultadEn: 'intermediate',
+   561→          urlContenido: '/cursos/servicio-premium',
+   562→          posicion: 'Todos',
+   563→          posicionEn: 'All',
+   564→          puntos: 30,
+   565→          activo: true,
+   566→        },
+   567→      }),
+   568→      db.capacitacion.create({
+   569→        data: {
+   570→          titulo: 'Onboarding: Tu Primer Día',
+   571→          tituloEn: 'Onboarding: Your First Day',
+   572→          descripcion: 'Guía completa para nuevos empleados sobre procesos, cultura organizacional y herramientas del primer día de trabajo.',
+   573→          descripcionEn: 'Complete guide for new employees about processes, organizational culture and tools for their first day.',
+   574→          categoria: 'onboarding',
+   575→          categoriaEn: 'onboarding',
+   576→          modalidad: 'virtual',
+   577→          duracion: 20,
+   578→          dificultad: 'principiante',
+   579→          dificultadEn: 'beginner',
+   580→          urlContenido: '/cursos/onboarding-primer-dia',
+   581→          posicion: 'Todos',
+   582→          posicionEn: 'All',
+   583→          puntos: 5,
+   584→          activo: true,
+   585→        },
+   586→      }),
+   587→      db.capacitacion.create({
+   588→        data: {
+   589→          titulo: 'Liderazgo en Piso',
+   590→          tituloEn: 'Floor Leadership',
+   591→          descripcion: 'Prepárate para roles de liderazgo operativo: gestión de equipos, resolución de conflictos en piso y toma de decisiones bajo presión.',
+   592→          descripcionEn: 'Prepare for operational leadership roles: team management, floor conflict resolution and decision making under pressure.',
+   593→          categoria: 'liderazgo',
+   594→          categoriaEn: 'leadership',
+   595→          modalidad: 'presencial',
+   596→          duracion: 600,
+   597→          dificultad: 'avanzado',
+   598→          dificultadEn: 'advanced',
+   599→          urlContenido: '/cursos/liderazgo-piso',
+   600→          posicion: 'Capitán',
+   601→          posicionEn: 'Captain',
+   602→          puntos: 40,
+   603→          activo: true,
+   604→          propiedadId: cancun.id,
+   605→        },
+   606→      }),
+   607→      db.capacitacion.create({
+   608→        data: {
+   609→          titulo: 'Cocktails y Mixología',
+   610→          tituloEn: 'Cocktails & Mixology',
+   611→          descripcion: 'Fundamentos de mixología, técnicas de preparación de cócteles clásicos y contemporáneos, y presentación de bebidas.',
+   612→          descripcionEn: 'Mixology fundamentals, classic and contemporary cocktail preparation techniques, and beverage presentation.',
+   613→          categoria: 'conocimiento_producto',
+   614→          categoriaEn: 'product_knowledge',
+   615→          modalidad: 'virtual',
+   616→          duracion: 40,
+   617→          dificultad: 'principiante',
+   618→          dificultadEn: 'beginner',
+   619→          urlContenido: '/cursos/cocktails-mixologia',
+   620→          posicion: 'Bartender',
+   621→          posicionEn: 'Bartender',
+   622→          puntos: 15,
+   623→          activo: true,
+   624→          propiedadId: playaCarmen.id,
+   625→        },
+   626→      }),
+   627→      db.capacitacion.create({
+   628→        data: {
+   629→          titulo: 'Manejo de Quejas y Conflictos',
+   630→          tituloEn: 'Complaint & Conflict Handling',
+   631→          descripcion: 'Estrategias efectivas para manejar quejas de clientes, desescalar situaciones tensas y convertir experiencias negativas en oportunidades.',
+   632→          descripcionEn: 'Effective strategies for handling customer complaints, de-escalating tense situations and turning negative experiences into opportunities.',
+   633→          categoria: 'hospitalidad',
+   634→          categoriaEn: 'hospitality',
+   635→          modalidad: 'virtual',
+   636→          duracion: 25,
+   637→          dificultad: 'intermedio',
+   638→          dificultadEn: 'intermediate',
+   639→          urlContenido: '/cursos/manejo-quejas',
+   640→          posicion: 'Todos',
+   641→          posicionEn: 'All',
+   642→          puntos: 15,
+   643→          activo: true,
+   644→        },
+   645→      }),
+   646→    ])
+   647→
+   648→    const [upsellingAvanzado, maridajeVinos, ventaTours, servicioPremium, onboarding, liderazgoPiso, cocktails, manejoQuejas] = capacitaciones
+   649→
+   650→    // ============================
+   651→    // EMPLEADO_CAPACITACION (17)
+   652→    // ============================
+   653→    const empleadoCapacitaciones = await Promise.all([
+   654→      // Juan Pérez - completó upselling y maridaje, en progreso de liderazgo
+   655→      db.empleadoCapacitacion.create({
+   656→        data: {
+   657→          empleadoId: juanPerez.id,
+   658→          capacitacionId: upsellingAvanzado.id,
+   659→          estado: 'completado',
+   660→          progreso: 100,
+   661→          puntuacion: 92,
+   662→          fechaInicio: new Date('2024-06-01'),
+   663→          fechaCompletado: new Date('2024-06-15'),
+   664→        },
+   665→      }),
+   666→      db.empleadoCapacitacion.create({
+   667→        data: {
+   668→          empleadoId: juanPerez.id,
+   669→          capacitacionId: maridajeVinos.id,
+   670→          estado: 'completado',
+   671→          progreso: 100,
+   672→          puntuacion: 88,
+   673→          fechaInicio: new Date('2024-08-01'),
+   674→          fechaCompletado: new Date('2024-08-12'),
+   675→        },
+   676→      }),
+   677→      db.empleadoCapacitacion.create({
+   678→        data: {
+   679→          empleadoId: juanPerez.id,
+   680→          capacitacionId: liderazgoPiso.id,
+   681→          estado: 'en_progreso',
+   682→          progreso: 35,
+   683→          fechaInicio: new Date('2025-01-05'),
+   684→        },
+   685→      }),
+   686→      // María García - en progreso de onboarding y upselling básico
+   687→      db.empleadoCapacitacion.create({
+   688→        data: {
+   689→          empleadoId: mariaGarcia.id,
+   690→          capacitacionId: onboarding.id,
+   691→          estado: 'completado',
+   692→          progreso: 100,
+   693→          puntuacion: 65,
+   694→          fechaInicio: new Date('2024-12-01'),
+   695→          fechaCompletado: new Date('2024-12-02'),
+   696→        },
+   697→      }),
+   698→      db.empleadoCapacitacion.create({
+   699→        data: {
+   700→          empleadoId: mariaGarcia.id,
+   701→          capacitacionId: ventaTours.id,
+   702→          estado: 'en_progreso',
+   703→          progreso: 40,
+   704→          fechaInicio: new Date('2025-01-06'),
+   705→        },
+   706→      }),
+   707→      db.empleadoCapacitacion.create({
+   708→        data: {
+   709→          empleadoId: mariaGarcia.id,
+   710→          capacitacionId: manejoQuejas.id,
+   711→          estado: 'no_iniciado',
+   712→          progreso: 0,
+   713→        },
+   714→      }),
+   715→      // Laura Hernández - completó todos sus cursos, top performer
+   716→      db.empleadoCapacitacion.create({
+   717→        data: {
+   718→          empleadoId: lauraHernandez.id,
+   719→          capacitacionId: upsellingAvanzado.id,
+   720→          estado: 'completado',
+   721→          progreso: 100,
+   722→          puntuacion: 98,
+   723→          fechaInicio: new Date('2022-03-01'),
+   724→          fechaCompletado: new Date('2022-03-15'),
+   725→        },
+   726→      }),
+   727→      db.empleadoCapacitacion.create({
+   728→        data: {
+   729→          empleadoId: lauraHernandez.id,
+   730→          capacitacionId: maridajeVinos.id,
+   731→          estado: 'completado',
+   732→          progreso: 100,
+   733→          puntuacion: 95,
+   734→          fechaInicio: new Date('2022-05-01'),
+   735→          fechaCompletado: new Date('2022-05-10'),
+   736→        },
+   737→      }),
+   738→      db.empleadoCapacitacion.create({
+   739→        data: {
+   740→          empleadoId: lauraHernandez.id,
+   741→          capacitacionId: liderazgoPiso.id,
+   742→          estado: 'completado',
+   743→          progreso: 100,
+   744→          puntuacion: 97,
+   745→          fechaInicio: new Date('2023-01-10'),
+   746→          fechaCompletado: new Date('2023-02-28'),
+   747→        },
+   748→      }),
+   749→      // Ana Martínez - completó servicio premium, en progreso de venta tours
+   750→      db.empleadoCapacitacion.create({
+   751→        data: {
+   752→          empleadoId: anaMartinez.id,
+   753→          capacitacionId: servicioPremium.id,
+   754→          estado: 'completado',
+   755→          progreso: 100,
+   756→          puntuacion: 82,
+   757→          fechaInicio: new Date('2023-10-01'),
+   758→          fechaCompletado: new Date('2023-10-15'),
+   759→        },
+   760→      }),
+   761→      db.empleadoCapacitacion.create({
+   762→        data: {
+   763→          empleadoId: anaMartinez.id,
+   764→          capacitacionId: ventaTours.id,
+   765→          estado: 'en_progreso',
+   766→          progreso: 60,
+   767→          fechaInicio: new Date('2025-01-08'),
+   768→        },
+   769→      }),
+   770→      // Miguel Torres - en progreso de cocktails
+   771→      db.empleadoCapacitacion.create({
+   772→        data: {
+   773→          empleadoId: miguelTorres.id,
+   774→          capacitacionId: cocktails.id,
+   775→          estado: 'en_progreso',
+   776→          progreso: 55,
+   777→          fechaInicio: new Date('2025-01-10'),
+   778→        },
+   779→      }),
+   780→      // Sofía Vargas - completó upselling, en progreso de maridaje
+   781→      db.empleadoCapacitacion.create({
+   782→        data: {
+   783→          empleadoId: sofiaVargas.id,
+   784→          capacitacionId: upsellingAvanzado.id,
+   785→          estado: 'completado',
+   786→          progreso: 100,
+   787→          puntuacion: 90,
+   788→          fechaInicio: new Date('2023-04-01'),
+   789→          fechaCompletado: new Date('2023-04-14'),
+   790→        },
+   791→      }),
+   792→      db.empleadoCapacitacion.create({
+   793→        data: {
+   794→          empleadoId: sofiaVargas.id,
+   795→          capacitacionId: maridajeVinos.id,
+   796→          estado: 'en_progreso',
+   797→          progreso: 70,
+   798→          fechaInicio: new Date('2025-01-03'),
+   799→        },
+   800→      }),
+   801→      // Diego Flores - onboarding y venta tours
+   802→      db.empleadoCapacitacion.create({
+   803→        data: {
+   804→          empleadoId: diegoFlores.id,
+   805→          capacitacionId: onboarding.id,
+   806→          estado: 'en_progreso',
+   807→          progreso: 80,
+   808→          fechaInicio: new Date('2024-11-15'),
+   809→        },
+   810→      }),
+   811→      db.empleadoCapacitacion.create({
+   812→        data: {
+   813→          empleadoId: diegoFlores.id,
+   814→          capacitacionId: ventaTours.id,
+   815→          estado: 'no_iniciado',
+   816→          progreso: 0,
+   817→        },
+   818→      }),
+   819→      // Fernando Morales - onboarding en progreso
+   820→      db.empleadoCapacitacion.create({
+   821→        data: {
+   822→          empleadoId: fernandoMorales.id,
+   823→          capacitacionId: onboarding.id,
+   824→          estado: 'en_progreso',
+   825→          progreso: 50,
+   826→          fechaInicio: new Date('2024-12-10'),
+   827→        },
+   828→      }),
+   829→      // Roberto Sánchez - servicio premium en progreso
+   830→      db.empleadoCapacitacion.create({
+   831→        data: {
+   832→          empleadoId: robertoSanchez.id,
+   833→          capacitacionId: servicioPremium.id,
+   834→          estado: 'en_progreso',
+   835→          progreso: 25,
+   836→          fechaInicio: new Date('2025-01-12'),
+   837→        },
+   838→      }),
+   839→    ])
+   840→
+   841→    // ============================
+   842→    // VENTA NPS (24)
+   843→    // ============================
+   844→    const ventas = await Promise.all([
+   845→      // Juan Pérez - Top performer, upselling alto, NPS alto
+   846→      db.ventaNPS.create({
+   847→        data: {
+   848→          empleadoId: juanPerez.id, propiedadId: cancun.id,
+   849→          montoUpselling: 850, esUpselling: true, nombreServicio: 'Upgrade a Suite Ocean View',
+   850→          cantidad: 1, precioUnitario: 850, montoTotal: 850,
+   851→          calificacionNPS: 10, esPromotor: true, comentario: 'Juan nos recomendó la suite con vista al mar, ¡increíble experiencia!',
+   852→          fuenteNPS: 'qr', categoriaServicio: 'upgrade_habitacion', fechaVenta: new Date('2025-01-18'),
+   853→        },
+   854→      }),
+   855→      db.ventaNPS.create({
+   856→        data: {
+   857→          empleadoId: juanPerez.id, propiedadId: cancun.id,
+   858→          montoUpselling: 480, esUpselling: true, nombreServicio: 'Tour Isla Mujeres Premium',
+   859→          cantidad: 2, precioUnitario: 240, montoTotal: 480,
+   860→          calificacionNPS: 9, esPromotor: true, comentario: 'Muy buena recomendación del tour',
+   861→          fuenteNPS: 'sms', categoriaServicio: 'tour', fechaVenta: new Date('2025-01-15'),
+   862→        },
+   863→      }),
+   864→      db.ventaNPS.create({
+   865→        data: {
+   866→          empleadoId: juanPerez.id, propiedadId: cancun.id,
+   867→          montoUpselling: 320, esUpselling: true, nombreServicio: 'Maridaje de Vinos Reserva',
+   868→          cantidad: 2, precioUnitario: 160, montoTotal: 320,
+   869→          calificacionNPS: 10, esPromotor: true, comentario: 'El maridaje fue espectacular, gracias Juan',
+   870→          fuenteNPS: 'app', categoriaServicio: 'upselling', fechaVenta: new Date('2025-01-12'),
+   871→        },
+   872→      }),
+   873→      // Laura Hernández - Top performer, upselling alto
+   874→      db.ventaNPS.create({
+   875→        data: {
+   876→          empleadoId: lauraHernandez.id, propiedadId: cancun.id,
+   877→          montoUpselling: 1200, esUpselling: true, nombreServicio: 'Cena Romántica en Terraza VIP',
+   878→          cantidad: 1, precioUnitario: 1200, montoTotal: 1200,
+   879→          calificacionNPS: 10, esPromotor: true, comentario: 'Laura organizó una cena perfecta para nuestro aniversario',
+   880→          fuenteNPS: 'email', categoriaServicio: 'experiencia', fechaVenta: new Date('2025-01-19'),
+   881→        },
+   882→      }),
+   883→      db.ventaNPS.create({
+   884→        data: {
+   885→          empleadoId: lauraHernandez.id, propiedadId: cancun.id,
+   886→          montoUpselling: 680, esUpselling: true, nombreServicio: 'Paquete Spa + Cena',
+   887→          cantidad: 1, precioUnitario: 680, montoTotal: 680,
+   888→          calificacionNPS: 10, esPromotor: true, comentario: 'Increíble atención de Laura, lo mejor del hotel',
+   889→          fuenteNPS: 'qr', categoriaServicio: 'experiencia', fechaVenta: new Date('2025-01-17'),
+   890→        },
+   891→      }),
+   892→      // María García - Upselling bajo, NPS medio
+   893→      db.ventaNPS.create({
+   894→        data: {
+   895→          empleadoId: mariaGarcia.id, propiedadId: cancun.id,
+   896→          montoUpselling: 0, esUpselling: false, nombreServicio: 'Cena Standard',
+   897→          cantidad: 2, precioUnitario: 350, montoTotal: 700,
+   898→          calificacionNPS: 7, esPromotor: false, comentario: 'Servicio correcto pero nada especial',
+   899→          fuenteNPS: 'qr', categoriaServicio: 'menu', fechaVenta: new Date('2025-01-14'),
+   900→        },
+   901→      }),
+   902→      db.ventaNPS.create({
+   903→        data: {
+   904→          empleadoId: mariaGarcia.id, propiedadId: cancun.id,
+   905→          montoUpselling: 120, esUpselling: true, nombreServicio: 'Postre Especial',
+   906→          cantidad: 2, precioUnitario: 60, montoTotal: 120,
+   907→          calificacionNPS: 6, esPromotor: false, comentario: 'Se veía nerviosa, tardó mucho en traer la cuenta',
+   908→          fuenteNPS: 'sms', categoriaServicio: 'menu', fechaVenta: new Date('2025-01-10'),
+   909→        },
+   910→      }),
+   911→      // Patricia Ruiz - NPS BAJO, upselling agresivo
+   912→      db.ventaNPS.create({
+   913→        data: {
+   914→          empleadoId: patriciaRuiz.id, propiedadId: losCabos.id,
+   915→          montoUpselling: 580, esUpselling: true, nombreServicio: 'Upgrade Habitación Premium',
+   916→          cantidad: 1, precioUnitario: 580, montoTotal: 580,
+   917→          calificacionNPS: 5, esPromotor: false, comentario: 'Nos presionó demasiado para cambiar de habitación, muy incómodo',
+   918→          fuenteNPS: 'qr', categoriaServicio: 'upgrade_habitacion', fechaVenta: new Date('2025-01-08'),
+   919→          analizadoPorIA: true, resultadoIA: JSON.stringify({ tipo: 'upselling_agresivo', detalle: 'Cliente reportó presión excesiva durante venta de upgrade' }),
+   920→        },
+   921→      }),
+   922→      db.ventaNPS.create({
+   923→        data: {
+   924→          empleadoId: patriciaRuiz.id, propiedadId: losCabos.id,
+   925→          montoUpselling: 340, esUpselling: true, nombreServicio: 'Tour Snorkel Premium',
+   926→          cantidad: 2, precioUnitario: 170, montoTotal: 340,
+   927→          calificacionNPS: 4, esPromotor: false, comentario: 'No paraba de intentar vendernos cosas. Queríamos disfrutar la comida en paz.',
+   928→          fuenteNPS: 'app', categoriaServicio: 'tour', fechaVenta: new Date('2025-01-06'),
+   929→          analizadoPorIA: true, resultadoIA: JSON.stringify({ tipo: 'upselling_agresivo', detalle: 'NPS 4 con upselling - patrón de venta forzada detectado' }),
+   930→        },
+   931→      }),
+   932→      db.ventaNPS.create({
+   933→        data: {
+   934→          empleadoId: patriciaRuiz.id, propiedadId: losCabos.id,
+   935→          montoUpselling: 0, esUpselling: false, nombreServicio: 'Desayuno Buffet',
+   936→          cantidad: 2, precioUnitario: 280, montoTotal: 560,
+   937→          calificacionNPS: 3, esPromotor: false, comentario: 'Actitud grosera, tiró el plato sobre la mesa. Pésimo servicio.',
+   938→          fuenteNPS: 'qr', categoriaServicio: 'menu', fechaVenta: new Date('2025-01-04'),
+   939→        },
+   940→      }),
+   941→      // Ana Martínez - NPS medio, upselling moderado
+   942→      db.ventaNPS.create({
+   943→        data: {
+   944→          empleadoId: anaMartinez.id, propiedadId: cdmx.id,
+   945→          montoUpselling: 380, esUpselling: true, nombreServicio: 'Tour Ciudad de México Premium',
+   946→          cantidad: 2, precioUnitario: 190, montoTotal: 380,
+   947→          calificacionNPS: 8, esPromotor: false, comentario: 'Buena recomendación del tour',
+   948→          fuenteNPS: 'email', categoriaServicio: 'tour', fechaVenta: new Date('2025-01-16'),
+   949→        },
+   950→      }),
+   951→      db.ventaNPS.create({
+   952→        data: {
+   953→          empleadoId: anaMartinez.id, propiedadId: cdmx.id,
+   954→          montoUpselling: 220, esUpselling: true, nombreServicio: 'Upgrade Suite Ejecutiva',
+   955→          cantidad: 1, precioUnitario: 220, montoTotal: 220,
+   956→          calificacionNPS: 9, esPromotor: true, comentario: 'Ana fue muy amable al sugerirnos la suite',
+   957→          fuenteNPS: 'qr', categoriaServicio: 'upgrade_habitacion', fechaVenta: new Date('2025-01-13'),
+   958→        },
+   959→      }),
+   960→      // Carlos López - Hospitalidad alta, upselling moderado
+   961→      db.ventaNPS.create({
+   962→        data: {
+   963→          empleadoId: carlosLopez.id, propiedadId: cancun.id,
+   964→          montoUpselling: 450, esUpselling: true, nombreServicio: 'Transporte VIP Aeropuerto',
+   965→          cantidad: 1, precioUnitario: 450, montoTotal: 450,
+   966→          calificacionNPS: 10, esPromotor: true, comentario: 'Carlos hizo que nuestra llegada fuera perfecta',
+   967→          fuenteNPS: 'email', categoriaServicio: 'experiencia', fechaVenta: new Date('2025-01-18'),
+   968→        },
+   969→      }),
+   970→      db.ventaNPS.create({
+   971→        data: {
+   972→          empleadoId: carlosLopez.id, propiedadId: cancun.id,
+   973→          montoUpselling: 280, esUpselling: true, nombreServicio: 'Tour Chichén Itzá Privado',
+   974→          cantidad: 1, precioUnitario: 280, montoTotal: 280,
+   975→          calificacionNPS: 9, esPromotor: true, comentario: 'Excelente recomendación',
+   976→          fuenteNPS: 'sms', categoriaServicio: 'tour', fechaVenta: new Date('2025-01-15'),
+   977→        },
+   978→      }),
+   979→      // Sofía Vargas - Buena performer
+   980→      db.ventaNPS.create({
+   981→        data: {
+   982→          empleadoId: sofiaVargas.id, propiedadId: cancun.id,
+   983→          montoUpselling: 520, esUpselling: true, nombreServicio: 'Cena Show con Mariachi',
+   984→          cantidad: 2, precioUnitario: 260, montoTotal: 520,
+   985→          calificacionNPS: 9, esPromotor: true, comentario: 'Sofía nos consiguió los mejores asientos',
+   986→          fuenteNPS: 'qr', categoriaServicio: 'experiencia', fechaVenta: new Date('2025-01-17'),
+   987→        },
+   988→      }),
+   989→      db.ventaNPS.create({
+   990→        data: {
+   991→          empleadoId: sofiaVargas.id, propiedadId: cancun.id,
+   992→          montoUpselling: 350, esUpselling: true, nombreServicio: 'Maridaje de Vinos',
+   993→          cantidad: 2, precioUnitario: 175, montoTotal: 350,
+   994→          calificacionNPS: 10, esPromotor: true, comentario: 'Súper recomendación la del maridaje',
+   995→          fuenteNPS: 'app', categoriaServicio: 'upselling', fechaVenta: new Date('2025-01-14'),
+   996→        },
+   997→      }),
+   998→      // Miguel Torres - Bartender
+   999→      db.ventaNPS.create({
+  1000→        data: {
+  1001→          empleadoId: miguelTorres.id, propiedadId: playaCarmen.id,
+  1002→          montoUpselling: 180, esUpselling: true, nombreServicio: 'Cócteles Premium Tasting',
+  1003→          cantidad: 2, precioUnitario: 90, montoTotal: 180,
+  1004→          calificacionNPS: 8, esPromotor: false, comentario: 'Buenos cócteles, presentación agradable',
+  1005→          fuenteNPS: 'qr', categoriaServicio: 'menu', fechaVenta: new Date('2025-01-17'),
+  1006→        },
+  1007→      }),
+  1008→      db.ventaNPS.create({
+  1009→        data: {
+  1010→          empleadoId: miguelTorres.id, propiedadId: playaCarmen.id,
+  1011→          montoUpselling: 250, esUpselling: true, nombreServicio: 'Experiencia Mixología Privada',
+  1012→          cantidad: 1, precioUnitario: 250, montoTotal: 250,
+  1013→          calificacionNPS: 9, esPromotor: true, comentario: 'Miguel es un gran bartender, súper creativo',
+  1014→          fuenteNPS: 'sms', categoriaServicio: 'experiencia', fechaVenta: new Date('2025-01-12'),
+  1015→        },
+  1016→      }),
+  1017→      // Roberto Sánchez - Camarista, sin upselling
+  1018→      db.ventaNPS.create({
+  1019→        data: {
+  1020→          empleadoId: robertoSanchez.id, propiedadId: puebla.id,
+  1021→          montoUpselling: 0, esUpselling: false, nombreServicio: 'Limpieza de Habitación',
+  1022→          cantidad: 1, precioUnitario: 0, montoTotal: 0,
+  1023→          calificacionNPS: 7, esPromotor: false, comentario: 'La habitación estaba bien pero tardó mucho',
+  1024→          fuenteNPS: 'qr', categoriaServicio: 'menu', fechaVenta: new Date('2025-01-11'),
+  1025→        },
+  1026→      }),
+  1027→      // Diego Flores - Onboarding, NPS bajo
+  1028→      db.ventaNPS.create({
+  1029→        data: {
+  1030→          empleadoId: diegoFlores.id, propiedadId: cdmx.id,
+  1031→          montoUpselling: 0, esUpselling: false, nombreServicio: 'Check-in Standard',
+  1032→          cantidad: 1, precioUnitario: 0, montoTotal: 0,
+  1033→          calificacionNPS: 6, esPromotor: false, comentario: 'El check-in fue lento y no nos explicó los servicios',
+  1034→          fuenteNPS: 'qr', categoriaServicio: 'menu', fechaVenta: new Date('2025-01-14'),
+  1035→        },
+  1036→      }),
+  1037→      db.ventaNPS.create({
+  1038→        data: {
+  1039→          empleadoId: diegoFlores.id, propiedadId: cdmx.id,
+  1040→          montoUpselling: 0, esUpselling: false, nombreServicio: 'Check-in Standard',
+  1041→          cantidad: 1, precioUnitario: 0, montoTotal: 0,
+  1042→          calificacionNPS: 5, esPromotor: false, comentario: 'No sabía cómo operar el sistema, tuve que esperar 20 min',
+  1043→          fuenteNPS: 'app', categoriaServicio: 'menu', fechaVenta: new Date('2025-01-09'),
+  1044→        },
+  1045→      }),
+  1046→      // Carmen Delgado - Gerente, ventas de alto valor
+  1047→      db.ventaNPS.create({
+  1048→        data: {
+  1049→          empleadoId: carmenDelgado.id, propiedadId: cancun.id,
+  1050→          montoUpselling: 2800, esUpselling: true, nombreServicio: 'Evento Corporativo Banquete',
+  1051→          cantidad: 1, precioUnitario: 2800, montoTotal: 2800,
+  1052→          calificacionNPS: 10, esPromotor: true, comentario: 'Carmen organizó un evento impecable para nuestra empresa',
+  1053→          fuenteNPS: 'email', categoriaServicio: 'experiencia', fechaVenta: new Date('2025-01-19'),
+  1054→        },
+  1055→      }),
+  1056→      db.ventaNPS.create({
+  1057→        data: {
+  1058→          empleadoId: carmenDelgado.id, propiedadId: cancun.id,
+  1059→          montoUpselling: 1500, esUpselling: true, nombreServicio: 'Paquete Todo Incluido Premium',
+  1060→          cantidad: 1, precioUnitario: 1500, montoTotal: 1500,
+  1061→          calificacionNPS: 10, esPromotor: true, comentario: 'La mejor decisión fue seguir la recomendación de Carmen',
+  1062→          fuenteNPS: 'qr', categoriaServicio: 'upselling', fechaVenta: new Date('2025-01-16'),
+  1063→        },
+  1064→      }),
+  1065→      // Fernando Morales - NPS bajo, onboarding
+  1066→      db.ventaNPS.create({
+  1067→        data: {
+  1068→          empleadoId: fernandoMorales.id, propiedadId: cancun.id,
+  1069→          montoUpselling: 0, esUpselling: false, nombreServicio: 'Servicio de Equipaje',
+  1070→          cantidad: 1, precioUnitario: 0, montoTotal: 0,
+  1071→          calificacionNPS: 6, esPromotor: false, comentario: 'Parecía nuevo, no sabía dónde quedaba la habitación',
+  1072→          fuenteNPS: 'qr', categoriaServicio: 'menu', fechaVenta: new Date('2025-01-13'),
+  1073→        },
+  1074→      }),
+  1075→    ])
+  1076→
+  1077→    // ============================
+  1078→    // RESPUESTAS NPS (6)
+  1079→    // ============================
+  1080→    const respuestasNps = await Promise.all([
+  1081→      db.respuestaNPS.create({
+  1082→        data: {
+  1083→          empleadoId: juanPerez.id,
+  1084→          puntuacion: 10,
+  1085→          comentario: 'Juan siempre nos da una atención excepcional',
+  1086→          esPromotor: true,
+  1087→          fuente: 'qr',
+  1088→        },
+  1089→      }),
+  1090→      db.respuestaNPS.create({
+  1091→        data: {
+  1092→          empleadoId: patriciaRuiz.id,
+  1093→          puntuacion: 3,
+  1094→          comentario: 'Actitud muy mala, no queremos que nos atienda otra vez',
+  1095→          esPromotor: false,
+  1096→          fuente: 'app',
+  1097→        },
+  1098→      }),
+  1099→      db.respuestaNPS.create({
+  1100→        data: {
+  1101→          empleadoId: lauraHernandez.id,
+  1102→          puntuacion: 10,
+  1103→          comentario: 'Laura es la mejor capitana que hemos tenido',
+  1104→          esPromotor: true,
+  1105→          fuente: 'email',
+  1106→        },
+  1107→      }),
+  1108→      db.respuestaNPS.create({
+  1109→        data: {
+  1110→          empleadoId: mariaGarcia.id,
+  1111→          puntuacion: 6,
+  1112→          comentario: 'Se veía perdida, tardó mucho con el pedido',
+  1113→          esPromotor: false,
+  1114→          fuente: 'qr',
+  1115→        },
+  1116→      }),
+  1117→      db.respuestaNPS.create({
+  1118→        data: {
+  1119→          empleadoId: carlosLopez.id,
+  1120→          puntuacion: 9,
+  1121→          comentario: 'Carlos es muy atento y conocedor del hotel',
+  1122→          esPromotor: true,
+  1123→          fuente: 'sms',
+  1124→        },
+  1125→      }),
+  1126→      db.respuestaNPS.create({
+  1127→        data: {
+  1128→          empleadoId: anaMartinez.id,
+  1129→          puntuacion: 8,
+  1130→          comentario: 'Buena atención pero podría mejorar el check-in',
+  1131→          esPromotor: false,
+  1132→          fuente: 'qr',
+  1133→        },
+  1134→      }),
+  1135→    ])
+  1136→
+  1137→    // ============================
+  1138→    // ALERTAS RIESGO (8)
+  1139→    // ============================
+  1140→    const alertas = await Promise.all([
+  1141→      // CRÍTICA 1 - María García
+  1142→      db.alertaRiesgo.create({
+  1143→        data: {
+  1144→          empleadoId: mariaGarcia.id,
+  1145→          propiedadId: cancun.id,
+  1146→          tipo: 'baja_felicidad',
+  1147→          tipoEn: 'low_happiness',
+  1148→          severidad: 'critico',
+  1149→          mensaje: 'ALERTA CRÍTICA: María García muestra señales de abandono durante onboarding. Índice de felicidad en 68% y descendiendo. Scores de desempeño bajos (45/100). Se recomienda intervención inmediata con mentoría asignada.',
+  1150→          mensajeEn: 'CRITICAL ALERT: María García shows abandonment signs during onboarding. Happiness index at 68% and declining. Low performance scores (45/100). Immediate intervention with assigned mentoring recommended.',
+  1151→          probabilidad: 78,
+  1152→          generadoPorIA: true,
+  1153→          leida: true,
+  1154→          resuelta: false,
+  1155→        },
+  1156→      }),
+  1157→      // CRÍTICA 2 - Patricia Ruiz
+  1158→      db.alertaRiesgo.create({
+  1159→        data: {
+  1160→          empleadoId: patriciaRuiz.id,
+  1161→          propiedadId: losCabos.id,
+  1162→          tipo: 'nps_bajo',
+  1163→          tipoEn: 'low_nps',
+  1164→          severidad: 'critico',
+  1165→          mensaje: 'ALERTA CRÍTICA: Patricia Ruiz tiene NPS promedio de 5.8 con múltiples quejas de upselling agresivo. En proceso de offboarding. Se requiere acelerar transición y preparar reemplazo inmediato.',
+  1166→          mensajeEn: 'CRITICAL ALERT: Patricia Ruiz has average NPS of 5.8 with multiple aggressive upselling complaints. In offboarding process. Accelerate transition and prepare immediate replacement.',
+  1167→          probabilidad: 92,
+  1168→          generadoPorIA: true,
+  1169→          leida: true,
+  1170→          resuelta: false,
+  1171→        },
+  1172→      }),
+  1173→      // ALTA 1 - Diego Flores
+  1174→      db.alertaRiesgo.create({
+  1175→        data: {
+  1176→          empleadoId: diegoFlores.id,
+  1177→          propiedadId: cdmx.id,
+  1178→          tipo: 'estancamiento',
+  1179→          tipoEn: 'stagnation',
+  1180→          severidad: 'alto',
+  1181→          mensaje: 'Diego Flores presenta estancamiento en onboarding con scores de 44/100. Adaptación lenta con riesgo de desmotivación. Se sugiere asignar mentor y reforzar capacitación.',
+  1182→          mensajeEn: 'Diego Flores shows onboarding stagnation with scores of 44/100. Slow adaptation with demotivation risk. Assign mentor and reinforce training.',
+  1183→          probabilidad: 65,
+  1184→          generadoPorIA: false,
+  1185→          leida: false,
+  1186→          resuelta: false,
+  1187→        },
+  1188→      }),
+  1189→      // ALTA 2 - Fernando Morales
+  1190→      db.alertaRiesgo.create({
+  1191→        data: {
+  1192→          empleadoId: fernandoMorales.id,
+  1193→          propiedadId: cancun.id,
+  1194→          tipo: 'estancamiento',
+  1195→          tipoEn: 'stagnation',
+  1196→          severidad: 'alto',
+  1197→          mensaje: 'Fernando Morales muestra progreso lento en onboarding. NPS de 6.8 en sus primeras interacciones. Felicidad en 62%. Requiere acompañamiento adicional.',
+  1198→          mensajeEn: 'Fernando Morales shows slow onboarding progress. NPS of 6.8 in first interactions. Happiness at 62%. Requires additional support.',
+  1199→          probabilidad: 55,
+  1200→          generadoPorIA: false,
+  1201→          leida: false,
+  1202→          resuelta: false,
+  1203→        },
+  1204→      }),
+  1205→      // MEDIA 1 - Ana Martínez
+  1206→      db.alertaRiesgo.create({
+  1207→        data: {
+  1208→          empleadoId: anaMartinez.id,
+  1209→          propiedadId: cdmx.id,
+  1210→          tipo: 'baja_felicidad',
+  1211→          tipoEn: 'low_happiness',
+  1212→          severidad: 'medio',
+  1213→          mensaje: 'Ana Martínez muestra tendencia descendente en felicidad (72%). Solicitó cambio de turno sin éxito. Riesgo moderado de rotación si no se atiende.',
+  1214→          mensajeEn: 'Ana Martínez shows declining happiness trend (72%). Requested shift change unsuccessfully. Moderate turnover risk if unaddressed.',
+  1215→          probabilidad: 35,
+  1216→          generadoPorIA: false,
+  1217→          leida: true,
+  1218→          resuelta: false,
+  1219→        },
+  1220→      }),
+  1221→      // MEDIA 2 - Roberto Sánchez
+  1222→      db.alertaRiesgo.create({
+  1223→        data: {
+  1224→          empleadoId: robertoSanchez.id,
+  1225→          propiedadId: puebla.id,
+  1226→          tipo: 'inactividad',
+  1227→          tipoEn: 'inactivity',
+  1228→          severidad: 'medio',
+  1229→          mensaje: 'Roberto Sánchez incrementó inasistencias en el último mes. Comentarios negativos sobre carga de trabajo. Felicidad en 58%.',
+  1230→          mensajeEn: 'Roberto Sánchez increased absences in the last month. Negative comments about workload. Happiness at 58%.',
+  1231→          probabilidad: 45,
+  1232→          generadoPorIA: false,
+  1233→          leida: false,
+  1234→          resuelta: false,
+  1235→        },
+  1236→      }),
+  1237→      // BAJA 1 - Miguel Torres
+  1238→      db.alertaRiesgo.create({
+  1239→        data: {
+  1240→          empleadoId: miguelTorres.id,
+  1241→          propiedadId: playaCarmen.id,
+  1242→          tipo: 'estancamiento',
+  1243→          tipoEn: 'stagnation',
+  1244→          severidad: 'bajo',
+  1245→          mensaje: 'Miguel Torres podría beneficiarse de certificación avanzada en mixología para mejorar scores de hospitalidad (72/100).',
+  1246→          mensajeEn: 'Miguel Torres could benefit from advanced mixology certification to improve hospitality scores (72/100).',
+  1247→          probabilidad: 22,
+  1248→          generadoPorIA: true,
+  1249→          leida: true,
+  1250→          resuelta: true,
+  1251→        },
+  1252→      }),
+  1253→      // BAJA 2 - Juan Pérez (informativa)
+  1254→      db.alertaRiesgo.create({
+  1255→        data: {
+  1256→          empleadoId: juanPerez.id,
+  1257→          propiedadId: cancun.id,
+  1258→          tipo: 'fin_contrato',
+  1259→          tipoEn: 'contract_end',
+  1260→          severidad: 'bajo',
+  1261→          mensaje: 'Juan Pérez es candidato para promoción a Capitán. Se recomienda acelerar su formación en Liderazgo en Piso.',
+  1262→          mensajeEn: 'Juan Pérez is a candidate for promotion to Captain. Recommend accelerating Floor Leadership training.',
+  1263→          probabilidad: 12,
+  1264→          generadoPorIA: true,
+  1265→          leida: true,
+  1266→          resuelta: true,
+  1267→        },
+  1268→      }),
+  1269→    ])
+  1270→
+  1271→    // ============================
+  1272→    // INSTRUCTORES (5)
+  1273→    // ============================
+  1274→    const instructores = await Promise.all([
+  1275→      db.instructor.create({
+  1276→        data: {
+  1277→          nombre: 'Ricardo Mendoza',
+  1278→          especialidad: 'Upselling y Ventas',
+  1279→          ubicacion: 'Cancún, Q. Roo',
+  1280→          region: 'cancun',
+  1281→          calificacion: 4.9,
+  1282→          tarifaHora: 850,
+  1283→          disponible: true,
+  1284→        },
+  1285→      }),
+  1286→      db.instructor.create({
+  1287→        data: {
+  1288→          nombre: 'Isabel Navarro',
+  1289→          especialidad: 'Hospitalidad Premium',
+  1290→          ubicacion: 'Ciudad de México',
+  1291→          region: 'cdmx',
+  1292→          calificacion: 4.8,
+  1293→          tarifaHora: 920,
+  1294→          disponible: true,
+  1295→        },
+  1296→      }),
+  1297→      db.instructor.create({
+  1298→        data: {
+  1299→          nombre: 'Fernando Delgado',
+  1300→          especialidad: 'Liderazgo',
+  1301→          ubicacion: 'Puebla, Pue.',
+  1302→          region: 'puebla',
+  1303→          calificacion: 4.7,
+  1304→          tarifaHora: 1100,
+  1305→          disponible: true,
+  1306→        },
+  1307→      }),
+  1308→      db.instructor.create({
+  1309→        data: {
+  1310→          nombre: 'Carmen Salinas',
+  1311→          especialidad: 'Servicio al Cliente',
+  1312→          ubicacion: 'Los Cabos, BCS',
+  1313→          region: 'los_cabos',
+  1314→          calificacion: 4.6,
+  1315→          tarifaHora: 780,
+  1316→          disponible: false,
+  1317→        },
+  1318→      }),
+  1319→      db.instructor.create({
+  1320→        data: {
+  1321→          nombre: 'Alejandro Vega',
+  1322→          especialidad: 'Mixología',
+  1323→          ubicacion: 'Playa del Carmen, Q. Roo',
+  1324→          region: 'playa_carmen',
+  1325→          calificacion: 4.9,
+  1326→          tarifaHora: 750,
+  1327→          disponible: true,
+  1328→        },
+  1329→      }),
+  1330→    ])
+  1331→
+  1332→    const [ricardoMendoza, isabelNavarro, fernandoDelgado, carmenSalinas, alejandroVega] = instructores
+  1333→
+  1334→    // ============================
+  1335→    // CANDIDATOS POOL (8)
+  1336→    // ============================
+  1337→    const candidatos = await Promise.all([
+  1338→      // 3 en Cancún
+  1339→      db.candidatoPool.create({
+  1340→        data: {
+  1341→          nombre: 'Andrea Jiménez',
+  1342→          email: 'andrea.jimenez@email.com',
+  1343→          telefono: '+52 998 1234 567',
+  1344→          posicion: 'Mesera',
+  1345→          posicionEn: 'Waitress',
+  1346→          region: 'cancun',
+  1347→          experiencia: 3,
+  1348→          habilidades: JSON.stringify(['servicio al cliente', 'pos POS', 'vinos básicos', 'trabajo en equipo']),
+  1349→          estado: 'disponible',
+  1350→          puntuacionEntrevista: 82,
+  1351→          notas: 'Excelente actitud. Experiencia en hotel 4 estrellas.',
+  1352→          fuente: 'portal',
+  1353→          propiedadId: cancun.id,
+  1354→        },
+  1355→      }),
+  1356→      db.candidatoPool.create({
+  1357→        data: {
+  1358→          nombre: 'Luis Ramírez',
+  1359→          email: 'luis.ramirez@email.com',
+  1360→          telefono: '+52 998 9876 543',
+  1361→          posicion: 'Bellboy',
+  1362→          posicionEn: 'Bellboy',
+  1363→          region: 'cancun',
+  1364→          experiencia: 1,
+  1365→          habilidades: JSON.stringify(['atención al huésped', 'equipaje', 'conocimiento local']),
+  1366→          estado: 'en_proceso',
+  1367→          puntuacionEntrevista: 68,
+  1368→          notas: 'En proceso de segunda entrevista. Buena disposición.',
+  1369→          fuente: 'referido',
+  1370→          propiedadId: cancun.id,
+  1371→        },
+  1372→      }),
+  1373→      db.candidatoPool.create({
+  1374→        data: {
+  1375→          nombre: 'Gabriela Ortíz',
+  1376→          email: 'gabriela.ortiz@email.com',
+  1377→          telefono: '+52 998 5555 123',
+  1378→          posicion: 'Mesera',
+  1379→          posicionEn: 'Waitress',
+  1380→          region: 'cancun',
+  1381→          experiencia: 5,
+  1382→          habilidades: JSON.stringify(['servicio premium', 'upselling', 'maridaje de vinos', 'POS Micros']),
+  1383→          estado: 'contratado',
+  1384→          puntuacionEntrevista: 91,
+  1385→          notas: 'Contratada como reemplazo de Patricia Ruiz (MES-701). Excelente perfil. Inicia onboarding el 25/01.',
+  1386→          fuente: 'agencia',
+  1387→          propiedadId: losCabos.id,
+  1388→          empleadoReemplazaId: patriciaRuiz.id,
+  1389→          fechaContratacion: new Date('2025-01-20'),
+  1390→          onboardingCompletado: false,
+  1391→          nivelAlcanzado: 0,
+  1392→        },
+  1393→      }),
+  1394→      // 2 en CDMX
+  1395→      db.candidatoPool.create({
+  1396→        data: {
+  1397→          nombre: 'Roberto Medina',
+  1398→          email: 'roberto.medina@email.com',
+  1399→          telefono: '+52 55 3333 4444',
+  1400→          posicion: 'Recepcionista',
+  1401→          posicionEn: 'Receptionist',
+  1402→          region: 'cdmx',
+  1403→          experiencia: 2,
+  1404→          habilidades: JSON.stringify(['Opera PMS', 'idioma inglés', 'atención telefónica']),
+  1405→          estado: 'disponible',
+  1406→          puntuacionEntrevista: 75,
+  1407→          notas: 'Buen nivel de inglés. Experiencia en hotel boutique.',
+  1408→          fuente: 'portal',
+  1409→          propiedadId: cdmx.id,
+  1410→        },
+  1411→      }),
+  1412→      db.candidatoPool.create({
+  1413→        data: {
+  1414→          nombre: 'Patricia Wong',
+  1415→          email: 'patricia.wong@email.com',
+  1416→          telefono: '+52 55 7777 8888',
+  1417→          posicion: 'Recepcionista',
+  1418→          posicionEn: 'Receptionist',
+  1419→          region: 'cdmx',
+  1420→          experiencia: 4,
+  1421→          habilidades: JSON.stringify(['multiidioma', 'Opera PMS', 'resolución de problemas', 'concierge']),
+  1422→          estado: 'disponible',
+  1423→          puntuacionEntrevista: 88,
+  1424→          notas: 'Candidata fuerte. Habla 3 idiomas. Disponible inmediato.',
+  1425→          fuente: 'spontaneous',
+  1426→        },
+  1427→      }),
+  1428→      // 1 en Puebla
+  1429→      db.candidatoPool.create({
+  1430→        data: {
+  1431→          nombre: 'Marco Antonio Díaz',
+  1432→          email: 'marco.diaz@email.com',
+  1433→          telefono: '+52 222 1111 2222',
+  1434→          posicion: 'Mesero',
+  1435→          posicionEn: 'Waiter',
+  1436→          region: 'puebla',
+  1437→          experiencia: 2,
+  1438→          habilidades: JSON.stringify(['servicio en restaurante', 'carta de vinos', 'POS']),
+  1439→          estado: 'en_proceso',
+  1440→          puntuacionEntrevista: 70,
+  1441→          notas: 'En espera de verificación de referencias.',
+  1442→          fuente: 'referido',
+  1443→          propiedadId: puebla.id,
+  1444→        },
+  1445→      }),
+  1446→      // 1 en Los Cabos
+  1447→      db.candidatoPool.create({
+  1448→        data: {
+  1449→          nombre: 'Carolina Vega',
+  1450→          email: 'carolina.vega@email.com',
+  1451→          telefono: '+52 624 9999 0000',
+  1452→          posicion: 'Bartender',
+  1453→          posicionEn: 'Bartender',
+  1454→          region: 'los_cabos',
+  1455→          experiencia: 6,
+  1456→          habilidades: JSON.stringify(['mixología avanzada', 'coctelería creativa', 'bar management', 'TIPS certificado']),
+  1457→          estado: 'disponible',
+  1458→          puntuacionEntrevista: 90,
+  1459→          notas: 'Perfil senior. Podría ser bar manager. Muy buen candidato.',
+  1460→          fuente: 'agencia',
+  1461→          propiedadId: losCabos.id,
+  1462→        },
+  1463→      }),
+  1464→      // 1 en Veracruz
+  1465→      db.candidatoPool.create({
+  1466→        data: {
+  1467→          nombre: 'José Luis Fernández',
+  1468→          email: 'jose.fernandez@email.com',
+  1469→          telefono: '+52 229 4444 5555',
+  1470→          posicion: 'Mesero',
+  1471→          posicionEn: 'Waiter',
+  1472→          region: 'veracruz',
+  1473→          experiencia: 3,
+  1474→          habilidades: JSON.stringify(['servicio en restaurante', 'mariscos', 'vinos', 'POS']),
+  1475→          estado: 'disponible',
+  1476→          puntuacionEntrevista: 76,
+  1477→          notas: 'Experiencia en restaurantes de mariscos. Buen referente.',
+  1478→          fuente: 'portal',
+  1479→          propiedadId: veracruz.id,
+  1480→        },
+  1481→      }),
+  1482→    ])
+  1483→
+  1484→    // ============================
+  1485→    // NOTIFICACIONES (6)
+  1486→    // ============================
+  1487→    const notificaciones = await Promise.all([
+  1488→      // Empleado dado de baja
+  1489→      db.notificacion.create({
+  1490→        data: {
+  1491→          tipo: 'empleado_baja',
+  1492→          titulo: 'Empleado en proceso de baja',
+  1493→          tituloEn: 'Employee in offboarding process',
+  1494→          mensaje: 'Patricia Ruiz (MES-701) ha sido dada de baja en Resort Los Cabos. NPS promedio: 5.8. Se requiere reemplazo urgente.',
+  1495→          mensajeEn: 'Patricia Ruiz (MES-701) has been offboarded at Los Cabos Resort. Average NPS: 5.8. Urgent replacement required.',
+  1496→          leida: false,
+  1497→          propiedadId: losCabos.id,
+  1498→          prioridad: 'urgente',
+  1499→          accionUrl: '/empleados/' + patriciaRuiz.id,
+  1500→        },
+  1501→      }),
+  1502→      // Alerta de rotación crítica
+  1503→      db.notificacion.create({
+  1504→        data: {
+  1505→          tipo: 'alerta_ia',
+  1506→          titulo: 'Alerta de rotación crítica detectada',
+  1507→          tituloEn: 'Critical turnover alert detected',
+  1508→          mensaje: 'El Agente de IA detectó 2 empleados con riesgo crítico de abandono: María García (MES-402) y Patricia Ruiz (MES-701). Intervención inmediata recomendada.',
+  1509→          mensajeEn: 'AI Agent detected 2 employees with critical turnover risk: María García (MES-402) and Patricia Ruiz (MES-701). Immediate intervention recommended.',
+  1510→          leida: true,
+  1511→          propiedadId: cancun.id,
+  1512→          prioridad: 'urgente',
+  1513→        },
+  1514→      }),
+  1515→      // Solicitud de capacitación
+  1516→      db.notificacion.create({
+  1517→        data: {
+  1518→          tipo: 'solicitud_capacitacion',
+  1519→          titulo: 'Nueva solicitud de capacitación',
+  1520→          tituloEn: 'New training request',
+  1521→          mensaje: 'Carmen Delgado solicitó capacitación de "Liderazgo en Piso" para 3 empleados del Hotel Playa Cancún.',
+  1522→          mensajeEn: 'Carmen Delgado requested "Floor Leadership" training for 3 employees at Cancún Beach Hotel.',
+  1523→          leida: false,
+  1524→          propiedadId: cancun.id,
+  1525→          prioridad: 'normal',
+  1526→          accionUrl: '/capacitaciones',
+  1527→        },
+  1528→      }),
+  1529→      // Curso completado
+  1530→      db.notificacion.create({
+  1531→        data: {
+  1532→          tipo: 'curso_completado',
+  1533→          titulo: 'Curso completado exitosamente',
+  1534→          tituloEn: 'Course completed successfully',
+  1535→          mensaje: 'Sofía Vargas completó "Técnicas de Upselling Avanzado" con puntuación de 90/100. +20 puntos de carrera.',
+  1536→          mensajeEn: 'Sofía Vargas completed "Advanced Upselling Techniques" with a score of 90/100. +20 career points.',
+  1537→          leida: true,
+  1538→          propiedadId: cancun.id,
+  1539→          prioridad: 'normal',
+  1540→        },
+  1541→      }),
+  1542→      // Reemplazo necesario
+  1543→      db.notificacion.create({
+  1544→        data: {
+  1545→          tipo: 'reemplazo_necesario',
+  1546→          titulo: 'Reemplazo necesario - Mesera en Los Cabos',
+  1547→          tituloEn: 'Replacement needed - Waitress in Los Cabos',
+  1548→          mensaje: 'Se requiere reemplazo para Patricia Ruiz (MES-701) en Resort Los Cabos. Candidata asignada: Gabriela Ortíz. Inicia onboarding 25/01.',
+  1549→          mensajeEn: 'Replacement needed for Patricia Ruiz (MES-701) at Los Cabos Resort. Assigned candidate: Gabriela Ortíz. Starts onboarding 01/25.',
+  1550→          leida: false,
+  1551→          propiedadId: losCabos.id,
+  1552→          prioridad: 'alta',
+  1553→          accionUrl: '/empleados',
+  1554→        },
+  1555→      }),
+  1556→      // NPS bajo detectado
+  1557→      db.notificacion.create({
+  1558→        data: {
+  1559→          tipo: 'alerta_ia',
+  1560→          titulo: 'Patrón de upselling agresivo detectado',
+  1561→          tituloEn: 'Aggressive upselling pattern detected',
+  1562→          mensaje: 'El Agente de IA detectó patrón de upselling agresivo en Patricia Ruiz (MES-701): ventas altas pero NPS de 4-5. Se recomienda intervención inmediata.',
+  1563→          mensajeEn: 'AI Agent detected aggressive upselling pattern in Patricia Ruiz (MES-701): high sales but NPS of 4-5. Immediate intervention recommended.',
+  1564→          leida: true,
+  1565→          propiedadId: losCabos.id,
+  1566→          prioridad: 'alta',
+  1567→        },
+  1568→      }),
+  1569→    ])
+  1570→
+  1571→    // ============================
+  1572→    // SOLICITUD CAPACITACION (4)
+  1573→    // ============================
+  1574→    const solicitudes = await Promise.all([
+  1575→      db.solicitudCapacitacion.create({
+  1576→        data: {
+  1577→          propiedadId: cancun.id,
+  1578→          capacitacionId: liderazgoPiso.id,
+  1579→          modalidad: 'presencial',
+  1580→          fechaSolicitada: new Date('2025-02-10'),
+  1581→          participantes: 3,
+  1582→          instructorId: fernandoDelgado.id,
+  1583→          nombreInstructor: 'Fernando Delgado',
+  1584→          estado: 'pendiente',
+  1585→          costo: 6600,
+  1586→          notas: 'Para Juan Pérez, Sofía Vargas y un mesero más. Solicitado por Carmen Delgado.',
+  1587→          creadoPor: carmenDelgado.id,
+  1588→        },
+  1589→      }),
+  1590→      db.solicitudCapacitacion.create({
+  1591→        data: {
+  1592→          propiedadId: cdmx.id,
+  1593→          capacitacionId: ventaTours.id,
+  1594→          modalidad: 'virtual',
+  1595→          fechaSolicitada: new Date('2025-02-05'),
+  1596→          participantes: 4,
+  1597→          instructorId: ricardoMendoza.id,
+  1598→          nombreInstructor: 'Ricardo Mendoza',
+  1599→          estado: 'confirmada',
+  1600→          fechaConfirmada: new Date('2025-01-18'),
+  1601→          costo: 1200,
+  1602→          notas: 'Para recepcionistas del Gran Hotel CDMX. Incluye a Ana Martínez y Diego Flores.',
+  1603→          creadoPor: carmenDelgado.id,
+  1604→        },
+  1605→      }),
+  1606→      db.solicitudCapacitacion.create({
+  1607→        data: {
+  1608→          propiedadId: playaCarmen.id,
+  1609→          capacitacionId: cocktails.id,
+  1610→          modalidad: 'virtual',
+  1611→          fechaSolicitada: new Date('2025-02-15'),
+  1612→          participantes: 2,
+  1613→          instructorId: alejandroVega.id,
+  1614→          nombreInstructor: 'Alejandro Vega',
+  1615→          estado: 'confirmada',
+  1616→          fechaConfirmada: new Date('2025-01-19'),
+  1617→          costo: 900,
+  1618→          notas: 'Para Miguel Torres y nuevo bartender.',
+  1619→          creadoPor: carmenDelgado.id,
+  1620→        },
+  1621→      }),
+  1622→      db.solicitudCapacitacion.create({
+  1623→        data: {
+  1624→          propiedadId: puebla.id,
+  1625→          tema: 'Manejo de Estrés y Carga de Trabajo',
+  1626→          modalidad: 'presencial',
+  1627→          fechaSolicitada: new Date('2025-02-20'),
+  1628→          participantes: 8,
+  1629→          estado: 'pendiente',
+  1630→          costo: 5000,
+  1631→          notas: 'Solicitado por departamento de Ama de Llaves. Personal reporta sobrecarga de trabajo.',
+  1632→          creadoPor: carmenDelgado.id,
+  1633→        },
+  1634→      }),
+  1635→    ])
+  1636→
+  1637→    // ============================
+  1638→    // SERVICIOS (35)
+  1639→    // ============================
+  1640→    const servicios = await Promise.all([
+  1641→      // ---- Hotel Playa Cancún ----
+  1642→      // Platillos
+  1643→      db.servicio.create({
+  1644→        data: {
+  1645→          nombre: 'Filete de Res a la Parrilla',
+  1646→          nombreEn: 'Grilled Beef Fillet',
+  1647→          descripcion: 'Corte premium de res a la parrilla con guarnición de vegetales asados y puré de papa trufado.',
+  1648→          descripcionEn: 'Premium grilled beef cut with roasted vegetables and truffle mashed potatoes.',
+  1649→          categoria: 'platillo', esUpselling: true, precioNormal: 380, precioUpselling: 520,
+  1650→          objetivoUpselling: 'Vender maridaje de vino con este platillo para aumentar ticket promedio',
+  1651→          objetivoUpsellingEn: 'Sell wine pairing with this dish to increase average ticket',
+  1652→          propiedadId: cancun.id, orden: 1,
+  1653→        },
+  1654→      }),
+  1655→      db.servicio.create({
+  1656→        data: {
+  1657→          nombre: 'Camarones al Mojo de Ajo',
+  1658→          nombreEn: 'Garlic Butter Shrimp',
+  1659→          descripcion: 'Camarones frescos salteados al mojo de ajo con arroz blanco y ensalada tropical.',
+  1660→          descripcionEn: 'Fresh shrimp sautéed in garlic butter with white rice and tropical salad.',
+  1661→          categoria: 'platillo', esUpselling: false, precioNormal: 290,
+  1662→          propiedadId: cancun.id, orden: 2,
+  1663→        },
+  1664→      }),
+  1665→      db.servicio.create({
+  1666→        data: {
+  1667→          nombre: 'Ensalada César',
+  1668→          nombreEn: 'Caesar Salad',
+  1669→          descripcion: 'Ensalada César clásica con crutones, parmesano y aderezo casero.',
+  1670→          descripcionEn: 'Classic Caesar salad with croutons, parmesan and house dressing.',
+  1671→          categoria: 'platillo', esUpselling: true, precioNormal: 180, precioUpselling: 260,
+  1672→          objetivoUpselling: 'Ofrecer upgrade con salmón fresco para incrementar valor del platillo',
+  1673→          objetivoUpsellingEn: 'Offer upgrade with fresh salmon to increase dish value',
+  1674→          propiedadId: cancun.id, orden: 3,
+  1675→        },
+  1676→      }),
+  1677→      // Bebidas
+  1678→      db.servicio.create({
+  1679→        data: {
+  1680→          nombre: 'Margarita Premium',
+  1681→          nombreEn: 'Premium Margarita',
+  1682→          descripcion: 'Margarita preparada con tequila 100% agave, licor de naranja y limón fresco.',
+  1683→          descripcionEn: 'Margarita made with 100% agave tequila, orange liqueur and fresh lime.',
+  1684→          categoria: 'bebida', esUpselling: true, precioNormal: 160, precioUpselling: 220,
+  1685→          objetivoUpselling: 'Sugerir versión con tequila reposado premium para experiencia superior',
+  1686→          objetivoUpsellingEn: 'Suggest version with premium reposado tequila for superior experience',
+  1687→          propiedadId: cancun.id, orden: 10,
+  1688→        },
+  1689→      }),
+  1690→      db.servicio.create({
+  1691→        data: {
+  1692→          nombre: 'Mojito Cubano',
+  1693→          nombreEn: 'Cuban Mojito',
+  1694→          descripcion: 'Mojito clásico con ron blanco, menta fresca, limón y soda.',
+  1695→          descripcionEn: 'Classic mojito with white rum, fresh mint, lime and soda.',
+  1696→          categoria: 'bebida', esUpselling: false, precioNormal: 140,
+  1697→          propiedadId: cancun.id, orden: 11,
+  1698→        },
+  1699→      }),
+  1700→      db.servicio.create({
+  1701→        data: {
+  1702→          nombre: 'Vino Tinto Copa',
+  1703→          nombreEn: 'Red Wine by the Glass',
+  1704→          descripcion: 'Selección de vinos tintos mexicanos e internacionales por copa.',
+  1705→          descripcionEn: 'Selection of Mexican and international red wines by the glass.',
+  1706→          categoria: 'bebida', esUpselling: true, precioNormal: 120, precioUpselling: 280,
+  1707→          objetivoUpselling: 'Vender botella completa en lugar de copa para mayor margen',
+  1708→          objetivoUpsellingEn: 'Sell full bottle instead of glass for higher margin',
+  1709→          propiedadId: cancun.id, orden: 12,
+  1710→        },
+  1711→      }),
+  1712→      // Tours
+  1713→      db.servicio.create({
+  1714→        data: {
+  1715→          nombre: 'Tour Isla Mujeres',
+  1716→          nombreEn: 'Isla Mujeres Tour',
+  1717→          descripcion: 'Excursión en catamarán a Isla Mujeres con snorkel, comida y open bar incluidos.',
+  1718→          descripcionEn: 'Catamaran excursion to Isla Mujeres with snorkel, lunch and open bar included.',
+  1719→          categoria: 'tour', esUpselling: true, precioNormal: 1200, precioUpselling: 1800,
+  1720→          objetivoUpselling: 'Ofrecer upgrade a tour privado para grupos y parejas',
+  1721→          objetivoUpsellingEn: 'Offer upgrade to private tour for groups and couples',
+  1722→          propiedadId: cancun.id, orden: 20,
+  1723→        },
+  1724→      }),
+  1725→      db.servicio.create({
+  1726→        data: {
+  1727→          nombre: 'Tour Chichén Itzá VIP',
+  1728→          nombreEn: 'Chichén Itzá VIP Tour',
+  1729→          descripcion: 'Tour VIP a Chichén Itzá con guía privado, acceso exclusivo y comida gourmet.',
+  1730→          descripcionEn: 'VIP tour to Chichén Itzá with private guide, exclusive access and gourmet lunch.',
+  1731→          categoria: 'tour', esUpselling: false, precioNormal: 2500,
+  1732→          propiedadId: cancun.id, orden: 21,
+  1733→        },
+  1734→      }),
+  1735→      db.servicio.create({
+  1736→        data: {
+  1737→          nombre: 'Snorkel Arrecife',
+  1738→          nombreEn: 'Reef Snorkeling',
+  1739→          descripcion: 'Experiencia de snorkel en el segundo arrecife más grande del mundo con equipo incluido.',
+  1740→          descripcionEn: "Snorkeling experience on the world's second largest reef with equipment included.",
+  1741→          categoria: 'tour', esUpselling: false, precioNormal: 800,
+  1742→          propiedadId: cancun.id, orden: 22,
+  1743→        },
+  1744→      }),
+  1745→      // Masajes
+  1746→      db.servicio.create({
+  1747→        data: {
+  1748→          nombre: 'Masaje Relajante 60min',
+  1749→          nombreEn: 'Relaxation Massage 60min',
+  1750→          descripcion: 'Masaje relajante de cuerpo completo con aceites esenciales y técnica sueca.',
+  1751→          descripcionEn: 'Full body relaxation massage with essential oils and Swedish technique.',
+  1752→          categoria: 'masaje', esUpselling: true, precioNormal: 900, precioUpselling: 1300,
+  1753→          objetivoUpselling: 'Ofrecer upgrade a 90min con aromaterapia para mayor relajación',
+  1754→          objetivoUpsellingEn: 'Offer upgrade to 90min with aromatherapy for deeper relaxation',
+  1755→          propiedadId: cancun.id, orden: 30,
+  1756→        },
+  1757→      }),
+  1758→      db.servicio.create({
+  1759→        data: {
+  1760→          nombre: 'Masaje Pareja',
+  1761→          nombreEn: 'Couples Massage',
+  1762→          descripcion: 'Masaje simultáneo para parejas en suite privada con velas y champagne.',
+  1763→          descripcionEn: 'Simultaneous couples massage in private suite with candles and champagne.',
+  1764→          categoria: 'masaje', esUpselling: false, precioNormal: 1600,
+  1765→          propiedadId: cancun.id, orden: 31,
+  1766→        },
+  1767→      }),
+  1768→      // Habitaciones
+  1769→      db.servicio.create({
+  1770→        data: {
+  1771→          nombre: 'Upgrade Suite Ocean View',
+  1772→          nombreEn: 'Ocean View Suite Upgrade',
+  1773→          descripcion: 'Upgrade a suite con vista al mar Caribe, balcón privado y minibar premium.',
+  1774→          descripcionEn: 'Upgrade to suite with Caribbean Sea view, private balcony and premium minibar.',
+  1775→          categoria: 'habitacion', esUpselling: true, precioNormal: 890, precioUpselling: 890,
+  1776→          objetivoUpselling: 'Ofrecer upgrade al check-in cuando hay disponibilidad',
+  1777→          objetivoUpsellingEn: 'Offer upgrade at check-in when availability exists',
+  1778→          propiedadId: cancun.id, orden: 40,
+  1779→        },
+  1780→      }),
+  1781→      db.servicio.create({
+  1782→        data: {
+  1783→          nombre: 'Upgrade Suite Presidencial',
+  1784→          nombreEn: 'Presidential Suite Upgrade',
+  1785→          descripcion: 'Upgrade a suite presidencial con terraza panorámica, jacuzzi privado y servicio de mayordomo.',
+  1786→          descripcionEn: 'Upgrade to presidential suite with panoramic terrace, private jacuzzi and butler service.',
+  1787→          categoria: 'habitacion', esUpselling: false, precioNormal: 2200,
+  1788→          propiedadId: cancun.id, orden: 41,
+  1789→        },
+  1790→      }),
+  1791→
+  1792→      // ---- Restaurante La Terraza ----
+  1793→      // Platillos
+  1794→      db.servicio.create({
+  1795→        data: {
+  1796→          nombre: 'Pasta Trufa',
+  1797→          nombreEn: 'Truffle Pasta',
+  1798→          descripcion: 'Pasta fresca con salsa de trufa negra, parmesano 24 meses y mantequilla clarificada.',
+  1799→          descripcionEn: 'Fresh pasta with black truffle sauce, 24-month parmesan and clarified butter.',
+  1800→          categoria: 'platillo', esUpselling: true, precioNormal: 280, precioUpselling: 380,
+  1801→          objetivoUpselling: 'Sugerir versión con trufa fresca rallada en mesa para experiencia premium',
+  1802→          objetivoUpsellingEn: 'Suggest version with fresh truffle shaved tableside for premium experience',
+  1803→          propiedadId: puebla.id, orden: 1,
+  1804→        },
+  1805→      }),
+  1806→      db.servicio.create({
+  1807→        data: {
+  1808→          nombre: 'Risotto Hongos',
+  1809→          nombreEn: 'Mushroom Risotto',
+  1810→          descripcion: 'Risotto cremoso con mezcla de hongos silvestres y parmesano.',
+  1811→          descripcionEn: 'Creamy risotto with wild mushroom medley and parmesan.',
+  1812→          categoria: 'platillo', esUpselling: false, precioNormal: 240,
+  1813→          propiedadId: puebla.id, orden: 2,
+  1814→        },
+  1815→      }),
+  1816→      db.servicio.create({
+  1817→        data: {
+  1818→          nombre: 'Postre del Chef',
+  1819→          nombreEn: "Chef's Dessert",
+  1820→          descripcion: 'Creación dulce del chef con ingredientes de temporada y presentación artística.',
+  1821→          descripcionEn: "Chef's sweet creation with seasonal ingredients and artistic presentation.",
+  1822→          categoria: 'platillo', esUpselling: true, precioNormal: 180, precioUpselling: 280,
+  1823→          objetivoUpselling: 'Ofrecer maridaje con vino dulce o digestivo para completar la experiencia',
+  1824→          objetivoUpsellingEn: 'Offer pairing with dessert wine or digestif to complete the experience',
+  1825→          propiedadId: puebla.id, orden: 3,
+  1826→        },
+  1827→      }),
+  1828→      // Bebidas
+  1829→      db.servicio.create({
+  1830→        data: {
+  1831→          nombre: 'Cóctel de la Casa',
+  1832→          nombreEn: 'House Cocktail',
+  1833→          descripcion: 'Cóctel exclusivo de La Terraza con mezcal, frutas de temporada y hierbas aromáticas.',
+  1834→          descripcionEn: 'La Terraza exclusive cocktail with mezcal, seasonal fruits and aromatic herbs.',
+  1835→          categoria: 'bebida', esUpselling: true, precioNormal: 150, precioUpselling: 220,
+  1836→          objetivoUpselling: 'Ofrecer versión premium con licor artesanal de alta gama',
+  1837→          objetivoUpsellingEn: 'Offer premium version with high-end artisanal liquor',
+  1838→          propiedadId: puebla.id, orden: 10,
+  1839→        },
+  1840→      }),
+  1841→      db.servicio.create({
+  1842→        data: {
+  1843→          nombre: 'Cerveza Artesanal',
+  1844→          nombreEn: 'Craft Beer',
+  1845→          descripcion: 'Selección de cervezas artesanales locales: IPA, Stout y Blonde Ale.',
+  1846→          descripcionEn: 'Selection of local craft beers: IPA, Stout and Blonde Ale.',
+  1847→          categoria: 'bebida', esUpselling: false, precioNormal: 90,
+  1848→          propiedadId: puebla.id, orden: 11,
+  1849→        },
+  1850→      }),
+  1851→      db.servicio.create({
+  1852→        data: {
+  1853→          nombre: 'Mezcal Reposado',
+  1854→          nombreEn: 'Reposado Mezcal',
+  1855→          descripcion: 'Mezcal reposado artesanal con notas de madera y agave cocido. Servido con naranja y sal de gusano.',
+  1856→          descripcionEn: 'Artisanal reposado mezcal with wood and cooked agave notes. Served with orange and worm salt.',
+  1857→          categoria: 'bebida', esUpselling: false, precioNormal: 180,
+  1858→          propiedadId: puebla.id, orden: 12,
+  1859→        },
+  1860→      }),
+  1861→
+  1862→      // ---- Gran Hotel CDMX ----
+  1863→      // Platillos
+  1864→      db.servicio.create({
+  1865→        data: {
+  1866→          nombre: 'Chilaquiles Divorciados',
+  1867→          nombreEn: 'Divorced Chilaquiles',
+  1868→          descripcion: 'Chilaquiles con salsa roja y verde, coronados con dos huevos estrellados y crema.',
+  1869→          descripcionEn: 'Chilaquiles with red and green salsa, topped with two fried eggs and cream.',
+  1870→          categoria: 'platillo', esUpselling: true, precioNormal: 190, precioUpselling: 280,
+  1871→          objetivoUpselling: 'Sugerir agregar arrachera para convertir en plato fuerte completo',
+  1872→          objetivoUpsellingEn: 'Suggest adding arrachera to upgrade to a complete main course',
+  1873→          propiedadId: cdmx.id, orden: 1,
+  1874→        },
+  1875→      }),
+  1876→      db.servicio.create({
+  1877→        data: {
+  1878→          nombre: 'Huevos Benedictinos',
+  1879→          nombreEn: 'Eggs Benedict',
+  1880→          descripcion: 'Huevos pochados sobre muffin inglés con jamón y salsa holandesa casera.',
+  1881→          descripcionEn: 'Poached eggs on English muffin with ham and homemade hollandaise sauce.',
+  1882→          categoria: 'platillo', esUpselling: false, precioNormal: 220,
+  1883→          propiedadId: cdmx.id, orden: 2,
+  1884→        },
+  1885→      }),
+  1886→      // Bebidas
+  1887→      db.servicio.create({
+  1888→        data: {
+  1889→          nombre: 'Café de Olla',
+  1890→          nombreEn: 'Mexican Pot Coffee',
+  1891→          descripcion: 'Café de olla tradicional preparado con piloncillo, canela y clavo.',
+  1892→          descripcionEn: 'Traditional Mexican pot coffee brewed with piloncillo, cinnamon and clove.',
+  1893→          categoria: 'bebida', esUpselling: true, precioNormal: 70, precioUpselling: 120,
+  1894→          objetivoUpselling: 'Ofrecer acompañamiento de pan dulce artesanal para experiencia completa',
+  1895→          objetivoUpsellingEn: 'Offer artisanal sweet bread pairing for complete experience',
+  1896→          propiedadId: cdmx.id, orden: 10,
+  1897→        },
+  1898→      }),
+  1899→      db.servicio.create({
+  1900→        data: {
+  1901→          nombre: 'Chocolate Abuelita',
+  1902→          nombreEn: 'Mexican Hot Chocolate',
+  1903→          descripcion: 'Chocolate caliente tradicional con canela, preparado con tabletas Abuelita.',
+  1904→          descripcionEn: 'Traditional hot chocolate with cinnamon, made with Abuelita tablets.',
+  1905→          categoria: 'bebida', esUpselling: false, precioNormal: 80,
+  1906→          propiedadId: cdmx.id, orden: 11,
+  1907→        },
+  1908→      }),
+  1909→      // Tours
+  1910→      db.servicio.create({
+  1911→        data: {
+  1912→          nombre: 'Tour Centro Histórico',
+  1913→          nombreEn: 'Historic Center Tour',
+  1914→          descripcion: 'Recorrido guiado por el Centro Histórico de la CDMX, Patrimonio de la Humanidad UNESCO.',
+  1915→          descripcionEn: 'Guided tour of Mexico City Historic Center, UNESCO World Heritage Site.',
+  1916→          categoria: 'tour', esUpselling: true, precioNormal: 650, precioUpselling: 950,
+  1917→          objetivoUpselling: 'Ofrecer upgrade a tour privado con guía exclusivo y transporte de lujo',
+  1918→          objetivoUpsellingEn: 'Offer upgrade to private tour with exclusive guide and luxury transport',
+  1919→          propiedadId: cdmx.id, orden: 20,
+  1920→        },
+  1921→      }),
+  1922→      db.servicio.create({
+  1923→        data: {
+  1924→          nombre: 'Tour Museos',
+  1925→          nombreEn: 'Museum Tour',
+  1926→          descripcion: 'Visita a los principales museos de la CDMX incluyendo Museo de Antropología y Museo de Arte Moderno.',
+  1927→          descripcionEn: 'Visit to the main museums of Mexico City including Anthropology Museum and Modern Art Museum.',
+  1928→          categoria: 'tour', esUpselling: false, precioNormal: 500,
+  1929→          propiedadId: cdmx.id, orden: 21,
+  1930→        },
+  1931→      }),
+  1932→      // Masajes
+  1933→      db.servicio.create({
+  1934→        data: {
+  1935→          nombre: 'Masaje Deportivo 45min',
+  1936→          nombreEn: 'Sports Massage 45min',
+  1937→          descripcion: 'Masaje deportivo enfocado en recuperación muscular y liberación de tensión profunda.',
+  1938→          descripcionEn: 'Sports massage focused on muscle recovery and deep tension release.',
+  1939→          categoria: 'masaje', esUpselling: true, precioNormal: 700, precioUpselling: 1000,
+  1940→          objetivoUpselling: 'Sugerir upgrade a 75min para trabajo más profundo y estiramiento asistido',
+  1941→          objetivoUpsellingEn: 'Suggest upgrade to 75min for deeper work and assisted stretching',
+  1942→          propiedadId: cdmx.id, orden: 30,
+  1943→        },
+  1944→      }),
+  1945→      // Habitaciones
+  1946→      db.servicio.create({
+  1947→        data: {
+  1948→          nombre: 'Upgrade Executive Floor',
+  1949→          nombreEn: 'Executive Floor Upgrade',
+  1950→          descripcion: 'Upgrade a piso ejecutivo con acceso a Executive Lounge, desayuno y WiFi premium.',
+  1951→          descripcionEn: 'Upgrade to executive floor with Executive Lounge access, breakfast and premium WiFi.',
+  1952→          categoria: 'habitacion', esUpselling: false, precioNormal: 450,
+  1953→          propiedadId: cdmx.id, orden: 40,
+  1954→        },
+  1955→      }),
+  1956→      db.servicio.create({
+  1957→        data: {
+  1958→          nombre: 'Upgrade Suite Terraza',
+  1959→          nombreEn: 'Terrace Suite Upgrade',
+  1960→          descripcion: 'Upgrade a suite con terraza privada y vista a la Alameda Central.',
+  1961→          descripcionEn: 'Upgrade to suite with private terrace and view of Alameda Central.',
+  1962→          categoria: 'habitacion', esUpselling: false, precioNormal: 780,
+  1963→          propiedadId: cdmx.id, orden: 41,
+  1964→        },
+  1965→      }),
+  1966→
+  1967→      // ---- Bar Mar Azul ----
+  1968→      // Bebidas
+  1969→      db.servicio.create({
+  1970→        data: {
+  1971→          nombre: 'Mezcal Margarita',
+  1972→          nombreEn: 'Mezcal Margarita',
+  1973→          descripcion: 'Margarita con mezcal joven, licor de naranja y sal de chapulín.',
+  1974→          descripcionEn: 'Margarita with young mezcal, orange liqueur and grasshopper salt.',
+  1975→          categoria: 'bebida', esUpselling: true, precioNormal: 180, precioUpselling: 280,
+  1976→          objetivoUpselling: 'Ofrecer versión con mezcal artesanal de alta gama para experiencia premium',
+  1977→          objetivoUpsellingEn: 'Offer version with high-end artisanal mezcal for premium experience',
+  1978→          propiedadId: playaCarmen.id, orden: 10,
+  1979→        },
+  1980→      }),
+  1981→      db.servicio.create({
+  1982→        data: {
+  1983→          nombre: 'Cerveza Premium',
+  1984→          nombreEn: 'Premium Beer',
+  1985→          descripcion: 'Selección de cervezas premium internacionales: Stella Artois, Heineken y Corona Familiar.',
+  1986→          descripcionEn: 'Selection of premium international beers: Stella Artois, Heineken and Corona Familiar.',
+  1987→          categoria: 'bebida', esUpselling: true, precioNormal: 100, precioUpselling: 160,
+  1988→          objetivoUpselling: 'Ofrecer botana de cortesía con upgrade a presentación premium',
+  1989→          objetivoUpsellingEn: 'Offer complimentary snack with upgrade to premium presentation',
+  1990→          propiedadId: playaCarmen.id, orden: 11,
+  1991→        },
+  1992→      }),
+  1993→      db.servicio.create({
+  1994→        data: {
+  1995→          nombre: 'Cuba Libre',
+  1996→          nombreEn: 'Cuba Libre',
+  1997→          descripcion: 'Ron con Coca-Cola y limón fresco. El clásico que nunca falla.',
+  1998→          descripcionEn: 'Rum with Coca-Cola and fresh lime. The classic that never fails.',
+  1999→          categoria: 'bebida', esUpselling: false, precioNormal: 120,
+  2000→          propiedadId: playaCarmen.id, orden: 12,
+
+[showing lines 1-2000 of 2239; use offset=2001 with limit to continue reading]

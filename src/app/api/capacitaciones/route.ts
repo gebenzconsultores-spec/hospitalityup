@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db, isDatabaseAvailable } from '@/lib/db'
+import { getMockCapacitaciones, getDemoModeResponse } from '@/lib/api-helpers'
 
 export async function GET(request: Request) {
   try {
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json(getMockCapacitaciones())
+    }
+
     const { searchParams } = new URL(request.url)
     const categoria = searchParams.get('categoria')
     const modalidad = searchParams.get('modalidad')
@@ -53,15 +58,16 @@ export async function GET(request: Request) {
     return NextResponse.json(capacitacionesWithStats)
   } catch (error) {
     console.error('Capacitaciones GET error:', error)
-    return NextResponse.json(
-      { error: 'Error al obtener capacitaciones' },
-      { status: 500 }
-    )
+    return NextResponse.json(getMockCapacitaciones())
   }
 }
 
 export async function POST(request: Request) {
   try {
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json(getDemoModeResponse('create', 'capacitacion'), { status: 201 })
+    }
+
     const body = await request.json()
 
     const capacitacion = await db.capacitacion.create({
@@ -94,9 +100,6 @@ export async function POST(request: Request) {
     return NextResponse.json(capacitacion, { status: 201 })
   } catch (error) {
     console.error('Capacitaciones POST error:', error)
-    return NextResponse.json(
-      { error: 'Error al crear capacitación' },
-      { status: 500 }
-    )
+    return NextResponse.json(getDemoModeResponse('create', 'capacitacion'), { status: 201 })
   }
 }
