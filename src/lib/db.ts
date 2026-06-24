@@ -4,27 +4,39 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-// Check if we have a valid database URL (not SQLite file that won't work on Vercel)
 const dbUrl = process.env.DATABASE_URL || ''
-const isSQLite = dbUrl.startsWith('file:')
 const isVercel = !!process.env.VERCEL
+const isPostgres = dbUrl.startsWith('postgresql://') || dbUrl.startsWith('postgres://')
+const isSQLite = dbUrl.startsWith('file:')
 
-// Only create PrismaClient if we have a real database connection
-// On Vercel with SQLite, we skip it and use mock data instead
 let _db: PrismaClient | null = null
+let _dbAvailable = false
 
-try {
-  if (isVercel && isSQLite) {
-    console.log('⚠️ SQLite not supported on Vercel - using mock data mode')
-  } else if (dbUrl) {
+if (isPostgres) {
+  try {
     _db = globalForPrisma.prisma ?? new PrismaClient({
       log: process.env.NODE_ENV === 'production' ? ['error'] : ['error', 'warn'],
     })
     if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = _db
+    _dbAvailable = true
+    if (isVercel) {
+      console.log('✅ PostgreSQL database configured for Vercel')
+    } else {
+      console.log('✅ PostgreSQL database configured')
+    }
+  } catch (e) {
+    console.log('⚠️ Database init failed:', e)
+    _dbAvailable = false
   }
-} catch (e) {
-  console.log('⚠️ Database connection failed - using mock data mode:', e)
+} else if (isSQLite) {
+  console.log('💡 SQLite detected - using mock data mode (SQLite not for production)')
+  console.log('💡 Set DATABASE_URL to PostgreSQL for production use')
+} else {
+  console.log('⚠️ No DATABASE_URL found - using mock data mode')
 }
 
-export const db = _db
-export const isDatabaseAvailable = () => _db !== null
+const db = _db
+
+const isDatabaseAvailable = (): boolean => _dbAvailable
+
+export { db, isDatabaseAvailable }
