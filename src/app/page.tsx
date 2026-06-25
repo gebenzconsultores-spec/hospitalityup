@@ -29,6 +29,7 @@ const VentasModule = dynamic(() => import('@/components/ventas/ventas-module').t
 const CapacitacionModule = dynamic(() => import('@/components/capacitacion/capacitacion-module').then(m => ({ default: m.CapacitacionModule })), { loading: () => <Loading /> })
 const BolsaTrabajo = dynamic(() => import('@/components/bolsa-trabajo/bolsa-trabajo').then(m => ({ default: m.BolsaTrabajo })), { loading: () => <Loading /> })
 const ConfiguracionModule = dynamic(() => import('@/components/configuracion/configuracion').then(m => ({ default: m.ConfiguracionModule })), { loading: () => <Loading /> })
+const PropiedadesModule = dynamic(() => import('@/components/propiedades/propiedades-module').then(m => ({ default: m.PropiedadesModule })), { loading: () => <Loading /> })
 
 function Loading() {
   return (
@@ -43,6 +44,7 @@ const viewLabels: Record<Locale, Record<ViewMode, string>> = {
     dashboard: 'Dashboard',
     trabajador: 'Vista Trabajador',
     servicios: 'Menú & Servicios',
+    propiedades: 'Propiedades',
     empleados: 'Empleados',
     ventas: 'Ventas & NPS',
     capacitacion: 'Capacitación',
@@ -53,6 +55,7 @@ const viewLabels: Record<Locale, Record<ViewMode, string>> = {
     dashboard: 'Dashboard',
     trabajador: 'Worker View',
     servicios: 'Menu & Services',
+    propiedades: 'Properties',
     empleados: 'Employees',
     ventas: 'Sales & NPS',
     capacitacion: 'Training',
@@ -114,6 +117,7 @@ function ContentArea({ currentView }: { currentView: ViewMode }) {
     case 'dashboard': return <DashboardGerencial />
     case 'trabajador': return <VistaTrabajador />
     case 'servicios': return <ServiciosAdmin />
+    case 'propiedades': return <PropiedadesModule />
     case 'empleados': return <EmpleadosModule />
     case 'ventas': return <VentasModule />
     case 'capacitacion': return <CapacitacionModule />

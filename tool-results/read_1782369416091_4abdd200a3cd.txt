@@ -1,0 +1,763 @@
+     1→'use client'
+     2→
+     3→import { useEffect, useState, useCallback } from 'react'
+     4→import { useAppStore } from '@/lib/store'
+     5→import { translations } from '@/lib/i18n'
+     6→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+     7→import { Button } from '@/components/ui/button'
+     8→import { Badge } from '@/components/ui/badge'
+     9→import { Input } from '@/components/ui/input'
+    10→import { Label } from '@/components/ui/label'
+    11→import { Switch } from '@/components/ui/switch'
+    12→import { Textarea } from '@/components/ui/textarea'
+    13→import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+    14→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+    15→import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+    16→import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+    17→import { Separator } from '@/components/ui/separator'
+    18→import { toast } from 'sonner'
+    19→import {
+    20→  Plus,
+    21→  Pencil,
+    22→  Trash2,
+    23→  Package,
+    24→  DollarSign,
+    25→  TrendingUp,
+    26→  Star,
+    27→  Clock,
+    28→  ShoppingCart,
+    29→  Target,
+    30→} from 'lucide-react'
+    31→
+    32→// ─── Types ────────────────────────────────────────────────────
+    33→interface Servicio {
+    34→  id: string
+    35→  nombre: string
+    36→  nombreEn: string | null
+    37→  descripcion: string | null
+    38→  descripcionEn: string | null
+    39→  categoria: string
+    40→  categoriaEn: string | null
+    41→  esUpselling: boolean
+    42→  precioNormal: number
+    43→  precioUpselling: number | null
+    44→  objetivoUpselling: string | null
+    45→  objetivoUpsellingEn: string | null
+    46→  disponible: boolean
+    47→  propiedadId: string
+    48→  propiedad: { id: string; nombre: string; nombreEn: string | null; moneda: string }
+    49→  [key: string]: unknown
+    50→}
+    51→
+    52→interface Propiedad {
+    53→  id: string
+    54→  nombre: string
+    55→  nombreEn: string | null
+    56→  moneda: string
+    57→}
+    58→
+    59→interface Venta {
+    60→  id: string
+    61→  nombreServicio: string | null
+    62→  montoTotal: number
+    63→  montoUpselling: number
+    64→  esUpselling: boolean
+    65→  calificacionNPS: number | null
+    66→  cantidad: number
+    67→  fechaVenta: string
+    68→  empleado: { id: string; nombre: string; empleadoId: string }
+    69→}
+    70→
+    71→const categoriasList = [
+    72→  { value: 'platillo', es: 'Platillo', en: 'Dish' },
+    73→  { value: 'bebida', es: 'Bebida', en: 'Drink' },
+    74→  { value: 'tour', es: 'Tour', en: 'Tour' },
+    75→  { value: 'masaje', es: 'Masaje', en: 'Massage' },
+    76→  { value: 'habitacion', es: 'Habitación', en: 'Room' },
+    77→  { value: 'experiencia', es: 'Experiencia', en: 'Experience' },
+    78→  { value: 'paquete', es: 'Paquete', en: 'Package' },
+    79→  { value: 'otro', es: 'Otro', en: 'Other' },
+    80→]
+    81→
+    82→interface ServicioForm {
+    83→  nombre: string
+    84→  nombreEn: string
+    85→  descripcion: string
+    86→  descripcionEn: string
+    87→  categoria: string
+    88→  precioNormal: string
+    89→  esUpselling: boolean
+    90→  precioUpselling: string
+    91→  objetivoUpselling: string
+    92→  objetivoUpsellingEn: string
+    93→  disponible: boolean
+    94→}
+    95→
+    96→const emptyForm: ServicioForm = {
+    97→  nombre: '',
+    98→  nombreEn: '',
+    99→  descripcion: '',
+   100→  descripcionEn: '',
+   101→  categoria: 'platillo',
+   102→  precioNormal: '',
+   103→  esUpselling: false,
+   104→  precioUpselling: '',
+   105→  objetivoUpselling: '',
+   106→  objetivoUpsellingEn: '',
+   107→  disponible: true,
+   108→}
+   109→
+   110→export function ServiciosAdmin() {
+   111→  const { locale, selectedProperty } = useAppStore()
+   112→  const t = translations[locale].serviciosAdmin
+   113→  const tc = translations[locale].common
+   114→
+   115→  // State
+   116→  const [propiedades, setPropiedades] = useState<Propiedad[]>([])
+   117→  const [propiedadSeleccionada, setPropiedadSeleccionada] = useState<string>(selectedProperty !== 'all' ? selectedProperty : '')
+   118→  const [servicios, setServicios] = useState<Servicio[]>([])
+   119→  const [ventasHoy, setVentasHoy] = useState<Venta[]>([])
+   120→  const [loading, setLoading] = useState(false)
+   121→  const [categoriaFiltro, setCategoriaFiltro] = useState('todas')
+   122→  const [activeTab, setActiveTab] = useState('catalogo')
+   123→
+   124→  // Form state
+   125→  const [showFormDialog, setShowFormDialog] = useState(false)
+   126→  const [editingId, setEditingId] = useState<string | null>(null)
+   127→  const [form, setForm] = useState<ServicioForm>(emptyForm)
+   128→  const [saving, setSaving] = useState(false)
+   129→
+   130→  // Delete dialog
+   131→  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+   132→  const [deletingId, setDeletingId] = useState<string | null>(null)
+   133→
+   134→  // Load propiedades
+   135→  useEffect(() => {
+   136→    fetch('/api/propiedades')
+   137→      .then(r => r.json())
+   138→      .then(data => {
+   139→        const props = Array.isArray(data) ? data : []
+   140→        setPropiedades(props)
+   141→        if (!propiedadSeleccionada && props.length > 0) {
+   142→          setPropiedadSeleccionada(selectedProperty !== 'all' ? selectedProperty : props[0].id)
+   143→        }
+   144→      })
+   145→      .catch(() => {})
+   146→  }, [selectedProperty, propiedadSeleccionada])
+   147→
+   148→  // Load servicios when propiedad changes
+   149→  useEffect(() => {
+   150→    if (!propiedadSeleccionada) return
+   151→    setLoading(true)
+   152→    fetch(`/api/servicios?propiedadId=${propiedadSeleccionada}`)
+   153→      .then(r => r.json())
+   154→      .then(data => {
+   155→        setServicios(Array.isArray(data) ? data : [])
+   156→        setLoading(false)
+   157→      })
+   158→      .catch(() => setLoading(false))
+   159→  }, [propiedadSeleccionada])
+   160→
+   161→  // Load today's sales
+   162→  useEffect(() => {
+   163→    if (!propiedadSeleccionada) return
+   164→    const today = new Date()
+   165→    today.setHours(0, 0, 0, 0)
+   166→    fetch(`/api/ventas?propiedadId=${propiedadSeleccionada}&limit=200`)
+   167→      .then(r => r.json())
+   168→      .then(data => {
+   169→        const ventas = data?.ventas || data
+   170→        if (Array.isArray(ventas)) {
+   171→          const hoy = ventas.filter((v: Venta) => new Date(v.fechaVenta) >= today)
+   172→          setVentasHoy(hoy)
+   173→        }
+   174→      })
+   175→      .catch(() => {})
+   176→  }, [propiedadSeleccionada])
+   177→
+   178→  // Filtered services
+   179→  const serviciosFiltrados = categoriaFiltro === 'todas'
+   180→    ? servicios
+   181→    : servicios.filter(s => s.categoria === categoriaFiltro)
+   182→
+   183→  // Today's metrics
+   184→  const totalVentas = ventasHoy.reduce((s, v) => s + v.montoTotal, 0)
+   185→  const ventasUpselling = ventasHoy.filter(v => v.esUpselling)
+   186→  const tasaUpselling = ventasHoy.length > 0 ? (ventasUpselling.length / ventasHoy.length) * 100 : 0
+   187→  const ticketPromedio = ventasHoy.length > 0 ? totalVentas / ventasHoy.length : 0
+   188→
+   189→  const fmt = (n: number) => `$${n.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+   190→
+   191→  // Open form for new service
+   192→  const abrirNuevo = () => {
+   193→    setEditingId(null)
+   194→    setForm(emptyForm)
+   195→    setShowFormDialog(true)
+   196→  }
+   197→
+   198→  // Open form for editing
+   199→  const abrirEditar = (servicio: Servicio) => {
+   200→    setEditingId(servicio.id)
+   201→    setForm({
+   202→      nombre: servicio.nombre,
+   203→      nombreEn: servicio.nombreEn || '',
+   204→      descripcion: servicio.descripcion || '',
+   205→      descripcionEn: servicio.descripcionEn || '',
+   206→      categoria: servicio.categoria,
+   207→      precioNormal: servicio.precioNormal.toString(),
+   208→      esUpselling: servicio.esUpselling,
+   209→      precioUpselling: servicio.precioUpselling?.toString() || '',
+   210→      objetivoUpselling: servicio.objetivoUpselling || '',
+   211→      objetivoUpsellingEn: servicio.objetivoUpsellingEn || '',
+   212→      disponible: servicio.disponible,
+   213→    })
+   214→    setShowFormDialog(true)
+   215→  }
+   216→
+   217→  // Save service (create or update)
+   218→  const guardarServicio = async () => {
+   219→    if (!propiedadSeleccionada || !form.nombre || !form.precioNormal) {
+   220→      toast.error(t.errorCrear)
+   221→      return
+   222→    }
+   223→    setSaving(true)
+   224→
+   225→    try {
+   226→      const payload = {
+   227→        propiedadId: propiedadSeleccionada,
+   228→        nombre: form.nombre,
+   229→        nombreEn: form.nombreEn || null,
+   230→        descripcion: form.descripcion || null,
+   231→        descripcionEn: form.descripcionEn || null,
+   232→        categoria: form.categoria,
+   233→        esUpselling: form.esUpselling,
+   234→        precioNormal: parseFloat(form.precioNormal),
+   235→        precioUpselling: form.esUpselling && form.precioUpselling ? parseFloat(form.precioUpselling) : null,
+   236→        objetivoUpselling: form.esUpselling && form.objetivoUpselling ? form.objetivoUpselling : null,
+   237→        objetivoUpsellingEn: form.esUpselling && form.objetivoUpsellingEn ? form.objetivoUpsellingEn : null,
+   238→        disponible: form.disponible,
+   239→      }
+   240→
+   241→      let res: Response
+   242→      if (editingId) {
+   243→        res = await fetch(`/api/servicios/${editingId}`, {
+   244→          method: 'PATCH',
+   245→          headers: { 'Content-Type': 'application/json' },
+   246→          body: JSON.stringify(payload),
+   247→        })
+   248→      } else {
+   249→        res = await fetch('/api/servicios', {
+   250→          method: 'POST',
+   251→          headers: { 'Content-Type': 'application/json' },
+   252→          body: JSON.stringify(payload),
+   253→        })
+   254→      }
+   255→
+   256→      if (!res.ok) {
+   257→        const err = await res.json()
+   258→        throw new Error(err.error || 'Error')
+   259→      }
+   260→
+   261→      const saved = await res.json()
+   262→
+   263→      // Update local state
+   264→      if (editingId) {
+   265→        setServicios(prev => prev.map(s => s.id === editingId ? saved : s))
+   266→        toast.success(t.actualizado)
+   267→      } else {
+   268→        setServicios(prev => [saved, ...prev])
+   269→        toast.success(t.creado)
+   270→      }
+   271→
+   272→      setShowFormDialog(false)
+   273→    } catch (error) {
+   274→      toast.error(String(error?.valueOf()) || t.errorCrear)
+   275→    } finally {
+   276→      setSaving(false)
+   277→    }
+   278→  }
+   279→
+   280→  // Delete service
+   281→  const eliminarServicio = async () => {
+   282→    if (!deletingId) return
+   283→    try {
+   284→      const res = await fetch(`/api/servicios/${deletingId}`, { method: 'DELETE' })
+   285→      if (!res.ok) throw new Error('Error')
+   286→      setServicios(prev => prev.filter(s => s.id !== deletingId))
+   287→      toast.success(t.eliminado)
+   288→    } catch {
+   289→      toast.error('Error')
+   290→    } finally {
+   291→      setShowDeleteDialog(false)
+   292→      setDeletingId(null)
+   293→    }
+   294→  }
+   295→
+   296→  // Toggle disponibilidad
+   297→  const toggleDisponibilidad = async (servicio: Servicio) => {
+   298→    try {
+   299→      const res = await fetch(`/api/servicios/${servicio.id}`, {
+   300→        method: 'PATCH',
+   301→        headers: { 'Content-Type': 'application/json' },
+   302→        body: JSON.stringify({ disponible: !servicio.disponible }),
+   303→      })
+   304→      if (!res.ok) throw new Error('Error')
+   305→      const updated = await res.json()
+   306→      setServicios(prev => prev.map(s => s.id === servicio.id ? updated : s))
+   307→    } catch {
+   308→      toast.error('Error')
+   309→    }
+   310→  }
+   311→
+   312→  const getCategoriaLabel = (cat: string) => {
+   313→    const found = categoriasList.find(c => c.value === cat)
+   314→    return found ? (locale === 'en' ? found.en : found.es) : cat
+   315→  }
+   316→
+   317→  return (
+   318→    <div className="space-y-4">
+   319→      {/* ── Property Selector ── */}
+   320→      <Card>
+   321→        <CardContent className="p-4">
+   322→          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+   323→            <div className="flex items-center gap-3">
+   324→              <Label className="text-sm font-medium">{t.propiedad}</Label>
+   325→              <Select value={propiedadSeleccionada} onValueChange={setPropiedadSeleccionada}>
+   326→                <SelectTrigger className="w-[260px]">
+   327→                  <SelectValue placeholder={t.propiedad} />
+   328→                </SelectTrigger>
+   329→                <SelectContent>
+   330→                  {propiedades.map(p => (
+   331→                    <SelectItem key={p.id} value={p.id}>
+   332→                      {locale === 'en' && p.nombreEn ? p.nombreEn : p.nombre}
+   333→                    </SelectItem>
+   334→                  ))}
+   335→                </SelectContent>
+   336→              </Select>
+   337→            </div>
+   338→            <Button onClick={abrirNuevo} className="bg-emerald-600 hover:bg-emerald-700">
+   339→              <Plus className="mr-1 size-4" />
+   340→              {t.agregarServicio}
+   341→            </Button>
+   342→          </div>
+   343→        </CardContent>
+   344→      </Card>
+   345→
+   346→      {/* ── Tabs ── */}
+   347→      <Tabs value={activeTab} onValueChange={setActiveTab}>
+   348→        <TabsList className="grid w-full grid-cols-3">
+   349→          <TabsTrigger value="catalogo">{t.catalogo}</TabsTrigger>
+   350→          <TabsTrigger value="agregar">{t.agregarEditar}</TabsTrigger>
+   351→          <TabsTrigger value="ventas">{t.ventasDelDia}</TabsTrigger>
+   352→        </TabsList>
+   353→
+   354→        {/* ── Tab 1: Catálogo ── */}
+   355→        <TabsContent value="catalogo" className="mt-4 space-y-4">
+   356→          {/* Category filter */}
+   357→          <div className="flex flex-wrap gap-2">
+   358→            <Button
+   359→              variant={categoriaFiltro === 'todas' ? 'default' : 'outline'}
+   360→              size="sm"
+   361→              className={categoriaFiltro === 'todas' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
+   362→              onClick={() => setCategoriaFiltro('todas')}
+   363→            >
+   364→              {t.todas}
+   365→            </Button>
+   366→            {categoriasList.map(cat => (
+   367→              <Button
+   368→                key={cat.value}
+   369→                variant={categoriaFiltro === cat.value ? 'default' : 'outline'}
+   370→                size="sm"
+   371→                className={categoriaFiltro === cat.value ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
+   372→                onClick={() => setCategoriaFiltro(cat.value)}
+   373→              >
+   374→                {locale === 'en' ? cat.en : cat.es}
+   375→              </Button>
+   376→            ))}
+   377→          </div>
+   378→
+   379→          {/* Service grid */}
+   380→          {loading ? (
+   381→            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+   382→              {[1, 2, 3].map(i => (
+   383→                <Card key={i} className="animate-pulse">
+   384→                  <CardContent className="h-40 bg-muted" />
+   385→                </Card>
+   386→              ))}
+   387→            </div>
+   388→          ) : serviciosFiltrados.length === 0 ? (
+   389→            <Card>
+   390→              <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+   391→                <Package className="mb-2 size-8 opacity-30" />
+   392→                <p>{tc.sinDatos}</p>
+   393→              </CardContent>
+   394→            </Card>
+   395→          ) : (
+   396→            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+   397→              {serviciosFiltrados.map(servicio => {
+   398→                const nombre = locale === 'en' && servicio.nombreEn ? servicio.nombreEn : servicio.nombre
+   399→                return (
+   400→                  <Card key={servicio.id} className="relative transition-all hover:shadow-md">
+   401→                    <CardContent className="p-4">
+   402→                      <div className="mb-2 flex items-start justify-between">
+   403→                        <div className="min-w-0 flex-1">
+   404→                          <h3 className="text-sm font-semibold leading-tight">{nombre}</h3>
+   405→                          <div className="mt-1 flex flex-wrap gap-1">
+   406→                            <Badge variant="outline" className="text-[10px]">
+   407→                              {getCategoriaLabel(servicio.categoria)}
+   408→                            </Badge>
+   409→                            {servicio.esUpselling && (
+   410→                              <Badge className="bg-emerald-600 text-[10px] text-white hover:bg-emerald-700">
+   411→                                🎯 UPS
+   412→                              </Badge>
+   413→                            )}
+   414→                          </div>
+   415→                        </div>
+   416→                        <div className="flex items-center gap-1">
+   417→                          <Button
+   418→                            variant="ghost"
+   419→                            size="icon"
+   420→                            className="size-7"
+   421→                            onClick={() => abrirEditar(servicio)}
+   422→                          >
+   423→                            <Pencil className="size-3.5" />
+   424→                          </Button>
+   425→                          <Button
+   426→                            variant="ghost"
+   427→                            size="icon"
+   428→                            className="size-7 text-destructive hover:text-destructive"
+   429→                            onClick={() => {
+   430→                              setDeletingId(servicio.id)
+   431→                              setShowDeleteDialog(true)
+   432→                            }}
+   433→                          >
+   434→                            <Trash2 className="size-3.5" />
+   435→                          </Button>
+   436→                        </div>
+   437→                      </div>
+   438→
+   439→                      <div className="mb-2 space-y-0.5">
+   440→                        <div className="flex items-baseline gap-1">
+   441→                          <span className="text-lg font-bold">{fmt(servicio.precioNormal)}</span>
+   442→                          {servicio.esUpselling && servicio.precioUpselling && (
+   443→                            <span className="text-sm text-emerald-600">↑ {fmt(servicio.precioUpselling)}</span>
+   444→                          )}
+   445→                        </div>
+   446→                      </div>
+   447→
+   448→                      {/* Disponible toggle */}
+   449→                      <div className="flex items-center justify-between">
+   450→                        <span className="text-xs text-muted-foreground">{t.disponible}</span>
+   451→                        <Switch
+   452→                          checked={servicio.disponible}
+   453→                          onCheckedChange={() => toggleDisponibilidad(servicio)}
+   454→                        />
+   455→                      </div>
+   456→                    </CardContent>
+   457→                  </Card>
+   458→                )
+   459→              })}
+   460→            </div>
+   461→          )}
+   462→        </TabsContent>
+   463→
+   464→        {/* ── Tab 2: Agregar/Editar ── */}
+   465→        <TabsContent value="agregar" className="mt-4">
+   466→          <Card>
+   467→            <CardHeader>
+   468→              <CardTitle className="flex items-center gap-2 text-base">
+   469→                {editingId ? <Pencil className="size-4" /> : <Plus className="size-4" />}
+   470→                {editingId ? t.editar : t.agregarServicio}
+   471→              </CardTitle>
+   472→            </CardHeader>
+   473→            <CardContent className="space-y-4">
+   474→              <div className="grid gap-4 sm:grid-cols-2">
+   475→                {/* Nombre ES */}
+   476→                <div className="space-y-1.5">
+   477→                  <Label>{t.nombreES} *</Label>
+   478→                  <Input
+   479→                    value={form.nombre}
+   480→                    onChange={(e) => setForm(prev => ({ ...prev, nombre: e.target.value }))}
+   481→                    placeholder="Nombre del servicio"
+   482→                  />
+   483→                </div>
+   484→                {/* Nombre EN */}
+   485→                <div className="space-y-1.5">
+   486→                  <Label>{t.nombreEN}</Label>
+   487→                  <Input
+   488→                    value={form.nombreEn}
+   489→                    onChange={(e) => setForm(prev => ({ ...prev, nombreEn: e.target.value }))}
+   490→                    placeholder="Service name"
+   491→                  />
+   492→                </div>
+   493→              </div>
+   494→
+   495→              <div className="grid gap-4 sm:grid-cols-2">
+   496→                {/* Descripción */}
+   497→                <div className="space-y-1.5">
+   498→                  <Label>{t.descripcion}</Label>
+   499→                  <Textarea
+   500→                    value={form.descripcion}
+   501→                    onChange={(e) => setForm(prev => ({ ...prev, descripcion: e.target.value }))}
+   502→                    rows={3}
+   503→                  />
+   504→                </div>
+   505→                {/* Descripción EN */}
+   506→                <div className="space-y-1.5">
+   507→                  <Label>{t.descripcionEN}</Label>
+   508→                  <Textarea
+   509→                    value={form.descripcionEn}
+   510→                    onChange={(e) => setForm(prev => ({ ...prev, descripcionEn: e.target.value }))}
+   511→                    rows={3}
+   512→                  />
+   513→                </div>
+   514→              </div>
+   515→
+   516→              <div className="grid gap-4 sm:grid-cols-3">
+   517→                {/* Categoría */}
+   518→                <div className="space-y-1.5">
+   519→                  <Label>{t.categoria}</Label>
+   520→                  <Select value={form.categoria} onValueChange={(val) => setForm(prev => ({ ...prev, categoria: val }))}>
+   521→                    <SelectTrigger>
+   522→                      <SelectValue />
+   523→                    </SelectTrigger>
+   524→                    <SelectContent>
+   525→                      {categoriasList.map(cat => (
+   526→                        <SelectItem key={cat.value} value={cat.value}>
+   527→                          {locale === 'en' ? cat.en : cat.es}
+   528→                        </SelectItem>
+   529→                      ))}
+   530→                    </SelectContent>
+   531→                  </Select>
+   532→                </div>
+   533→
+   534→                {/* Precio normal */}
+   535→                <div className="space-y-1.5">
+   536→                  <Label>{t.precioNormal} *</Label>
+   537→                  <Input
+   538→                    type="number"
+   539→                    value={form.precioNormal}
+   540→                    onChange={(e) => setForm(prev => ({ ...prev, precioNormal: e.target.value }))}
+   541→                    placeholder="0"
+   542→                  />
+   543→                </div>
+   544→
+   545→                {/* Disponible */}
+   546→                <div className="flex items-end gap-3 pb-1">
+   547→                  <Label>{t.disponible}</Label>
+   548→                  <Switch
+   549→                    checked={form.disponible}
+   550→                    onCheckedChange={(checked) => setForm(prev => ({ ...prev, disponible: checked }))}
+   551→                  />
+   552→                </div>
+   553→              </div>
+   554→
+   555→              {/* Upselling section */}
+   556→              <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-4 dark:border-emerald-800 dark:bg-emerald-950/20">
+   557→                <div className="mb-3 flex items-center justify-between">
+   558→                  <Label className="flex items-center gap-2 font-medium">
+   559→                    🎯 {t.esUpselling}
+   560→                  </Label>
+   561→                  <Switch
+   562→                    checked={form.esUpselling}
+   563→                    onCheckedChange={(checked) => setForm(prev => ({
+   564→                      ...prev,
+   565→                      esUpselling: checked,
+   566→                      precioUpselling: checked ? prev.precioUpselling : '',
+   567→                      objetivoUpselling: checked ? prev.objetivoUpselling : '',
+   568→                    }))}
+   569→                  />
+   570→                </div>
+   571→
+   572→                {form.esUpselling && (
+   573→                  <div className="grid gap-4 sm:grid-cols-3">
+   574→                    <div className="space-y-1.5">
+   575→                      <Label>{t.precioUpselling}</Label>
+   576→                      <Input
+   577→                        type="number"
+   578→                        value={form.precioUpselling}
+   579→                        onChange={(e) => setForm(prev => ({ ...prev, precioUpselling: e.target.value }))}
+   580→                        placeholder="0"
+   581→                      />
+   582→                    </div>
+   583→                    <div className="space-y-1.5">
+   584→                      <Label>{t.objetivoUpselling} (ES)</Label>
+   585→                      <Input
+   586→                        value={form.objetivoUpselling}
+   587→                        onChange={(e) => setForm(prev => ({ ...prev, objetivoUpselling: e.target.value }))}
+   588→                        placeholder="Ej: Vender maridaje con este platillo"
+   589→                      />
+   590→                    </div>
+   591→                    <div className="space-y-1.5">
+   592→                      <Label>{t.objetivoUpselling} (EN)</Label>
+   593→                      <Input
+   594→                        value={form.objetivoUpsellingEn}
+   595→                        onChange={(e) => setForm(prev => ({ ...prev, objetivoUpsellingEn: e.target.value }))}
+   596→                        placeholder="E.g.: Sell wine pairing with this dish"
+   597→                      />
+   598→                    </div>
+   599→                  </div>
+   600→                )}
+   601→              </div>
+   602→
+   603→              <div className="flex justify-end gap-2">
+   604→                {editingId && (
+   605→                  <Button
+   606→                    variant="outline"
+   607→                    onClick={() => {
+   608→                      setEditingId(null)
+   609→                      setForm(emptyForm)
+   610→                      setActiveTab('catalogo')
+   611→                    }}
+   612→                  >
+   613→                    {tc.cancelar}
+   614→                  </Button>
+   615→                )}
+   616→                <Button
+   617→                  className="bg-emerald-600 hover:bg-emerald-700"
+   618→                  onClick={guardarServicio}
+   619→                  disabled={saving || !form.nombre || !form.precioNormal}
+   620→                >
+   621→                  {saving ? '...' : editingId ? t.actualizar : t.guardar}
+   622→                </Button>
+   623→              </div>
+   624→            </CardContent>
+   625→          </Card>
+   626→        </TabsContent>
+   627→
+   628→        {/* ── Tab 3: Ventas del Día ── */}
+   629→        <TabsContent value="ventas" className="mt-4 space-y-4">
+   630→          {/* Metrics */}
+   631→          <div className="grid gap-3 sm:grid-cols-3">
+   632→            <Card>
+   633→              <CardContent className="p-4">
+   634→                <div className="flex items-center gap-3">
+   635→                  <div className="flex size-10 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/30">
+   636→                    <DollarSign className="size-5 text-green-600" />
+   637→                  </div>
+   638→                  <div>
+   639→                    <p className="text-xs text-muted-foreground">{t.totalVentas}</p>
+   640→                    <p className="text-xl font-bold">{fmt(totalVentas)}</p>
+   641→                  </div>
+   642→                </div>
+   643→              </CardContent>
+   644→            </Card>
+   645→            <Card>
+   646→              <CardContent className="p-4">
+   647→                <div className="flex items-center gap-3">
+   648→                  <div className="flex size-10 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
+   649→                    <TrendingUp className="size-5 text-emerald-600" />
+   650→                  </div>
+   651→                  <div>
+   652→                    <p className="text-xs text-muted-foreground">{t.tasaUpselling}</p>
+   653→                    <p className="text-xl font-bold">{tasaUpselling.toFixed(1)}%</p>
+   654→                  </div>
+   655→                </div>
+   656→              </CardContent>
+   657→            </Card>
+   658→            <Card>
+   659→              <CardContent className="p-4">
+   660→                <div className="flex items-center gap-3">
+   661→                  <div className="flex size-10 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30">
+   662→                    <Star className="size-5 text-amber-600" />
+   663→                  </div>
+   664→                  <div>
+   665→                    <p className="text-xs text-muted-foreground">{t.ticketPromedio}</p>
+   666→                    <p className="text-xl font-bold">{fmt(ticketPromedio)}</p>
+   667→                  </div>
+   668→                </div>
+   669→              </CardContent>
+   670→            </Card>
+   671→          </div>
+   672→
+   673→          {/* Sales table */}
+   674→          <Card>
+   675→            <CardHeader className="pb-3">
+   676→              <CardTitle className="flex items-center gap-2 text-base">
+   677→                <ShoppingCart className="size-4" />
+   678→                {t.ventasDelDia}
+   679→              </CardTitle>
+   680→            </CardHeader>
+   681→            <CardContent>
+   682→              {ventasHoy.length === 0 ? (
+   683→                <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+   684→                  <Clock className="mb-2 size-6 opacity-30" />
+   685→                  <p className="text-sm">{t.noVentas}</p>
+   686→                </div>
+   687→              ) : (
+   688→                <div className="overflow-x-auto">
+   689→                  <Table>
+   690→                    <TableHeader>
+   691→                      <TableRow>
+   692→                        <TableHead>{t.empleado}</TableHead>
+   693→                        <TableHead>{t.servicio}</TableHead>
+   694→                        <TableHead className="text-right">{t.monto}</TableHead>
+   695→                        <TableHead className="text-center">{t.upselling}</TableHead>
+   696→                        <TableHead className="text-center">{t.nps}</TableHead>
+   697→                        <TableHead className="text-right">{t.hora}</TableHead>
+   698→                      </TableRow>
+   699→                    </TableHeader>
+   700→                    <TableBody>
+   701→                      {ventasHoy.map(venta => (
+   702→                        <TableRow key={venta.id}>
+   703→                          <TableCell className="font-medium">
+   704→                            {venta.empleado?.nombre || '—'}
+   705→                          </TableCell>
+   706→                          <TableCell>{venta.nombreServicio || '—'}</TableCell>
+   707→                          <TableCell className="text-right font-medium">
+   708→                            {fmt(venta.montoTotal)}
+   709→                          </TableCell>
+   710→                          <TableCell className="text-center">
+   711→                            {venta.esUpselling ? (
+   712→                              <Badge className="bg-emerald-600 text-[10px] text-white">🎯 UPS</Badge>
+   713→                            ) : (
+   714→                              <Badge variant="outline" className="text-[10px]">Normal</Badge>
+   715→                            )}
+   716→                          </TableCell>
+   717→                          <TableCell className="text-center">
+   718→                            {venta.calificacionNPS !== null ? (
+   719→                              <span className={`font-medium ${
+   720→                                venta.calificacionNPS >= 9 ? 'text-green-600' :
+   721→                                venta.calificacionNPS >= 7 ? 'text-amber-600' : 'text-red-600'
+   722→                              }`}>
+   723→                                {venta.calificacionNPS}
+   724→                              </span>
+   725→                            ) : '—'}
+   726→                          </TableCell>
+   727→                          <TableCell className="text-right text-xs text-muted-foreground">
+   728→                            {new Date(venta.fechaVenta).toLocaleTimeString(locale === 'es' ? 'es-MX' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
+   729→                          </TableCell>
+   730→                        </TableRow>
+   731→                      ))}
+   732→                    </TableBody>
+   733→                  </Table>
+   734→                </div>
+   735→              )}
+   736→            </CardContent>
+   737→          </Card>
+   738→        </TabsContent>
+   739→      </Tabs>
+   740→
+   741→      {/* ── Delete Dialog ── */}
+   742→      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+   743→        <DialogContent className="max-w-sm">
+   744→          <DialogHeader>
+   745→            <DialogTitle>{tc.confirmar}</DialogTitle>
+   746→          </DialogHeader>
+   747→          <p className="text-sm text-muted-foreground">
+   748→            {locale === 'es' ? '¿Seguro que deseas eliminar este servicio?' : 'Are you sure you want to delete this service?'}
+   749→          </p>
+   750→          <DialogFooter>
+   751→            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+   752→              {tc.cancelar}
+   753→            </Button>
+   754→            <Button variant="destructive" onClick={eliminarServicio}>
+   755→              {t.eliminar}
+   756→            </Button>
+   757→          </DialogFooter>
+   758→        </DialogContent>
+   759→      </Dialog>
+   760→    </div>
+   761→  )
+   762→}
+   763→

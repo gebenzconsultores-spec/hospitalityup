@@ -695,3 +695,51 @@ Stage Summary:
 - La app funciona completamente en modo demo sin base de datos
 - Mock data es realista y coincide con lo que los componentes del frontend esperan
 - Listo para despliegue en Vercel
+
+---
+Task ID: 3
+Agent: Propiedades Module Agent
+Task: Create Propiedades (Properties) module with full CRUD
+
+Work Log:
+- Created `src/components/propiedades/propiedades-module.tsx` with full CRUD functionality:
+  - List/grid view of all properties with cards showing: nombre, tipo, ubicacion, region, plan, moneda, activo status, # empleados, # ventas
+  - Color accent bar per card (teal for active, gray for inactive)
+  - Type-specific icons (Hotel, Restaurant, Bar, Spa, Resort, Café, Nightclub, Beach Club)
+  - Stats row at top: total properties, active count, total employees
+  - Search + filter by region and type
+  - "Agregar Propiedad" button opens Dialog with form for all fields
+  - Edit button on each card pre-fills the dialog for updating
+  - Delete button with AlertDialog confirmation
+  - Toast notifications (sonner) for success/error
+  - Responsive grid (1/2/3 columns)
+  - Loading skeleton states
+  - Empty state with Building2 icon
+  - Bilingual support (ES/EN) via i18n translations
+  - Mock data fallback for demo mode (isDatabaseAvailable check)
+- Created `src/app/api/propiedades/[id]/route.ts` with PUT and DELETE handlers:
+  - PUT: updates a property by ID with all form fields
+  - DELETE: deletes a property by ID
+  - Both use db from @/lib/db with isDatabaseAvailable() check
+  - Demo mode fallback via getDemoModeResponse()
+  - Proper error handling with try/catch
+  - Uses async params pattern for Next.js 16
+- Updated `src/lib/store.ts`: added 'propiedades' to ViewMode type
+- Updated `src/components/app-sidebar.tsx`:
+  - Added Building2 icon import from lucide-react
+  - Added 'propiedades' nav item with Building2 icon (positioned after Servicios)
+- Updated `src/app/page.tsx`:
+  - Added lazy-loaded PropiedadesModule dynamic import
+  - Added 'propiedades' to viewLabels (ES: 'Propiedades', EN: 'Properties')
+  - Added case 'propiedades' in ContentArea switch
+- Updated `src/lib/i18n.ts`:
+  - Added 'propiedades' to nav translations (ES/EN)
+  - Added full `propiedades` translation block for ES with all labels
+  - Added full `propiedades` translation block for EN with all labels
+
+Stage Summary:
+- Full CRUD Propiedades module operational with Add/Edit/Delete
+- API routes: GET/POST at /api/propiedades, PUT/DELETE at /api/propiedades/[id]
+- Sidebar navigation item added and wired
+- Bilingual support complete
+- Lint passes cleanly, dev server running without errors

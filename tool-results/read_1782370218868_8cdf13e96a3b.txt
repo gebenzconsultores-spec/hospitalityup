@@ -1,0 +1,402 @@
+    60→    60→        empleadoId: 'GER-001',
+    61→    61→        nombre: 'Carmen Delgado',
+    62→    62→        posicion: 'Gerente A&B',
+    63→    63→        departamento: 'Gerencia',
+    64→    64→        puntuacionTotal: 96,
+    65→    65→        npsPromedio: 9.5,
+    66→    66→        totalUpselling: 12500,
+    67→    67→        indiceFelicidad: 92,
+    68→    68→        foto: null,
+    69→    69→        propiedad: { nombre: 'Hotel Playa Cancún', region: 'cancun' },
+    70→    70→      },
+    71→    71→      {
+    72→    72→        id: 'emp3',
+    73→    73→        empleadoId: 'MES-401',
+    74→    74→        nombre: 'Juan Pérez',
+    75→    75→        posicion: 'Mesero Sr.',
+    76→    76→        departamento: 'A&B',
+    77→    77→        puntuacionTotal: 88.3,
+    78→    78→        npsPromedio: 9.2,
+    79→    79→        totalUpselling: 4580,
+    80→    80→        indiceFelicidad: 88,
+    81→    81→        foto: null,
+    82→    82→        propiedad: { nombre: 'Hotel Playa Cancún', region: 'cancun' },
+    83→    83→      },
+    84→    84→    ],
+    85→    85→    empleadosRiesgo: [
+    86→    86→      {
+    87→    87→        id: 'emp10',
+    88→    88→        empleadoId: 'MES-701',
+    89→    89→        nombre: 'Patricia Ruiz',
+    90→    90→        posicion: 'Mesera',
+    91→    91→        departamento: 'A&B',
+    92→    92→        riesgoBaja: 92,
+    93→    93→        nivelRiesgoBaja: 'critico',
+    94→    94→        indiceFelicidad: 35,
+    95→    95→        npsPromedio: 5.2,
+    96→    96→        foto: null,
+    97→    97→        propiedad: { nombre: 'Hotel Playa Cancún', region: 'cancun' },
+    98→    98→      },
+    99→    99→      {
+   100→   100→        id: 'emp8',
+   101→   101→        empleadoId: 'MES-402',
+   102→   102→        nombre: 'María García',
+   103→   103→        posicion: 'Mesera Jr.',
+   104→   104→        departamento: 'A&B',
+   105→   105→        riesgoBaja: 78,
+   106→   106→        nivelRiesgoBaja: 'alto',
+   107→   107→        indiceFelicidad: 42,
+   108→   108→        npsPromedio: 6.1,
+   109→   109→        foto: null,
+   110→   110→        propiedad: { nombre: 'Hotel Playa Cancún', region: 'cancun' },
+   111→   111→      },
+   112→   112→      {
+   113→   113→        id: 'emp9',
+   114→   114→        empleadoId: 'REC-801',
+   115→   115→        nombre: 'Diego Flores',
+   116→   116→        posicion: 'Recepcionista Jr.',
+   117→   117→        departamento: 'Recepción',
+   118→   118→        riesgoBaja: 65,
+   119→   119→        nivelRiesgoBaja: 'alto',
+   120→   120→        indiceFelicidad: 48,
+   121→   121→        npsPromedio: 6.8,
+   122→   122→        foto: null,
+   123→   123→        propiedad: { nombre: 'Gran Hotel CDMX', region: 'cdmx' },
+   124→   124→      },
+   125→   125→    ],
+   126→   126→  }
+   127→   127→}
+   128→   128→
+   129→   129→// ─── Propiedades mock data ─────────────────────────────────────
+   130→   130→export function getMockPropiedades() {
+   131→   131→  return [
+   132→   132→    { id: 'prop1', nombre: 'Hotel Playa Cancún', nombreEn: 'Cancún Beach Hotel', tipo: 'hotel', ubicacion: 'Blvd. Kukulcán KM 12.5, Cancún', region: 'cancun', plan: 'growth', moneda: 'MXN', activo: true, createdAt: '2024-01-15T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', empleadosActivos: 7, capacitacionesActivas: 3, totalVentas: 14 },
+   133→   133→    { id: 'prop2', nombre: 'Restaurante La Terraza', nombreEn: 'La Terraza Restaurant', tipo: 'restaurante', ubicacion: 'Calle 5 de Mayo 208, Puebla', region: 'puebla', plan: 'boutique', moneda: 'MXN', activo: true, createdAt: '2024-02-01T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', empleadosActivos: 1, capacitacionesActivas: 0, totalVentas: 1 },
+   134→   134→    { id: 'prop3', nombre: 'Gran Hotel CDMX', nombreEn: 'Grand Hotel Mexico City', tipo: 'hotel', ubicacion: 'Av. Juárez 70, CDMX', region: 'cdmx', plan: 'enterprise', moneda: 'MXN', activo: true, createdAt: '2024-03-01T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', empleadosActivos: 2, capacitacionesActivas: 0, totalVentas: 4 },
+   135→   135→    { id: 'prop4', nombre: 'Bar Mar Azul', nombreEn: 'Blue Sea Bar', tipo: 'bar', ubicacion: 'Av. 10, Playa del Carmen', region: 'playa_carmen', plan: 'boutique', moneda: 'MXN', activo: true, createdAt: '2024-04-01T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', empleadosActivos: 1, capacitacionesActivas: 1, totalVentas: 2 },
+   136→   136→    { id: 'prop5', nombre: 'Resort Los Cabos', nombreEn: 'Los Cabos Resort', tipo: 'hotel', ubicacion: 'Carretera Transpeninsular KM 7, Los Cabos', region: 'los_cabos', plan: 'growth', moneda: 'USD', activo: true, createdAt: '2024-05-01T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', empleadosActivos: 0, capacitacionesActivas: 0, totalVentas: 3 },
+   137→   137→    { id: 'prop6', nombre: 'Restaurante Puerto Veracruz', nombreEn: 'Veracruz Port Restaurant', tipo: 'restaurante', ubicacion: 'Boulevard Manuel Ávila Camacho 1200', region: 'veracruz', plan: 'boutique', moneda: 'MXN', activo: true, createdAt: '2024-06-01T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', empleadosActivos: 0, capacitacionesActivas: 0, totalVentas: 0 },
+   138→   138→  ]
+   139→   139→}
+   140→   140→
+   141→   141→// ─── Empleados mock data (matching Prisma shape) ──────────────
+   142→   142→export function getMockEmpleados() {
+   143→   143→  return [
+   144→   144→    {
+   145→   145→      id: 'emp1', empleadoId: 'CAP-501', nombre: 'Laura Hernández', posicion: 'Capitana', posicionEn: 'Captain', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
+   146→   146→      fechaIngreso: '2022-03-15T00:00:00.000Z', estado: 'activo', nivelCarrera: 4, rutaCarrera: 'Mesera Jr. → Mesera Sr. → Capitana → Gerente A&B', rutaCarreraEn: 'Jr. Waitress → Sr. Waitress → Captain → F&B Manager',
+   147→   147→      puntuacionConocimiento: 95, puntuacionVentas: 98, puntuacionHospitalidad: 96, puntuacionTotal: 96.3,
+   148→   148→      totalUpselling: 8920, npsPromedio: 9.8, cursosCompletados: 8, cursosEnProgreso: 1,
+   149→   149→      indiceFelicidad: 95, riesgoBaja: 5, nivelRiesgoBaja: 'bajo',
+   150→   150→      justificacionRiesgo: null, sugerenciaCapacitacion: null,
+   151→   151→      ultimaActividad: '2024-06-10T14:30:00.000Z', fechaBaja: null, reemplazoTargetId: null,
+   152→   152→      propiedadId: 'prop1',
+   153→   153→      propiedad: { id: 'prop1', nombre: 'Hotel Playa Cancún', nombreEn: 'Cancún Beach Hotel', region: 'cancun' },
+   154→   154→      _count: { cursos: 9, alertas: 0, ventas: 6 },
+   155→   155→      createdAt: '2022-03-15T00:00:00.000Z', updatedAt: '2024-06-10T14:30:00.000Z',
+   156→   156→    },
+   157→   157→    {
+   158→   158→      id: 'emp2', empleadoId: 'GER-001', nombre: 'Carmen Delgado', posicion: 'Gerente A&B', posicionEn: 'F&B Manager', departamento: 'Gerencia', departamentoEn: 'Management', foto: null,
+   159→   159→      fechaIngreso: '2020-01-10T00:00:00.000Z', estado: 'activo', nivelCarrera: 5, rutaCarrera: 'Mesera → Capitana → Subgerente → Gerente A&B', rutaCarreraEn: 'Waitress → Captain → Asst. Manager → F&B Manager',
+   160→   160→      puntuacionConocimiento: 92, puntuacionVentas: 99, puntuacionHospitalidad: 97, puntuacionTotal: 96,
+   161→   161→      totalUpselling: 12500, npsPromedio: 9.5, cursosCompletados: 10, cursosEnProgreso: 0,
+   162→   162→      indiceFelicidad: 92, riesgoBaja: 3, nivelRiesgoBaja: 'bajo',
+   163→   163→      justificacionRiesgo: null, sugerenciaCapacitacion: null,
+   164→   164→      ultimaActividad: '2024-06-11T09:00:00.000Z', fechaBaja: null, reemplazoTargetId: null,
+   165→   165→      propiedadId: 'prop1',
+   166→   166→      propiedad: { id: 'prop1', nombre: 'Hotel Playa Cancún', nombreEn: 'Cancún Beach Hotel', region: 'cancun' },
+   167→   167→      _count: { cursos: 10, alertas: 0, ventas: 4 },
+   168→   168→      createdAt: '2020-01-10T00:00:00.000Z', updatedAt: '2024-06-11T09:00:00.000Z',
+   169→   169→    },
+   170→   170→    {
+   171→   171→      id: 'emp3', empleadoId: 'MES-401', nombre: 'Juan Pérez', posicion: 'Mesero Sr.', posicionEn: 'Sr. Waiter', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
+   172→   172→      fechaIngreso: '2023-02-20T00:00:00.000Z', estado: 'activo', nivelCarrera: 3, rutaCarrera: 'Mesero Jr. → Mesero Sr. → Capitán', rutaCarreraEn: 'Jr. Waiter → Sr. Waiter → Captain',
+   173→   173→      puntuacionConocimiento: 82, puntuacionVentas: 90, puntuacionHospitalidad: 92, puntuacionTotal: 88.3,
+   174→   174→      totalUpselling: 4580, npsPromedio: 9.2, cursosCompletados: 5, cursosEnProgreso: 2,
+   175→   175→      indiceFelicidad: 88, riesgoBaja: 12, nivelRiesgoBaja: 'bajo',
+   176→   176→      justificacionRiesgo: null, sugerenciaCapacitacion: null,
+   177→   177→      ultimaActividad: '2024-06-10T16:45:00.000Z', fechaBaja: null, reemplazoTargetId: null,
+   178→   178→      propiedadId: 'prop1',
+   179→   179→      propiedad: { id: 'prop1', nombre: 'Hotel Playa Cancún', nombreEn: 'Cancún Beach Hotel', region: 'cancun' },
+   180→   180→      _count: { cursos: 7, alertas: 0, ventas: 5 },
+   181→   181→      createdAt: '2023-02-20T00:00:00.000Z', updatedAt: '2024-06-10T16:45:00.000Z',
+   182→   182→    },
+   183→   183→    {
+   184→   184→      id: 'emp4', empleadoId: 'MES-301', nombre: 'Roberto Sánchez', posicion: 'Mesero', posicionEn: 'Waiter', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
+   185→   185→      fechaIngreso: '2023-06-01T00:00:00.000Z', estado: 'activo', nivelCarrera: 2, rutaCarrera: 'Mesero Jr. → Mesero → Mesero Sr.', rutaCarreraEn: 'Jr. Waiter → Waiter → Sr. Waiter',
+   186→   186→      puntuacionConocimiento: 70, puntuacionVentas: 75, puntuacionHospitalidad: 80, puntuacionTotal: 75.2,
+   187→   187→      totalUpselling: 2350, npsPromedio: 8.5, cursosCompletados: 3, cursosEnProgreso: 1,
+   188→   188→      indiceFelicidad: 78, riesgoBaja: 25, nivelRiesgoBaja: 'medio',
+   189→   189→      justificacionRiesgo: 'Nivel de ventas en upselling por debajo del promedio', sugerenciaCapacitacion: 'Curso de técnicas de upselling',
+   190→   190→      ultimaActividad: '2024-06-09T11:20:00.000Z', fechaBaja: null, reemplazoTargetId: null,
+   191→   191→      propiedadId: 'prop1',
+   192→   192→      propiedad: { id: 'prop1', nombre: 'Hotel Playa Cancún', nombreEn: 'Cancún Beach Hotel', region: 'cancun' },
+   193→   193→      _count: { cursos: 4, alertas: 1, ventas: 3 },
+   194→   194→      createdAt: '2023-06-01T00:00:00.000Z', updatedAt: '2024-06-09T11:20:00.000Z',
+   195→   195→    },
+   196→   196→    {
+   197→   197→      id: 'emp5', empleadoId: 'BAR-201', nombre: 'Miguel Torres', posicion: 'Bartender', posicionEn: 'Bartender', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
+   198→   198→      fechaIngreso: '2023-08-15T00:00:00.000Z', estado: 'activo', nivelCarrera: 2, rutaCarrera: 'Barback → Bartender → Bartender Sr.', rutaCarreraEn: 'Barback → Bartender → Sr. Bartender',
+   199→   199→      puntuacionConocimiento: 78, puntuacionVentas: 85, puntuacionHospitalidad: 82, puntuacionTotal: 82,
+   200→   200→      totalUpselling: 3200, npsPromedio: 8.8, cursosCompletados: 4, cursosEnProgreso: 1,
+   201→   201→      indiceFelicidad: 82, riesgoBaja: 18, nivelRiesgoBaja: 'bajo',
+   202→   202→      justificacionRiesgo: null, sugerenciaCapacitacion: null,
+   203→   203→      ultimaActividad: '2024-06-10T20:15:00.000Z', fechaBaja: null, reemplazoTargetId: null,
+   204→   204→      propiedadId: 'prop1',
+   205→   205→      propiedad: { id: 'prop1', nombre: 'Hotel Playa Cancún', nombreEn: 'Cancún Beach Hotel', region: 'cancun' },
+   206→   206→      _count: { cursos: 5, alertas: 0, ventas: 4 },
+   207→   207→      createdAt: '2023-08-15T00:00:00.000Z', updatedAt: '2024-06-10T20:15:00.000Z',
+   208→   208→    },
+   209→   209→    {
+   210→   210→      id: 'emp6', empleadoId: 'ONB-101', nombre: 'Ana Martínez', posicion: 'Mesera Jr.', posicionEn: 'Jr. Waitress', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
+   211→   211→      fechaIngreso: '2024-05-01T00:00:00.000Z', estado: 'onboarding', nivelCarrera: 1, rutaCarrera: 'Mesera Jr. → Mesera → Mesera Sr.', rutaCarreraEn: 'Jr. Waitress → Waitress → Sr. Waitress',
+   212→   212→      puntuacionConocimiento: 45, puntuacionVentas: 30, puntuacionHospitalidad: 60, puntuacionTotal: 44.3,
+   213→   213→      totalUpselling: 0, npsPromedio: 0, cursosCompletados: 0, cursosEnProgreso: 2,
+   214→   214→      indiceFelicidad: 75, riesgoBaja: 15, nivelRiesgoBaja: 'bajo',
+   215→   215→      justificacionRiesgo: null, sugerenciaCapacitacion: 'Onboarding: curso de hospitalidad básica',
+   216→   216→      ultimaActividad: '2024-06-11T08:00:00.000Z', fechaBaja: null, reemplazoTargetId: null,
+   217→   217→      propiedadId: 'prop1',
+   218→   218→      propiedad: { id: 'prop1', nombre: 'Hotel Playa Cancún', nombreEn: 'Cancún Beach Hotel', region: 'cancun' },
+   219→   219→      _count: { cursos: 2, alertas: 0, ventas: 0 },
+   220→   220→      createdAt: '2024-05-01T00:00:00.000Z', updatedAt: '2024-06-11T08:00:00.000Z',
+   221→   221→    },
+   222→   222→    {
+   223→   223→      id: 'emp7', empleadoId: 'ONB-102', nombre: 'Carlos López', posicion: 'Recepcionista', posicionEn: 'Receptionist', departamento: 'Recepción', departamentoEn: 'Reception', foto: null,
+   224→   224→      fechaIngreso: '2024-04-15T00:00:00.000Z', estado: 'onboarding', nivelCarrera: 1, rutaCarrera: 'Recepcionista Jr. → Recepcionista → Concierge', rutaCarreraEn: 'Jr. Receptionist → Receptionist → Concierge',
+   225→   225→      puntuacionConocimiento: 55, puntuacionVentas: 40, puntuacionHospitalidad: 70, puntuacionTotal: 54.8,
+   226→   226→      totalUpselling: 200, npsPromedio: 7.5, cursosCompletados: 1, cursosEnProgreso: 1,
+   227→   227→      indiceFelicidad: 72, riesgoBaja: 20, nivelRiesgoBaja: 'medio',
+   228→   228→      justificacionRiesgo: 'Aún en periodo de adaptación', sugerenciaCapacitacion: 'Mentoría con recepcionista senior',
+   229→   229→      ultimaActividad: '2024-06-10T17:00:00.000Z', fechaBaja: null, reemplazoTargetId: null,
+   230→   230→      propiedadId: 'prop3',
+   231→   231→      propiedad: { id: 'prop3', nombre: 'Gran Hotel CDMX', nombreEn: 'Grand Hotel Mexico City', region: 'cdmx' },
+   232→   232→      _count: { cursos: 2, alertas: 1, ventas: 1 },
+   233→   233→      createdAt: '2024-04-15T00:00:00.000Z', updatedAt: '2024-06-10T17:00:00.000Z',
+   234→   234→    },
+   235→   235→    {
+   236→   236→      id: 'emp8', empleadoId: 'MES-402', nombre: 'María García', posicion: 'Mesera Jr.', posicionEn: 'Jr. Waitress', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
+   237→   237→      fechaIngreso: '2023-11-01T00:00:00.000Z', estado: 'activo', nivelCarrera: 1, rutaCarrera: 'Mesera Jr. → Mesera', rutaCarreraEn: 'Jr. Waitress → Waitress',
+   238→   238→      puntuacionConocimiento: 50, puntuacionVentas: 40, puntuacionHospitalidad: 55, puntuacionTotal: 48.3,
+   239→   239→      totalUpselling: 450, npsPromedio: 6.1, cursosCompletados: 1, cursosEnProgreso: 0,
+   240→   240→      indiceFelicidad: 42, riesgoBaja: 78, nivelRiesgoBaja: 'alto',
+   241→   241→      justificacionRiesgo: 'NPS bajo consecutivo, índice de felicidad decreciente, sin actividad en capacitaciones', sugerenciaCapacitacion: 'Entrevista de retención + curso de motivación laboral',
+   242→   242→      ultimaActividad: '2024-06-05T10:00:00.000Z', fechaBaja: null, reemplazoTargetId: null,
+   243→   243→      propiedadId: 'prop1',
+   244→   244→      propiedad: { id: 'prop1', nombre: 'Hotel Playa Cancún', nombreEn: 'Cancún Beach Hotel', region: 'cancun' },
+   245→   245→      _count: { cursos: 1, alertas: 2, ventas: 2 },
+   246→   246→      createdAt: '2023-11-01T00:00:00.000Z', updatedAt: '2024-06-05T10:00:00.000Z',
+   247→   247→    },
+   248→   248→    {
+   249→   249→      id: 'emp9', empleadoId: 'REC-801', nombre: 'Diego Flores', posicion: 'Recepcionista Jr.', posicionEn: 'Jr. Receptionist', departamento: 'Recepción', departamentoEn: 'Reception', foto: null,
+   250→   250→      fechaIngreso: '2023-09-10T00:00:00.000Z', estado: 'activo', nivelCarrera: 1, rutaCarrera: 'Recepcionista Jr. → Recepcionista', rutaCarreraEn: 'Jr. Receptionist → Receptionist',
+   251→   251→      puntuacionConocimiento: 55, puntuacionVentas: 45, puntuacionHospitalidad: 60, puntuacionTotal: 53.3,
+   252→   252→      totalUpselling: 600, npsPromedio: 6.8, cursosCompletados: 2, cursosEnProgreso: 0,
+   253→   253→      indiceFelicidad: 48, riesgoBaja: 65, nivelRiesgoBaja: 'alto',
+   254→   254→      justificacionRiesgo: 'Índice de felicidad bajo, estancamiento en nivel de carrera, caída en NPS', sugerenciaCapacitacion: 'Plan de desarrollo individual + capacitación en servicio al cliente',
+   255→   255→      ultimaActividad: '2024-06-07T14:30:00.000Z', fechaBaja: null, reemplazoTargetId: null,
+   256→   256→      propiedadId: 'prop3',
+   257→   257→      propiedad: { id: 'prop3', nombre: 'Gran Hotel CDMX', nombreEn: 'Grand Hotel Mexico City', region: 'cdmx' },
+   258→   258→      _count: { cursos: 2, alertas: 2, ventas: 2 },
+   259→   259→      createdAt: '2023-09-10T00:00:00.000Z', updatedAt: '2024-06-07T14:30:00.000Z',
+   260→   260→    },
+   261→   261→    {
+   262→   262→      id: 'emp10', empleadoId: 'MES-701', nombre: 'Patricia Ruiz', posicion: 'Mesera', posicionEn: 'Waitress', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
+   263→   263→      fechaIngreso: '2022-07-01T00:00:00.000Z', estado: 'activo', nivelCarrera: 2, rutaCarrera: 'Mesera Jr. → Mesera', rutaCarreraEn: 'Jr. Waitress → Waitress',
+   264→   264→      puntuacionConocimiento: 40, puntuacionVentas: 30, puntuacionHospitalidad: 35, puntuacionTotal: 34.8,
+   265→   265→      totalUpselling: 120, npsPromedio: 5.2, cursosCompletados: 0, cursosEnProgreso: 0,
+   266→   266→      indiceFelicidad: 35, riesgoBaja: 92, nivelRiesgoBaja: 'critico',
+   267→   267→      justificacionRiesgo: 'Combinación de factores críticos: NPS muy bajo, felicidad en mínimo, sin participación en capacitaciones, inactividad prolongada en la app', sugerenciaCapacitacion: 'Intervención inmediata: entrevista de retención con RH, considerar cambio de área',
+   268→   268→      ultimaActividad: '2024-05-28T09:00:00.000Z', fechaBaja: null, reemplazoTargetId: null,
+   269→   269→      propiedadId: 'prop1',
+   270→   270→      propiedad: { id: 'prop1', nombre: 'Hotel Playa Cancún', nombreEn: 'Cancún Beach Hotel', region: 'cancun' },
+   271→   271→      _count: { cursos: 0, alertas: 3, ventas: 1 },
+   272→   272→      createdAt: '2022-07-01T00:00:00.000Z', updatedAt: '2024-05-28T09:00:00.000Z',
+   273→   273→    },
+   274→   274→    {
+   275→   275→      id: 'emp11', empleadoId: 'ONB-103', nombre: 'Sofía Ramírez', posicion: 'Mesera Jr.', posicionEn: 'Jr. Waitress', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
+   276→   276→      fechaIngreso: '2024-06-01T00:00:00.000Z', estado: 'onboarding', nivelCarrera: 1, rutaCarrera: 'Mesera Jr. → Mesera', rutaCarreraEn: 'Jr. Waitress → Waitress',
+   277→   277→      puntuacionConocimiento: 30, puntuacionVentas: 20, puntuacionHospitalidad: 50, puntuacionTotal: 33.5,
+   278→   278→      totalUpselling: 0, npsPromedio: 0, cursosCompletados: 0, cursosEnProgreso: 3,
+   279→   279→      indiceFelicidad: 80, riesgoBaja: 10, nivelRiesgoBaja: 'bajo',
+   280→   280→      justificacionRiesgo: null, sugerenciaCapacitacion: null,
+   281→   281→      ultimaActividad: '2024-06-11T10:00:00.000Z', fechaBaja: null, reemplazoTargetId: null,
+   282→   282→      propiedadId: 'prop2',
+   283→   283→      propiedad: { id: 'prop2', nombre: 'Restaurante La Terraza', nombreEn: 'La Terraza Restaurant', region: 'puebla' },
+   284→   284→      _count: { cursos: 3, alertas: 0, ventas: 0 },
+   285→   285→      createdAt: '2024-06-01T00:00:00.000Z', updatedAt: '2024-06-11T10:00:00.000Z',
+   286→   286→    },
+   287→   287→    {
+   288→   288→      id: 'emp12', empleadoId: 'OFF-001', nombre: 'Fernando Morales', posicion: 'Bartender Sr.', posicionEn: 'Sr. Bartender', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
+   289→   289→      fechaIngreso: '2021-05-15T00:00:00.000Z', estado: 'offboarding', nivelCarrera: 3, rutaCarrera: 'Bartender → Bartender Sr. → Bar Manager', rutaCarreraEn: 'Bartender → Sr. Bartender → Bar Manager',
+   290→   290→      puntuacionConocimiento: 75, puntuacionVentas: 70, puntuacionHospitalidad: 72, puntuacionTotal: 72.3,
+   291→   291→      totalUpselling: 1800, npsPromedio: 7.8, cursosCompletados: 4, cursosEnProgreso: 0,
+   292→   292→      indiceFelicidad: 55, riesgoBaja: 85, nivelRiesgoBaja: 'alto',
+   293→   293→      justificacionRiesgo: 'Empleado en proceso de offboarding, fecha de baja programada', sugerenciaCapacitacion: 'Reemplazo en proceso desde pool de candidatos',
+   294→   294→      ultimaActividad: '2024-06-08T18:00:00.000Z', fechaBaja: '2024-06-30T00:00:00.000Z', reemplazoTargetId: null,
+   295→   295→      propiedadId: 'prop4',
+   296→   296→      propiedad: { id: 'prop4', nombre: 'Bar Mar Azul', nombreEn: 'Blue Sea Bar', region: 'playa_carmen' },
+   297→   297→      _count: { cursos: 4, alertas: 1, ventas: 3 },
+   298→   298→      createdAt: '2021-05-15T00:00:00.000Z', updatedAt: '2024-06-08T18:00:00.000Z',
+   299→   299→    },
+   300→   300→  ]
+   301→   301→}
+   302→   302→
+   303→   303→// ─── Servicios mock data ──────────────────────────────────────
+   304→   304→export function getMockServicios() {
+   305→   305→  return [
+   306→   306→    { id: 'srv1', propiedadId: 'prop1', nombre: 'Filete Mignon con Trufa', nombreEn: 'Truffle Filet Mignon', descripcion: 'Filete de res con salsa de trufa negra y vegetales asados', descripcionEn: 'Beef tenderloin with black truffle sauce and roasted vegetables', categoria: 'platillo', categoriaEn: 'dish', esUpselling: true, precioNormal: 450, precioUpselling: 680, objetivoUpselling: 'Ofrecer maridaje de vino con el filete (+$230)', objetivoUpsellingEn: 'Offer wine pairing with the filet (+$230)', imagen: null, disponible: true, orden: 1, createdAt: '2024-01-20T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', propiedad: { id: 'prop1', nombre: 'Hotel Playa Cancún', nombreEn: 'Cancún Beach Hotel', moneda: 'MXN' } },
+   307→   307→    { id: 'srv2', propiedadId: 'prop1', nombre: 'Ceviche de Camarón Premium', nombreEn: 'Premium Shrimp Ceviche', descripcion: 'Ceviche de camarón con aguacate y chipotle', descripcionEn: 'Shrimp ceviche with avocado and chipotle', categoria: 'platillo', categoriaEn: 'dish', esUpselling: true, precioNormal: 280, precioUpselling: 420, objetivoUpselling: 'Sugerir versión premium con camarón gigante', objetivoUpsellingEn: 'Suggest premium version with jumbo shrimp', imagen: null, disponible: true, orden: 2, createdAt: '2024-01-20T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', propiedad: { id: 'prop1', nombre: 'Hotel Playa Cancún', nombreEn: 'Cancún Beach Hotel', moneda: 'MXN' } },
+   308→   308→    { id: 'srv3', propiedadId: 'prop1', nombre: 'Margarita de Mezcal Artesanal', nombreEn: 'Artisan Mezcal Margarita', descripcion: 'Margarita con mezcal artesanal y sal de gusano', descripcionEn: 'Margarita with artisan mezcal and worm salt', categoria: 'bebida', categoriaEn: 'drink', esUpselling: true, precioNormal: 180, precioUpselling: 320, objetivoUpselling: 'Ofrecer upgrade a mezcal premium', objetivoUpsellingEn: 'Offer upgrade to premium mezcal', imagen: null, disponible: true, orden: 3, createdAt: '2024-01-20T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', propiedad: { id: 'prop1', nombre: 'Hotel Playa Cancún', nombreEn: 'Cancún Beach Hotel', moneda: 'MXN' } },
+   309→   309→    { id: 'srv4', propiedadId: 'prop1', nombre: 'Tour Isla Mujeres Privado', nombreEn: 'Private Isla Mujeres Tour', descripcion: 'Tour privado en yate a Isla Mujeres con snorkel y comida', descripcionEn: 'Private yacht tour to Isla Mujeres with snorkeling and lunch', categoria: 'tour', categoriaEn: 'tour', esUpselling: true, precioNormal: 2500, precioUpselling: 4500, objetivoUpselling: 'Ofrecer upgrade a tour privado vs compartido', objetivoUpsellingEn: 'Offer upgrade to private vs shared tour', imagen: null, disponible: true, orden: 4, createdAt: '2024-01-20T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', propiedad: { id: 'prop1', nombre: 'Hotel Playa Cancún', nombreEn: 'Cancún Beach Hotel', moneda: 'MXN' } },
+   310→   310→    { id: 'srv5', propiedadId: 'prop1', nombre: 'Suite Upgrade Ocean View', nombreEn: 'Ocean View Suite Upgrade', descripcion: 'Upgrade de habitación estándar a suite con vista al mar', descripcionEn: 'Upgrade from standard room to ocean view suite', categoria: 'habitacion', categoriaEn: 'room', esUpselling: true, precioNormal: 3500, precioUpselling: 6800, objetivoUpselling: 'Ofrecer upgrade al check-in', objetivoUpsellingEn: 'Offer upgrade at check-in', imagen: null, disponible: true, orden: 5, createdAt: '2024-01-20T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', propiedad: { id: 'prop1', nombre: 'Hotel Playa Cancún', nombreEn: 'Cancún Beach Hotel', moneda: 'MXN' } },
+   311→   311→    { id: 'srv6', propiedadId: 'prop1', nombre: 'Masaje Relajante Spa', nombreEn: 'Relaxing Spa Massage', descripcion: 'Masaje relajante de 60 minutos con aceites esenciales', descripcionEn: '60-minute relaxing massage with essential oils', categoria: 'masaje', categoriaEn: 'massage', esUpselling: false, precioNormal: 1200, precioUpselling: null, objetivoUpselling: null, objetivoUpsellingEn: null, imagen: null, disponible: true, orden: 6, createdAt: '2024-01-20T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', propiedad: { id: 'prop1', nombre: 'Hotel Playa Cancún', nombreEn: 'Cancún Beach Hotel', moneda: 'MXN' } },
+   312→   312→    { id: 'srv7', propiedadId: 'prop1', nombre: 'Cena Romántica en Playa', nombreEn: 'Romantic Beach Dinner', descripcion: 'Cena privada en la playa con menú degustación', descripcionEn: 'Private beach dinner with tasting menu', categoria: 'experiencia', categoriaEn: 'experience', esUpselling: true, precioNormal: 3800, precioUpselling: 5500, objetivoUpselling: 'Incluir propuesta con champagne y flores', objetivoUpsellingEn: 'Include proposal package with champagne and flowers', imagen: null, disponible: true, orden: 7, createdAt: '2024-01-20T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', propiedad: { id: 'prop1', nombre: 'Hotel Playa Cancún', nombreEn: 'Cancún Beach Hotel', moneda: 'MXN' } },
+   313→   313→    { id: 'srv8', propiedadId: 'prop1', nombre: 'Tacos al Pastor', nombreEn: 'Tacos al Pastor', descripcion: 'Tacos al pastor tradicionales con piña', descripcionEn: 'Traditional al pastor tacos with pineapple', categoria: 'platillo', categoriaEn: 'dish', esUpselling: false, precioNormal: 120, precioUpselling: null, objetivoUpselling: null, objetivoUpsellingEn: null, imagen: null, disponible: true, orden: 8, createdAt: '2024-01-20T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', propiedad: { id: 'prop1', nombre: 'Hotel Playa Cancún', nombreEn: 'Cancún Beach Hotel', moneda: 'MXN' } },
+   314→   314→    { id: 'srv9', propiedadId: 'prop2', nombre: 'Mole Poblano Tradicional', nombreEn: 'Traditional Mole Poblano', descripcion: 'Mole poblano con pollo y arroz', descripcionEn: 'Mole poblano with chicken and rice', categoria: 'platillo', categoriaEn: 'dish', esUpselling: false, precioNormal: 220, precioUpselling: null, objetivoUpselling: null, objetivoUpsellingEn: null, imagen: null, disponible: true, orden: 1, createdAt: '2024-02-10T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', propiedad: { id: 'prop2', nombre: 'Restaurante La Terraza', nombreEn: 'La Terraza Restaurant', moneda: 'MXN' } },
+   315→   315→    { id: 'srv10', propiedadId: 'prop2', nombre: 'Chiles en Nogada', nombreEn: 'Chiles en Nogada', descripcion: 'Chiles en nogada tradicionales con granada', descripcionEn: 'Traditional chiles en nogada with pomegranate', categoria: 'platillo', categoriaEn: 'dish', esUpselling: true, precioNormal: 280, precioUpselling: 380, objetivoUpselling: 'Ofrecer versión gourmet con ingredientes premium', objetivoUpsellingEn: 'Offer gourmet version with premium ingredients', imagen: null, disponible: true, orden: 2, createdAt: '2024-02-10T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', propiedad: { id: 'prop2', nombre: 'Restaurante La Terraza', nombreEn: 'La Terraza Restaurant', moneda: 'MXN' } },
+   316→   316→    { id: 'srv11', propiedadId: 'prop3', nombre: 'Sushi Omakase', nombreEn: 'Omakase Sushi', descripcion: 'Menú omakase de 12 piezas con chef exclusivo', descripcionEn: '12-piece omakase menu with exclusive chef', categoria: 'platillo', categoriaEn: 'dish', esUpselling: true, precioNormal: 850, precioUpselling: 1500, objetivoUpselling: 'Ofrecer maridaje de sake premium', objetivoUpsellingEn: 'Offer premium sake pairing', imagen: null, disponible: true, orden: 1, createdAt: '2024-03-15T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', propiedad: { id: 'prop3', nombre: 'Gran Hotel CDMX', nombreEn: 'Grand Hotel Mexico City', moneda: 'MXN' } },
+   317→   317→    { id: 'srv12', propiedadId: 'prop3', nombre: 'Mezcal Tasting Experience', nombreEn: 'Mezcal Tasting Experience', descripcion: 'Degustación de 5 mezcales con maridaje', descripcionEn: 'Tasting of 5 mezcals with pairing', categoria: 'experiencia', categoriaEn: 'experience', esUpselling: true, precioNormal: 600, precioUpselling: 950, objetivoUpselling: 'Incluir botella de mezcal para llevar', objetivoUpsellingEn: 'Include mezcal bottle to go', imagen: null, disponible: true, orden: 2, createdAt: '2024-03-15T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', propiedad: { id: 'prop3', nombre: 'Gran Hotel CDMX', nombreEn: 'Grand Hotel Mexico City', moneda: 'MXN' } },
+   318→   318→    { id: 'srv13', propiedadId: 'prop3', nombre: 'Cocktail de Bienvenida', nombreEn: 'Welcome Cocktail', descripcion: 'Cocktail de bienvenida con mezcal y frutas tropicales', descripcionEn: 'Welcome cocktail with mezcal and tropical fruits', categoria: 'bebida', categoriaEn: 'drink', esUpselling: false, precioNormal: 150, precioUpselling: null, objetivoUpselling: null, objetivoUpsellingEn: null, imagen: null, disponible: true, orden: 3, createdAt: '2024-03-15T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', propiedad: { id: 'prop3', nombre: 'Gran Hotel CDMX', nombreEn: 'Grand Hotel Mexico City', moneda: 'MXN' } },
+   319→   319→    { id: 'srv14', propiedadId: 'prop4', nombre: 'Cocktail Tropical Sunset', nombreEn: 'Tropical Sunset Cocktail', descripcion: 'Cocktail con ron, jugo de maracuyá y granadina', descripcionEn: 'Cocktail with rum, passion fruit juice and grenadine', categoria: 'bebida', categoriaEn: 'drink', esUpselling: true, precioNormal: 150, precioUpselling: 250, objetivoUpselling: 'Ofrecer versión premium con ron añejo', objetivoUpsellingEn: 'Offer premium version with aged rum', imagen: null, disponible: true, orden: 1, createdAt: '2024-04-10T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', propiedad: { id: 'prop4', nombre: 'Bar Mar Azul', nombreEn: 'Blue Sea Bar', moneda: 'MXN' } },
+   320→   320→    { id: 'srv15', propiedadId: 'prop4', nombre: 'Tabla de Mariscos Premium', nombreEn: 'Premium Seafood Platter', descripcion: 'Tabla de mariscos con ostras, camarones y ceviche', descripcionEn: 'Seafood platter with oysters, shrimp and ceviche', categoria: 'platillo', categoriaEn: 'dish', esUpselling: true, precioNormal: 650, precioUpselling: 980, objetivoUpselling: 'Agregar langosta a la tabla', objetivoUpsellingEn: 'Add lobster to the platter', imagen: null, disponible: true, orden: 2, createdAt: '2024-04-10T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', propiedad: { id: 'prop4', nombre: 'Bar Mar Azul', nombreEn: 'Blue Sea Bar', moneda: 'MXN' } },
+   321→   321→    { id: 'srv16', propiedadId: 'prop5', nombre: 'Sunset Catamaran Tour', nombreEn: 'Sunset Catamaran Tour', descripcion: 'Tour en catamarán al atardecer con open bar', descripcionEn: 'Sunset catamaran tour with open bar', categoria: 'tour', categoriaEn: 'tour', esUpselling: true, precioNormal: 1800, precioUpselling: 3200, objetivoUpselling: 'Ofrecer upgrade a tour privado', objetivoUpsellingEn: 'Offer upgrade to private tour', imagen: null, disponible: true, orden: 1, createdAt: '2024-05-10T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', propiedad: { id: 'prop5', nombre: 'Resort Los Cabos', nombreEn: 'Los Cabos Resort', moneda: 'USD' } },
+   322→   322→    { id: 'srv17', propiedadId: 'prop5', nombre: 'Suite Master Ocean Front', nombreEn: 'Master Ocean Front Suite', descripcion: 'Upgrade a suite master frente al mar', descripcionEn: 'Upgrade to master ocean front suite', categoria: 'habitacion', categoriaEn: 'room', esUpselling: true, precioNormal: 500, precioUpselling: 1200, objetivoUpselling: 'Upgrade al hacer la reservación', objetivoUpsellingEn: 'Upgrade at booking', imagen: null, disponible: true, orden: 2, createdAt: '2024-05-10T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', propiedad: { id: 'prop5', nombre: 'Resort Los Cabos', nombreEn: 'Los Cabos Resort', moneda: 'USD' } },
+   323→   323→    { id: 'srv18', propiedadId: 'prop5', nombre: 'Spa Wellness Package', nombreEn: 'Wellness Spa Package', descripcion: 'Paquete de spa completo con temazcal', descripcionEn: 'Full spa package with temazcal', categoria: 'masaje', categoriaEn: 'massage', esUpselling: true, precioNormal: 200, precioUpselling: 380, objetivoUpselling: 'Agregar temazcal al paquete de spa', objetivoUpsellingEn: 'Add temazcal to spa package', imagen: null, disponible: true, orden: 3, createdAt: '2024-05-10T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', propiedad: { id: 'prop5', nombre: 'Resort Los Cabos', nombreEn: 'Los Cabos Resort', moneda: 'USD' } },
+   324→   324→    { id: 'srv19', propiedadId: 'prop6', nombre: 'Camarones al Mojo de Ajo', nombreEn: 'Garlic Butter Shrimp', descripcion: 'Camarones al mojo de ajo con arroz', descripcionEn: 'Garlic butter shrimp with rice', categoria: 'platillo', categoriaEn: 'dish', esUpselling: false, precioNormal: 250, precioUpselling: null, objetivoUpselling: null, objetivoUpsellingEn: null, imagen: null, disponible: true, orden: 1, createdAt: '2024-06-05T10:00:00.000Z', updatedAt: '2024-06-05T10:00:00.000Z', propiedad: { id: 'prop6', nombre: 'Restaurante Puerto Veracruz', nombreEn: 'Veracruz Port Restaurant', moneda: 'MXN' } },
+   325→   325→  ]
+   326→   326→}
+   327→   327→
+   328→   328→// ─── Alertas mock data ────────────────────────────────────────
+   329→   329→export function getMockAlertas() {
+   330→   330→  return {
+   331→   331→    alertas: [
+   332→   332→      { id: 'alert1', empleadoId: 'emp10', propiedadId: 'prop1', tipo: 'baja_felicidad', tipoEn: 'low_happiness', severidad: 'critico', mensaje: 'Índice de felicidad en mínimo histórico (35/100). Sin actividad en app por 13 días. NPS promedio 5.2.', mensajeEn: 'Happiness index at historic low (35/100). No app activity for 13 days. Average NPS 5.2.', probabilidad: 92, generadoPorIA: true, leida: false, resuelta: false, createdAt: '2024-06-08T09:00:00.000Z', empleado: { id: 'emp10', nombre: 'Patricia Ruiz', empleadoId: 'MES-701', posicion: 'Mesera', foto: null, departamento: 'A&B', riesgoBaja: 92, indiceFelicidad: 35, propiedad: { nombre: 'Hotel Playa Cancún', region: 'cancun' } }, propiedad: { nombre: 'Hotel Playa Cancún', region: 'cancun' } },
+   333→   333→      { id: 'alert2', empleadoId: 'emp10', propiedadId: 'prop1', tipo: 'nps_bajo', tipoEn: 'low_nps', severidad: 'critico', mensaje: 'NPS consecutivo por debajo de 6 en las últimas 3 evaluaciones', mensajeEn: 'Consecutive NPS below 6 in the last 3 evaluations', probabilidad: 88, generadoPorIA: true, leida: false, resuelta: false, createdAt: '2024-06-07T14:00:00.000Z', empleado: { id: 'emp10', nombre: 'Patricia Ruiz', empleadoId: 'MES-701', posicion: 'Mesera', foto: null, departamento: 'A&B', riesgoBaja: 92, indiceFelicidad: 35, propiedad: { nombre: 'Hotel Playa Cancún', region: 'cancun' } }, propiedad: { nombre: 'Hotel Playa Cancún', region: 'cancun' } },
+   334→   334→      { id: 'alert3', empleadoId: 'emp8', propiedadId: 'prop1', tipo: 'estancamiento', tipoEn: 'stagnation', severidad: 'alto', mensaje: 'Estancamiento en nivel de carrera: Mesera Jr. por más de 7 meses sin progreso', mensajeEn: 'Career stagnation: Jr. Waitress for over 7 months with no progress', probabilidad: 78, generadoPorIA: true, leida: true, resuelta: false, createdAt: '2024-06-06T10:00:00.000Z', empleado: { id: 'emp8', nombre: 'María García', empleadoId: 'MES-402', posicion: 'Mesera Jr.', foto: null, departamento: 'A&B', riesgoBaja: 78, indiceFelicidad: 42, propiedad: { nombre: 'Hotel Playa Cancún', region: 'cancun' } }, propiedad: { nombre: 'Hotel Playa Cancún', region: 'cancun' } },
+   335→   335→      { id: 'alert4', empleadoId: 'emp9', propiedadId: 'prop3', tipo: 'baja_felicidad', tipoEn: 'low_happiness', severidad: 'alto', mensaje: 'Índice de felicidad decreciente: de 65 a 48 en las últimas 4 semanas', mensajeEn: 'Declining happiness index: from 65 to 48 in the last 4 weeks', probabilidad: 65, generadoPorIA: true, leida: false, resuelta: false, createdAt: '2024-06-05T16:00:00.000Z', empleado: { id: 'emp9', nombre: 'Diego Flores', empleadoId: 'REC-801', posicion: 'Recepcionista Jr.', foto: null, departamento: 'Recepción', riesgoBaja: 65, indiceFelicidad: 48, propiedad: { nombre: 'Gran Hotel CDMX', region: 'cdmx' } }, propiedad: { nombre: 'Gran Hotel CDMX', region: 'cdmx' } },
+   336→   336→      { id: 'alert5', empleadoId: 'emp8', propiedadId: 'prop1', tipo: 'inactividad', tipoEn: 'inactivity', severidad: 'medio', mensaje: 'Sin actividad en la app por 6 días consecutivos', mensajeEn: 'No app activity for 6 consecutive days', probabilidad: 45, generadoPorIA: false, leida: true, resuelta: false, createdAt: '2024-06-04T11:00:00.000Z', empleado: { id: 'emp8', nombre: 'María García', empleadoId: 'MES-402', posicion: 'Mesera Jr.', foto: null, departamento: 'A&B', riesgoBaja: 78, indiceFelicidad: 42, propiedad: { nombre: 'Hotel Playa Cancún', region: 'cancun' } }, propiedad: { nombre: 'Hotel Playa Cancún', region: 'cancun' } },
+   337→   337→      { id: 'alert6', empleadoId: 'emp12', propiedadId: 'prop4', tipo: 'fin_contrato', tipoEn: 'contract_end', severidad: 'medio', mensaje: 'Fecha de baja programada: 30 de junio. Reemplazo pendiente de confirmación.', mensajeEn: 'Scheduled departure: June 30. Replacement pending confirmation.', probabilidad: 85, generadoPorIA: false, leida: true, resuelta: false, createdAt: '2024-06-03T08:00:00.000Z', empleado: { id: 'emp12', nombre: 'Fernando Morales', empleadoId: 'OFF-001', posicion: 'Bartender Sr.', foto: null, departamento: 'A&B', riesgoBaja: 85, indiceFelicidad: 55, propiedad: { nombre: 'Bar Mar Azul', region: 'playa_carmen' } }, propiedad: { nombre: 'Bar Mar Azul', region: 'playa_carmen' } },
+   338→   338→      { id: 'alert7', empleadoId: 'emp4', propiedadId: 'prop1', tipo: 'estancamiento', tipoEn: 'stagnation', severidad: 'bajo', mensaje: 'Nivel de carrera 2 por más de 12 meses, sugerir plan de desarrollo', mensajeEn: 'Career level 2 for over 12 months, suggest development plan', probabilidad: 25, generadoPorIA: true, leida: true, resuelta: true, createdAt: '2024-05-28T09:00:00.000Z', empleado: { id: 'emp4', nombre: 'Roberto Sánchez', empleadoId: 'MES-301', posicion: 'Mesero', foto: null, departamento: 'A&B', riesgoBaja: 25, indiceFelicidad: 78, propiedad: { nombre: 'Hotel Playa Cancún', region: 'cancun' } }, propiedad: { nombre: 'Hotel Playa Cancún', region: 'cancun' } },
+   339→   339→      { id: 'alert8', empleadoId: 'emp9', propiedadId: 'prop3', tipo: 'nps_bajo', tipoEn: 'low_nps', severidad: 'medio', mensaje: 'NPS por debajo de 7 en las últimas 2 evaluaciones', mensajeEn: 'NPS below 7 in the last 2 evaluations', probabilidad: 50, generadoPorIA: true, leida: false, resuelta: false, createdAt: '2024-06-01T14:00:00.000Z', empleado: { id: 'emp9', nombre: 'Diego Flores', empleadoId: 'REC-801', posicion: 'Recepcionista Jr.', foto: null, departamento: 'Recepción', riesgoBaja: 65, indiceFelicidad: 48, propiedad: { nombre: 'Gran Hotel CDMX', region: 'cdmx' } }, propiedad: { nombre: 'Gran Hotel CDMX', region: 'cdmx' } },
+   340→   340→    ],
+   341→   341→    total: 8,
+   342→   342→    limit: 50,
+   343→   343→    offset: 0,
+   344→   344→    resumen: {
+   345→   345→      total: 8,
+   346→   346→      porSeveridad: { critico: 2, alto: 2, medio: 3, bajo: 1 },
+   347→   347→    },
+   348→   348→  }
+   349→   349→}
+   350→   350→
+   351→   351→// ─── Candidatos mock data ─────────────────────────────────────
+   352→   352→export function getMockCandidatos() {
+   353→   353→  return {
+   354→   354→    candidatos: [
+   355→   355→      { id: 'cand1', nombre: 'Lucía Mendoza', email: 'lucia.mendoza@email.com', telefono: '+52 555 123 4567', posicion: 'Mesera Jr.', posicionEn: 'Jr. Waitress', region: 'cancun', experiencia: 2, habilidades: '["servicio al cliente", "POS", "trabajo en equipo"]', estado: 'disponible', puntuacionEntrevista: 85, notas: 'Excelente actitud y experiencia previa en hotel 5 estrellas', fuente: 'portal', propiedadId: null, empleadoReemplazaId: null, fechaContratacion: null, onboardingCompletado: false, nivelAlcanzado: 0, createdAt: '2024-06-01T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', propiedad: null },
+   356→   356→      { id: 'cand2', nombre: 'Andrés Vargas', email: 'andres.vargas@email.com', telefono: '+52 555 234 5678', posicion: 'Bartender', posicionEn: 'Bartender', region: 'playa_carmen', experiencia: 4, habilidades: '["mixología", "coctelería", "atención al cliente"]', estado: 'disponible', puntuacionEntrevista: 90, notas: 'Especialista en coctelería tropical, referido por empleado actual', fuente: 'referido', propiedadId: 'prop4', empleadoReemplazaId: 'emp12', fechaContratacion: null, onboardingCompletado: false, nivelAlcanzado: 0, createdAt: '2024-06-02T10:00:00.000Z', updatedAt: '2024-06-02T10:00:00.000Z', propiedad: { nombre: 'Bar Mar Azul', region: 'playa_carmen' } },
+   357→   357→      { id: 'cand3', nombre: 'Valentina Cruz', email: 'valentina.cruz@email.com', telefono: '+52 555 345 6789', posicion: 'Recepcionista', posicionEn: 'Receptionist', region: 'cdmx', experiencia: 3, habilidades: '["idiomas", "reservaciones", "concierge"]', estado: 'en_proceso', puntuacionEntrevista: 78, notas: 'Hablante de inglés e italiano, en proceso de segunda entrevista', fuente: 'agencia', propiedadId: 'prop3', empleadoReemplazaId: 'emp9', fechaContratacion: null, onboardingCompletado: false, nivelAlcanzado: 0, createdAt: '2024-06-03T10:00:00.000Z', updatedAt: '2024-06-03T10:00:00.000Z', propiedad: { nombre: 'Gran Hotel CDMX', region: 'cdmx' } },
+   358→   358→      { id: 'cand4', nombre: 'Marco Reyes', email: 'marco.reyes@email.com', telefono: '+52 555 456 7890', posicion: 'Mesero Sr.', posicionEn: 'Sr. Waiter', region: 'cancun', experiencia: 5, habilidades: '["upselling", "vinos", "servicio premium"]', estado: 'disponible', puntuacionEntrevista: 88, notas: 'Experiencia en restaurantes fine dining', fuente: 'referido', propiedadId: null, empleadoReemplazaId: null, fechaContratacion: null, onboardingCompletado: false, nivelAlcanzado: 0, createdAt: '2024-06-04T10:00:00.000Z', updatedAt: '2024-06-04T10:00:00.000Z', propiedad: null },
+   359→   359→      { id: 'cand5', nombre: 'Isabel Torres', email: 'isabel.torres@email.com', telefono: '+52 555 567 8901', posicion: 'Mesera', posicionEn: 'Waitress', region: 'cancun', experiencia: 1, habilidades: '["comunicación", "trabajo en equipo"]', estado: 'disponible', puntuacionEntrevista: 72, notas: 'Perfil para reemplazar a Patricia Ruiz si es necesario', fuente: 'portal', propiedadId: 'prop1', empleadoReemplazaId: 'emp10', fechaContratacion: null, onboardingCompletado: false, nivelAlcanzado: 0, createdAt: '2024-06-05T10:00:00.000Z', updatedAt: '2024-06-05T10:00:00.000Z', propiedad: { nombre: 'Hotel Playa Cancún', region: 'cancun' } },
+   360→   360→      { id: 'cand6', nombre: 'Pablo Jiménez', email: 'pablo.jimenez@email.com', telefono: '+52 555 678 9012', posicion: 'Barback', posicionEn: 'Barback', region: 'playa_carmen', experiencia: 1, habilidades: '["preparación de bebidas", "limpieza", "organización"]', estado: 'disponible', puntuacionEntrevista: 65, notas: 'Candidato joven con potencial de crecimiento', fuente: 'spontaneous', propiedadId: null, empleadoReemplazaId: null, fechaContratacion: null, onboardingCompletado: false, nivelAlcanzado: 0, createdAt: '2024-06-06T10:00:00.000Z', updatedAt: '2024-06-06T10:00:00.000Z', propiedad: null },
+   361→   361→      { id: 'cand7', nombre: 'Daniela Ríos', email: 'daniela.rios@email.com', telefono: '+52 555 789 0123', posicion: 'Capitana', posicionEn: 'Captain', region: 'cancun', experiencia: 6, habilidades: '["liderazgo", "supervisión", "capacitación", "upselling avanzado"]', estado: 'disponible', puntuacionEntrevista: 92, notas: 'Experiencia como capitana en hotel competidor', fuente: 'agencia', propiedadId: null, empleadoReemplazaId: null, fechaContratacion: null, onboardingCompletado: false, nivelAlcanzado: 0, createdAt: '2024-06-07T10:00:00.000Z', updatedAt: '2024-06-07T10:00:00.000Z', propiedad: null },
+   362→   362→      { id: 'cand8', nombre: 'Ricardo Navarro', email: 'ricardo.navarro@email.com', telefono: '+52 555 890 1234', posicion: 'Recepcionista Jr.', posicionEn: 'Jr. Receptionist', region: 'cdmx', experiencia: 2, habilidades: '["sistemas hoteleros", "atención al cliente", "inglés"]', estado: 'en_proceso', puntuacionEntrevista: 75, notas: 'En proceso de verificación de referencias', fuente: 'portal', propiedadId: null, empleadoReemplazaId: null, fechaContratacion: null, onboardingCompletado: false, nivelAlcanzado: 0, createdAt: '2024-06-08T10:00:00.000Z', updatedAt: '2024-06-08T10:00:00.000Z', propiedad: null },
+   363→   363→    ],
+   364→   364→    total: 8,
+   365→   365→    limit: 50,
+   366→   366→    offset: 0,
+   367→   367→  }
+   368→   368→}
+   369→   369→
+   370→   370→// ─── Capacitaciones mock data ─────────────────────────────────
+   371→   371→export function getMockCapacitaciones() {
+   372→   372→  return [
+   373→   373→    { id: 'cap1', titulo: 'Técnicas de Upselling en Restaurante', tituloEn: 'Restaurant Upselling Techniques', descripcion: 'Aprende las mejores técnicas para incrementar ventas sugiriendo upgrades y complementos', descripcionEn: 'Learn the best techniques to increase sales by suggesting upgrades and add-ons', categoria: 'upselling', categoriaEn: 'upselling', modalidad: 'virtual', duracion: 45, dificultad: 'intermedio', dificultadEn: 'intermediate', urlContenido: null, miniatura: null, posicion: 'Mesero / Capitán', posicionEn: 'Waiter / Captain', puntos: 15, activo: true, propiedadId: 'prop1', createdAt: '2024-01-20T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', propiedad: { id: 'prop1', nombre: 'Hotel Playa Cancún', nombreEn: 'Cancún Beach Hotel' }, _count: { inscripciones: 6, solicitudes: 2 }, inscripcionesCount: 6, completadosCount: 4, enProgresoCount: 2, tasaCompletado: 67 },
+   374→   374→    { id: 'cap2', titulo: 'Excelencia en Servicio al Cliente', tituloEn: 'Customer Service Excellence', descripcion: 'Fundamentos de hospitalidad y servicio excepcional', descripcionEn: 'Hospitality and exceptional service fundamentals', categoria: 'hospitalidad', categoriaEn: 'hospitality', modalidad: 'presencial', duracion: 60, dificultad: 'principiante', dificultadEn: 'beginner', urlContenido: null, miniatura: null, posicion: 'Todos', posicionEn: 'All', puntos: 10, activo: true, propiedadId: null, createdAt: '2024-02-10T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', propiedad: null, _count: { inscripciones: 8, solicitudes: 1 }, inscripcionesCount: 8, completadosCount: 5, enProgresoCount: 3, tasaCompletado: 63 },
+   375→   375→    { id: 'cap3', titulo: 'Conocimiento del Menú: Platillos Estrella', tituloEn: 'Menu Knowledge: Star Dishes', descripcion: 'Conoce a profundidad los platillos estrella del menú para recomendar con confianza', descripcionEn: 'Know the star menu dishes in depth to recommend with confidence', categoria: 'conocimiento_producto', categoriaEn: 'product_knowledge', modalidad: 'virtual', duracion: 30, dificultad: 'principiante', dificultadEn: 'beginner', urlContenido: null, miniatura: null, posicion: 'Mesero', posicionEn: 'Waiter', puntos: 10, activo: true, propiedadId: 'prop1', createdAt: '2024-03-05T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', propiedad: { id: 'prop1', nombre: 'Hotel Playa Cancún', nombreEn: 'Cancún Beach Hotel' }, _count: { inscripciones: 5, solicitudes: 0 }, inscripcionesCount: 5, completadosCount: 3, enProgresoCount: 2, tasaCompletado: 60 },
+   376→   376→    { id: 'cap4', titulo: 'Onboarding: Tu Primer Día', tituloEn: 'Onboarding: Your First Day', descripcion: 'Todo lo que necesitas saber para tu primer día de trabajo', descripcionEn: 'Everything you need to know for your first day at work', categoria: 'onboarding', categoriaEn: 'onboarding', modalidad: 'virtual', duracion: 20, dificultad: 'principiante', dificultadEn: 'beginner', urlContenido: null, miniatura: null, posicion: 'Nuevo Ingreso', posicionEn: 'New Hire', puntos: 5, activo: true, propiedadId: null, createdAt: '2024-01-15T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', propiedad: null, _count: { inscripciones: 3, solicitudes: 0 }, inscripcionesCount: 3, completadosCount: 2, enProgresoCount: 1, tasaCompletado: 67 },
+   377→   377→    { id: 'cap5', titulo: 'Liderazgo y Gestión de Equipos', tituloEn: 'Leadership and Team Management', descripcion: 'Habilidades de liderazgo para capitanes y gerentes', descripcionEn: 'Leadership skills for captains and managers', categoria: 'liderazgo', categoriaEn: 'leadership', modalidad: 'presencial', duracion: 90, dificultad: 'avanzado', dificultadEn: 'advanced', urlContenido: null, miniatura: null, posicion: 'Capitán / Gerente', posicionEn: 'Captain / Manager', puntos: 20, activo: true, propiedadId: null, createdAt: '2024-04-01T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', propiedad: null, _count: { inscripciones: 2, solicitudes: 1 }, inscripcionesCount: 2, completadosCount: 1, enProgresoCount: 1, tasaCompletado: 50 },
+   378→   378→    { id: 'cap6', titulo: 'Coctelería Avanzada', tituloEn: 'Advanced Cocktails', descripcion: 'Técnicas avanzadas de mixología y presentación', descripcionEn: 'Advanced mixology and presentation techniques', categoria: 'conocimiento_producto', categoriaEn: 'product_knowledge', modalidad: 'presencial', duracion: 60, dificultad: 'avanzado', dificultadEn: 'advanced', urlContenido: null, miniatura: null, posicion: 'Bartender', posicionEn: 'Bartender', puntos: 15, activo: true, propiedadId: 'prop4', createdAt: '2024-05-01T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', propiedad: { id: 'prop4', nombre: 'Bar Mar Azul', nombreEn: 'Blue Sea Bar' }, _count: { inscripciones: 1, solicitudes: 1 }, inscripcionesCount: 1, completadosCount: 0, enProgresoCount: 1, tasaCompletado: 0 },
+   379→   379→    { id: 'cap7', titulo: 'Manejo de Quejas y Situaciones Difíciles', tituloEn: 'Handling Complaints and Difficult Situations', descripcion: 'Cómo manejar quejas de clientes y convertir experiencias negativas en positivas', descripcionEn: 'How to handle customer complaints and turn negative experiences into positive ones', categoria: 'hospitalidad', categoriaEn: 'hospitality', modalidad: 'virtual', duracion: 40, dificultad: 'intermedio', dificultadEn: 'intermediate', urlContenido: null, miniatura: null, posicion: 'Todos', posicionEn: 'All', puntos: 12, activo: true, propiedadId: null, createdAt: '2024-03-20T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', propiedad: null, _count: { inscripciones: 4, solicitudes: 0 }, inscripcionesCount: 4, completadosCount: 2, enProgresoCount: 2, tasaCompletado: 50 },
+   380→   380→    { id: 'cap8', titulo: 'Venta de Experiencias y Tours', tituloEn: 'Selling Experiences and Tours', descripcion: 'Técnicas para vender tours, experiencias y upgrades de habitación', descripcionEn: 'Techniques for selling tours, experiences and room upgrades', categoria: 'upselling', categoriaEn: 'upselling', modalidad: 'virtual', duracion: 35, dificultad: 'intermedio', dificultadEn: 'intermediate', urlContenido: null, miniatura: null, posicion: 'Recepcionista / Concierge', posicionEn: 'Receptionist / Concierge', puntos: 12, activo: true, propiedadId: null, createdAt: '2024-04-15T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', propiedad: null, _count: { inscripciones: 3, solicitudes: 1 }, inscripcionesCount: 3, completadosCount: 1, enProgresoCount: 2, tasaCompletado: 33 },
+   381→   381→  ]
+   382→   382→}
+   383→   383→
+   384→   384→// ─── Ventas mock data ─────────────────────────────────────────
+   385→   385→export function getMockVentas() {
+   386→   386→  const ventas = [
+   387→   387→    { id: 'v1', empleadoId: 'emp1', propiedadId: 'prop1', montoUpselling: 680, esUpselling: true, nombreServicio: 'Filete Mignon con Trufa + Maridaje', cantidad: 1, precioUnitario: 680, montoTotal: 680, calificacionNPS: 10, esPromotor: true, comentario: 'Excelente recomendación de la capitana', fuenteNPS: 'qr', categoriaServicio: 'platillo', fechaVenta: '2024-06-10T14:30:00.000Z', analizadoPorIA: true, resultadoIA: null, createdAt: '2024-06-10T14:30:00.000Z', empleado: { id: 'emp1', nombre: 'Laura Hernández', empleadoId: 'CAP-501', posicion: 'Capitana', foto: null }, propiedad: { nombre: 'Hotel Playa Cancún', tipo: 'hotel' } },
+   388→   388→    { id: 'v2', empleadoId: 'emp2', propiedadId: 'prop1', montoUpselling: 1200, esUpselling: true, nombreServicio: 'Cena Romántica en Playa', cantidad: 2, precioUnitario: 5500, montoTotal: 5500, calificacionNPS: 10, esPromotor: true, comentario: 'Una experiencia inolvidable', fuenteNPS: 'app', categoriaServicio: 'experiencia', fechaVenta: '2024-06-09T20:00:00.000Z', analizadoPorIA: true, resultadoIA: null, createdAt: '2024-06-09T20:00:00.000Z', empleado: { id: 'emp2', nombre: 'Carmen Delgado', empleadoId: 'GER-001', posicion: 'Gerente A&B', foto: null }, propiedad: { nombre: 'Hotel Playa Cancún', tipo: 'hotel' } },
+   389→   389→    { id: 'v3', empleadoId: 'emp3', propiedadId: 'prop1', montoUpselling: 420, esUpselling: true, nombreServicio: 'Ceviche Premium', cantidad: 1, precioUnitario: 420, montoTotal: 420, calificacionNPS: 9, esPromotor: true, comentario: null, fuenteNPS: 'qr', categoriaServicio: 'platillo', fechaVenta: '2024-06-09T13:00:00.000Z', analizadoPorIA: true, resultadoIA: null, createdAt: '2024-06-09T13:00:00.000Z', empleado: { id: 'emp3', nombre: 'Juan Pérez', empleadoId: 'MES-401', posicion: 'Mesero Sr.', foto: null }, propiedad: { nombre: 'Hotel Playa Cancún', tipo: 'hotel' } },
+   390→   390→    { id: 'v4', empleadoId: 'emp5', propiedadId: 'prop1', montoUpselling: 320, esUpselling: true, nombreServicio: 'Margarita Mezcal Premium', cantidad: 2, precioUnitario: 320, montoTotal: 640, calificacionNPS: 8, esPromotor: false, comentario: 'Buen cóctel', fuenteNPS: 'sms', categoriaServicio: 'bebida', fechaVenta: '2024-06-08T21:00:00.000Z', analizadoPorIA: true, resultadoIA: null, createdAt: '2024-06-08T21:00:00.000Z', empleado: { id: 'emp5', nombre: 'Miguel Torres', empleadoId: 'BAR-201', posicion: 'Bartender', foto: null }, propiedad: { nombre: 'Hotel Playa Cancún', tipo: 'hotel' } },
+   391→   391→    { id: 'v5', empleadoId: 'emp1', propiedadId: 'prop1', montoUpselling: 4500, esUpselling: true, nombreServicio: 'Tour Isla Mujeres Privado', cantidad: 1, precioUnitario: 4500, montoTotal: 4500, calificacionNPS: 10, esPromotor: true, comentario: 'Increíble experiencia', fuenteNPS: 'email', categoriaServicio: 'tour', fechaVenta: '2024-06-08T09:00:00.000Z', analizadoPorIA: true, resultadoIA: null, createdAt: '2024-06-08T09:00:00.000Z', empleado: { id: 'emp1', nombre: 'Laura Hernández', empleadoId: 'CAP-501', posicion: 'Capitana', foto: null }, propiedad: { nombre: 'Hotel Playa Cancún', tipo: 'hotel' } },
+   392→   392→    { id: 'v6', empleadoId: 'emp4', propiedadId: 'prop1', montoUpselling: 0, esUpselling: false, nombreServicio: 'Tacos al Pastor', cantidad: 3, precioUnitario: 120, montoTotal: 360, calificacionNPS: 7, esPromotor: false, comentario: null, fuenteNPS: 'qr', categoriaServicio: 'platillo', fechaVenta: '2024-06-07T14:00:00.000Z', analizadoPorIA: false, resultadoIA: null, createdAt: '2024-06-07T14:00:00.000Z', empleado: { id: 'emp4', nombre: 'Roberto Sánchez', empleadoId: 'MES-301', posicion: 'Mesero', foto: null }, propiedad: { nombre: 'Hotel Playa Cancún', tipo: 'hotel' } },
+   393→   393→    { id: 'v7', empleadoId: 'emp3', propiedadId: 'prop1', montoUpselling: 230, esUpselling: true, nombreServicio: 'Filete Mignon + Maridaje', cantidad: 1, precioUnitario: 680, montoTotal: 680, calificacionNPS: 9, esPromotor: true, comentario: 'Juan recomendó el maridaje perfecto', fuenteNPS: 'app', categoriaServicio: 'platillo', fechaVenta: '2024-06-07T13:30:00.000Z', analizadoPorIA: true, resultadoIA: null, createdAt: '2024-06-07T13:30:00.000Z', empleado: { id: 'emp3', nombre: 'Juan Pérez', empleadoId: 'MES-401', posicion: 'Mesero Sr.', foto: null }, propiedad: { nombre: 'Hotel Playa Cancún', tipo: 'hotel' } },
+   394→   394→    { id: 'v8', empleadoId: 'emp2', propiedadId: 'prop1', montoUpselling: 6800, esUpselling: true, nombreServicio: 'Suite Ocean View Upgrade', cantidad: 1, precioUnitario: 6800, montoTotal: 6800, calificacionNPS: 10, esPromotor: true, comentario: 'Vale cada peso', fuenteNPS: 'qr', categoriaServicio: 'habitacion', fechaVenta: '2024-06-06T15:00:00.000Z', analizadoPorIA: true, resultadoIA: null, createdAt: '2024-06-06T15:00:00.000Z', empleado: { id: 'emp2', nombre: 'Carmen Delgado', empleadoId: 'GER-001', posicion: 'Gerente A&B', foto: null }, propiedad: { nombre: 'Hotel Playa Cancún', tipo: 'hotel' } },
+   395→   395→    { id: 'v9', empleadoId: 'emp5', propiedadId: 'prop1', montoUpselling: 320, esUpselling: true, nombreServicio: 'Margarita Mezcal Premium', cantidad: 1, precioUnitario: 320, montoTotal: 320, calificacionNPS: 9, esPromotor: true, comentario: null, fuenteNPS: 'qr', categoriaServicio: 'bebida', fechaVenta: '2024-06-06T22:00:00.000Z', analizadoPorIA: false, resultadoIA: null, createdAt: '2024-06-06T22:00:00.000Z', empleado: { id: 'emp5', nombre: 'Miguel Torres', empleadoId: 'BAR-201', posicion: 'Bartender', foto: null }, propiedad: { nombre: 'Hotel Playa Cancún', tipo: 'hotel' } },
+   396→   396→    { id: 'v10', empleadoId: 'emp1', propiedadId: 'prop1', montoUpselling: 380, esUpselling: true, nombreServicio: 'Chiles en Nogada Gourmet', cantidad: 1, precioUnitario: 380, montoTotal: 380, calificacionNPS: 9, esPromotor: true, comentario: 'Sugerencia excelente', fuenteNPS: 'app', categoriaServicio: 'platillo', fechaVenta: '2024-06-05T14:00:00.000Z', analizadoPorIA: true, resultadoIA: null, createdAt: '2024-06-05T14:00:00.000Z', empleado: { id: 'emp1', nombre: 'Laura Hernández', empleadoId: 'CAP-501', posicion: 'Capitana', foto: null }, propiedad: { nombre: 'Hotel Playa Cancún', tipo: 'hotel' } },
+   397→   397→    { id: 'v11', empleadoId: 'emp8', propiedadId: 'prop1', montoUpselling: 0, esUpselling: false, nombreServicio: 'Tacos al Pastor', cantidad: 2, precioUnitario: 120, montoTotal: 240, calificacionNPS: 5, esPromotor: false, comentario: 'Servicio lento', fuenteNPS: 'sms', categoriaServicio: 'platillo', fechaVenta: '2024-06-04T13:00:00.000Z', analizadoPorIA: false, resultadoIA: null, createdAt: '2024-06-04T13:00:00.000Z', empleado: { id: 'emp8', nombre: 'María García', empleadoId: 'MES-402', posicion: 'Mesera Jr.', foto: null }, propiedad: { nombre: 'Hotel Playa Cancún', tipo: 'hotel' } },
+   398→   398→    { id: 'v12', empleadoId: 'emp10', propiedadId: 'prop1', montoUpselling: 0, esUpselling: false, nombreServicio: 'Ceviche de Camarón', cantidad: 1, precioUnitario: 280, montoTotal: 280, calificacionNPS: 4, esPromotor: false, comentario: 'No recomendó nada extra', fuenteNPS: 'qr', categoriaServicio: 'platillo', fechaVenta: '2024-06-03T14:00:00.000Z', analizadoPorIA: false, resultadoIA: null, createdAt: '2024-06-03T14:00:00.000Z', empleado: { id: 'emp10', nombre: 'Patricia Ruiz', empleadoId: 'MES-701', posicion: 'Mesera', foto: null }, propiedad: { nombre: 'Hotel Playa Cancún', tipo: 'hotel' } },
+   399→   399→    { id: 'v13', empleadoId: 'emp7', propiedadId: 'prop3', montoUpselling: 200, esUpselling: true, nombreServicio: 'Cocktail de Bienvenida', cantidad: 1, precioUnitario: 150, montoTotal: 350, calificacionNPS: 8, esPromotor: false, comentario: null, fuenteNPS: 'qr', categoriaServicio: 'bebida', fechaVenta: '2024-06-08T18:00:00.000Z', analizadoPorIA: false, resultadoIA: null, createdAt: '2024-06-08T18:00:00.000Z', empleado: { id: 'emp7', nombre: 'Carlos López', empleadoId: 'ONB-102', posicion: 'Recepcionista', foto: null }, propiedad: { nombre: 'Gran Hotel CDMX', tipo: 'hotel' } },
+   400→   400→    { id: 'v14', empleadoId: 'emp9', propiedadId: 'prop3', montoUpselling: 0, esUpselling: false, nombreServicio: 'Cocktail de Bienvenida', cantidad: 1, precioUnitario: 150, montoTotal: 150, calificacionNPS: 6, esPromotor: false, comentario: 'Podría ser más atento', fuenteNPS: 'sms', categoriaServicio: 'bebida', fechaVenta: '2024-06-06T19:00:00.000Z', analizadoPorIA: false, resultadoIA: null, createdAt: '2024-06-06T19:00:00.000Z', empleado: { id: 'emp9', nombre: 'Diego Flores', empleadoId: 'REC-801', posicion: 'Recepcionista Jr.', foto: null }, propiedad: { nombre: 'Gran Hotel CDMX', tipo: 'hotel' } },
+   401→   401→    { id: 'v15', empleadoId: 'emp9', propiedadId: 'prop3', montoUpselling: 0, esUpselling: false, nombreServicio: 'Mezcal Tasting', cantidad: 2, precioUnitario: 600, montoTotal: 1200, calificacionNPS: 7, esPromotor: false, comentario: null, fuenteNPS: 'qr', categoriaServicio: 'experiencia', fechaVenta: '2024-06-04T17:00:00.000Z', analizadoPorIA: false, resultadoIA: null, createdAt: '2024-06-04T17:00:00.000Z', empleado: { id: 'emp9', nombre: 'Diego Flores', empleadoId: 'REC-801', posicion: 'Recepcionista Jr.', foto: null }, propiedad: { nombre: 'Gran Hotel CDMX', tipo: 'hotel' } },
+   402→   402→    { id: 'v16', empleadoId: 'emp7', propiedadId: 'prop3', montoUpselling: 950, esUpselling: true, nombreServicio: 'Mezcal Tasting + Botella', cantidad: 1, precioUnitario: 950, montoTotal: 950, calificacionNPS: 9, esPromotor: true, comentario: 'Gran recomendación', fuenteNPS: 'app', categoriaServicio: 'experiencia', fechaVenta: '2024-06-02T18:00:00.000Z', analizadoPorIA: true, resultadoIA: null, createdAt: '2024-06-02T18:00:00.000Z', empleado: { id: 'emp7', nombre: 'Carlos López', empleadoId: 'ONB-102', posicion: 'Recepcionista', foto: null }, propiedad: { nombre: 'Gran Hotel CDMX', tipo: 'hotel' } },
+   403→   403→    { id: 'v17', empleadoId: 'emp11', propiedadId: 'prop2', montoUpselling: 0, esUpselling: false, nombreServicio: 'Mole Poblano', cantidad: 1, precioUnitario: 220, montoTotal: 220, calificacionNPS: null, esPromotor: null, comentario: null, fuenteNPS: null, categoriaServicio: 'platillo', fechaVenta: '2024-06-10T13:00:00.000Z', analizadoPorIA: false, resultadoIA: null, createdAt: '2024-06-10T13:00:00.000Z', empleado: { id: 'emp11', nombre: 'Sofía Ramírez', empleadoId: 'ONB-103', posicion: 'Mesera Jr.', foto: null }, propiedad: { nombre: 'Restaurante La Terraza', tipo: 'restaurante' } },
+   404→   404→    { id: 'v18', empleadoId: 'emp12', propiedadId: 'prop4', montoUpselling: 250, esUpselling: true, nombreServicio: 'Cocktail Tropical Premium', cantidad: 2, precioUnitario: 250, montoTotal: 500, calificacionNPS: 8, esPromotor: false, comentario: 'Buen ambiente', fuenteNPS: 'qr', categoriaServicio: 'bebida', fechaVenta: '2024-06-07T22:00:00.000Z', analizadoPorIA: false, resultadoIA: null, createdAt: '2024-06-07T22:00:00.000Z', empleado: { id: 'emp12', nombre: 'Fernando Morales', empleadoId: 'OFF-001', posicion: 'Bartender Sr.', foto: null }, propiedad: { nombre: 'Bar Mar Azul', tipo: 'bar' } },
+   405→   405→    { id: 'v19', empleadoId: 'emp12', propiedadId: 'prop4', montoUpselling: 0, esUpselling: false, nombreServicio: 'Cocktail Tropical', cantidad: 1, precioUnitario: 150, montoTotal: 150, calificacionNPS: 7, esPromotor: false, comentario: null, fuenteNPS: 'qr', categoriaServicio: 'bebida', fechaVenta: '2024-06-05T21:00:00.000Z', analizadoPorIA: false, resultadoIA: null, createdAt: '2024-06-05T21:00:00.000Z', empleado: { id: 'emp12', nombre: 'Fernando Morales', empleadoId: 'OFF-001', posicion: 'Bartender Sr.', foto: null }, propiedad: { nombre: 'Bar Mar Azul', tipo: 'bar' } },
+   406→   406→    { id: 'v20', empleadoId: 'emp12', propiedadId: 'prop4', montoUpselling: 980, esUpselling: true, nombreServicio: 'Tabla de Mariscos + Langosta', cantidad: 1, precioUnitario: 980, montoTotal: 980, calificacionNPS: 9, esPromotor: true, comentario: 'Increíble la tabla', fuenteNPS: 'app', categoriaServicio: 'platillo', fechaVenta: '2024-06-03T20:00:00.000Z', analizadoPorIA: true, resultadoIA: null, createdAt: '2024-06-03T20:00:00.000Z', empleado: { id: 'emp12', nombre: 'Fernando Morales', empleadoId: 'OFF-001', posicion: 'Bartender Sr.', foto: null }, propiedad: { nombre: 'Bar Mar Azul', tipo: 'bar' } },
+   407→   407→    { id: 'v21', propiedadId: 'prop5', montoUpselling: 3200, esUpselling: true, nombreServicio: 'Sunset Catamaran Private', cantidad: 1, precioUnitario: 3200, montoTotal: 3200, calificacionNPS: 10, esPromotor: true, comentario: 'Best experience ever', fuenteNPS: 'email', categoriaServicio: 'tour', fechaVenta: '2024-06-09T16:00:00.000Z', analizadoPorIA: true, resultadoIA: null, createdAt: '2024-06-09T16:00:00.000Z', empleadoId: 'emp5', empleado: { id: 'emp5', nombre: 'Miguel Torres', empleadoId: 'BAR-201', posicion: 'Bartender', foto: null }, propiedad: { nombre: 'Resort Los Cabos', tipo: 'hotel' } },
+   408→   408→    { id: 'v22', propiedadId: 'prop5', montoUpselling: 1200, esUpselling: true, nombreServicio: 'Suite Master Upgrade', cantidad: 1, precioUnitario: 1200, montoTotal: 1200, calificacionNPS: 9, esPromotor: true, comentario: null, fuenteNPS: 'qr', categoriaServicio: 'habitacion', fechaVenta: '2024-06-07T12:00:00.000Z', analizadoPorIA: true, resultadoIA: null, createdAt: '2024-06-07T12:00:00.000Z', empleadoId: 'emp7', empleado: { id: 'emp7', nombre: 'Carlos López', empleadoId: 'ONB-102', posicion: 'Recepcionista', foto: null }, propiedad: { nombre: 'Resort Los Cabos', tipo: 'hotel' } },
+   409→   409→    { id: 'v23', propiedadId: 'prop5', montoUpselling: 380, esUpselling: true, nombreServicio: 'Spa + Temazcal Package', cantidad: 1, precioUnitario: 380, montoTotal: 380, calificacionNPS: 8, esPromotor: false, comentario: 'Relajante', fuenteNPS: 'sms', categoriaServicio: 'masaje', fechaVenta: '2024-06-05T11:00:00.000Z', analizadoPorIA: false, resultadoIA: null, createdAt: '2024-06-05T11:00:00.000Z', empleadoId: 'emp6', empleado: { id: 'emp6', nombre: 'Ana Martínez', empleadoId: 'ONB-101', posicion: 'Mesera Jr.', foto: null }, propiedad: { nombre: 'Resort Los Cabos', tipo: 'hotel' } },
+   410→   410→    { id: 'v24', propiedadId: 'prop2', montoUpselling: 380, esUpselling: true, nombreServicio: 'Chiles en Nogada Gourmet', cantidad: 1, precioUnitario: 380, montoTotal: 380, calificacionNPS: 9, esPromotor: true, comentario: 'Delicioso', fuenteNPS: 'qr', categoriaServicio: 'platillo', fechaVenta: '2024-06-04T14:00:00.000Z', analizadoPorIA: false, resultadoIA: null, createdAt: '2024-06-04T14:00:00.000Z', empleadoId: 'emp11', empleado: { id: 'emp11', nombre: 'Sofía Ramírez', empleadoId: 'ONB-103', posicion: 'Mesera Jr.', foto: null }, propiedad: { nombre: 'Restaurante La Terraza', tipo: 'restaurante' } },
+   411→   411→  ]
+   412→   412→  return { ventas, total: ventas.length, limit: 50, offset: 0 }
+   413→   413→}
+   414→   414→
+   415→   415→// ─── Solicitudes mock data ────────────────────────────────────
+   416→   416→export function getMockSolicitudes() {
+   417→   417→  return [
+   418→   418→    { id: 'sol1', propiedadId: 'prop1', capacitacionId: 'cap1', modalidad: 'presencial', tema: null, fechaSolicitada: '2024-06-15T10:00:00.000Z', fechaConfirmada: '2024-06-18T10:00:00.000Z', participantes: 5, instructorId: null, nombreInstructor: 'Ricardo Mendoza', estado: 'confirmada', costo: 2500, notas: 'Sesión intensiva de upselling para equipo de A&B', creadoPor: 'emp2', createdAt: '2024-06-01T10:00:00.000Z', updatedAt: '2024-06-05T10:00:00.000Z', propiedad: { id: 'prop1', nombre: 'Hotel Playa Cancún', nombreEn: 'Cancún Beach Hotel', region: 'cancun' }, capacitacion: { id: 'cap1', titulo: 'Técnicas de Upselling en Restaurante', tituloEn: 'Restaurant Upselling Techniques', categoria: 'upselling', modalidad: 'virtual' } },
+   419→   419→    { id: 'sol2', propiedadId: 'prop3', capacitacionId: 'cap7', modalidad: 'virtual', tema: null, fechaSolicitada: '2024-06-20T10:00:00.000Z', fechaConfirmada: null, participantes: 3, instructorId: null, nombreInstructor: null, estado: 'pendiente', costo: null, notas: 'Para equipo de recepción', creadoPor: 'emp9', createdAt: '2024-06-05T10:00:00.000Z', updatedAt: '2024-06-05T10:00:00.000Z', propiedad: { id: 'prop3', nombre: 'Gran Hotel CDMX', nombreEn: 'Grand Hotel Mexico City', region: 'cdmx' }, capacitacion: { id: 'cap7', titulo: 'Manejo de Quejas y Situaciones Difíciles', tituloEn: 'Handling Complaints and Difficult Situations', categoria: 'hospitalidad', modalidad: 'virtual' } },
+   420→   420→    { id: 'sol3', propiedadId: 'prop4', capacitacionId: 'cap6', modalidad: 'presencial', tema: null, fechaSolicitada: '2024-06-22T10:00:00.000Z', fechaConfirmada: '2024-06-25T10:00:00.000Z', participantes: 1, instructorId: null, nombreInstructor: 'Chef Omar', estado: 'confirmada', costo: 1500, notas: 'Para reemplazo de bartender', creadoPor: null, createdAt: '2024-06-03T10:00:00.000Z', updatedAt: '2024-06-08T10:00:00.000Z', propiedad: { id: 'prop4', nombre: 'Bar Mar Azul', nombreEn: 'Blue Sea Bar', region: 'playa_carmen' }, capacitacion: { id: 'cap6', titulo: 'Coctelería Avanzada', tituloEn: 'Advanced Cocktails', categoria: 'conocimiento_producto', modalidad: 'presencial' } },
+   421→   421→    { id: 'sol4', propiedadId: 'prop1', capacitacionId: null, modalidad: 'presencial', tema: 'Técnicas de Venta de Tours y Experiencias', fechaSolicitada: '2024-07-01T10:00:00.000Z', fechaConfirmada: null, participantes: 8, instructorId: null, nombreInstructor: null, estado: 'pendiente', costo: null, notas: 'Solicitud abierta - se necesita instructor especializado', creadoPor: 'emp1', createdAt: '2024-06-10T10:00:00.000Z', updatedAt: '2024-06-10T10:00:00.000Z', propiedad: { id: 'prop1', nombre: 'Hotel Playa Cancún', nombreEn: 'Cancún Beach Hotel', region: 'cancun' }, capacitacion: null },
+   422→   422→  ]
+   423→   423→}
+   424→   424→
+   425→   425→// ─── Seed mock response ───────────────────────────────────────
+   426→   426→export function getMockSeedResponse() {
+   427→   427→  return {
+   428→   428→    success: true,
+   429→   429→    message: 'Mock mode - no database needed. Data is served from static mock data.',
+   430→   430→    counts: {
+   431→   431→      propiedades: 6,
+   432→   432→      empleados: 12,
+   433→   433→      servicios: 19,
+   434→   434→      capacitaciones: 8,
+   435→   435→      ventas: 24,
+   436→   436→      alertas: 8,
+   437→   437→      candidatos: 8,
+   438→   438→      solicitudes: 4,
+   439→   439→      instructores: 0,
+   440→   440→    },
+   441→   441→  }
+   442→   442→}
+   443→   443→
+   444→   444→// ─── Demo mode response for POST/PATCH/DELETE ────────────────
+   445→   445→export function getDemoModeResponse(action: string, entity: string) {
+   446→   446→  return {
+   447→   447→    success: true,
+   448→   448→    message: `Demo mode - ${action} on ${entity} saved locally`,
+   449→   449→    demo: true,
+   450→   450→  }
+   451→   451→}
+   452→   452→
+   453→   453→// ─── English API mock data ────────────────────────────────────
+   454→   454→
+   455→   455→export function getMockEmployees() {
+   456→   456→  return getMockEmpleados().map((e) => ({
+   457→   457→    id: e.id,
+   458→   458→    employeeId: e.empleadoId,
+   459→   459→    name: e.nombre,
+
+[showing lines 60-459 of 699; use offset=460 with limit to continue reading]

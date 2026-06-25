@@ -13,6 +13,7 @@ import {
   Globe,
   ShoppingCart,
   Package,
+  Building2,
 } from 'lucide-react'
 
 import {
@@ -45,6 +46,7 @@ const navItems: { key: ViewMode; icon: React.ElementType }[] = [
   { key: 'dashboard', icon: LayoutDashboard },
   { key: 'trabajador', icon: ShoppingCart },
   { key: 'servicios', icon: Package },
+  { key: 'propiedades', icon: Building2 },
   { key: 'empleados', icon: Users },
   { key: 'ventas', icon: DollarSign },
   { key: 'capacitacion', icon: GraduationCap },
