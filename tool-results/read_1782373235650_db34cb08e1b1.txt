@@ -1,0 +1,721 @@
+     1→'use client'
+     2→
+     3→import { useState, useEffect, useCallback } from 'react'
+     4→import {
+     5→  Building2,
+     6→  Plus,
+     7→  Pencil,
+     8→  Trash2,
+     9→  MapPin,
+    10→  Users,
+    11→  CreditCard,
+    12→  Star,
+    13→  Search,
+    14→  Hotel,
+    15→  UtensilsCrossed,
+    16→  Wine,
+    17→  Sparkles,
+    18→  Palmtree,
+    19→  Coffee,
+    20→  Music,
+    21→  Waves,
+    22→  CheckCircle2,
+    23→  XCircle,
+    24→} from 'lucide-react'
+    25→import { Card, CardContent } from '@/components/ui/card'
+    26→import { Badge } from '@/components/ui/badge'
+    27→import { Button } from '@/components/ui/button'
+    28→import { Input } from '@/components/ui/input'
+    29→import { Label } from '@/components/ui/label'
+    30→import { Checkbox } from '@/components/ui/checkbox'
+    31→import {
+    32→  Select,
+    33→  SelectContent,
+    34→  SelectItem,
+    35→  SelectTrigger,
+    36→  SelectValue,
+    37→} from '@/components/ui/select'
+    38→import {
+    39→  Dialog,
+    40→  DialogContent,
+    41→  DialogHeader,
+    42→  DialogTitle,
+    43→  DialogFooter,
+    44→  DialogDescription,
+    45→} from '@/components/ui/dialog'
+    46→import {
+    47→  AlertDialog,
+    48→  AlertDialogAction,
+    49→  AlertDialogCancel,
+    50→  AlertDialogContent,
+    51→  AlertDialogDescription,
+    52→  AlertDialogFooter,
+    53→  AlertDialogHeader,
+    54→  AlertDialogTitle,
+    55→} from '@/components/ui/alert-dialog'
+    56→import { useAppStore } from '@/lib/store'
+    57→import { translations } from '@/lib/i18n'
+    58→import { toast } from 'sonner'
+    59→
+    60→// ─── Types ───────────────────────────────────────────────────
+    61→interface Propiedad {
+    62→  id: string
+    63→  nombre: string
+    64→  nombreEn: string | null
+    65→  tipo: string
+    66→  ubicacion: string
+    67→  region: string
+    68→  plan: string
+    69→  moneda: string
+    70→  activo: boolean
+    71→  createdAt: string
+    72→  updatedAt: string
+    73→  empleadosActivos: number
+    74→  capacitacionesActivas: number
+    75→  totalVentas: number
+    76→}
+    77→
+    78→interface FormData {
+    79→  nombre: string
+    80→  nombreEn: string
+    81→  tipo: string
+    82→  ubicacion: string
+    83→  region: string
+    84→  plan: string
+    85→  moneda: string
+    86→  activo: boolean
+    87→}
+    88→
+    89→const emptyForm: FormData = {
+    90→  nombre: '',
+    91→  nombreEn: '',
+    92→  tipo: 'hotel',
+    93→  ubicacion: '',
+    94→  region: 'cancun',
+    95→  plan: 'boutique',
+    96→  moneda: 'MXN',
+    97→  activo: true,
+    98→}
+    99→
+   100→const tiposPropiedad = [
+   101→  { value: 'hotel', labelEs: 'Hotel', labelEn: 'Hotel', icon: Hotel },
+   102→  { value: 'restaurante', labelEs: 'Restaurante', labelEn: 'Restaurant', icon: UtensilsCrossed },
+   103→  { value: 'bar', labelEs: 'Bar', labelEn: 'Bar', icon: Wine },
+   104→  { value: 'spa', labelEs: 'Spa', labelEn: 'Spa', icon: Sparkles },
+   105→  { value: 'resort', labelEs: 'Resort', labelEn: 'Resort', icon: Palmtree },
+   106→  { value: 'cafe', labelEs: 'Café', labelEn: 'Café', icon: Coffee },
+   107→  { value: 'discoteca', labelEs: 'Discoteca', labelEn: 'Nightclub', icon: Music },
+   108→  { value: 'club_playa', labelEs: 'Club de Playa', labelEn: 'Beach Club', icon: Waves },
+   109→]
+   110→
+   111→const regiones = [
+   112→  { value: 'cancun', labelEs: 'Cancún', labelEn: 'Cancún' },
+   113→  { value: 'cdmx', labelEs: 'Ciudad de México', labelEn: 'Mexico City' },
+   114→  { value: 'puebla', labelEs: 'Puebla', labelEn: 'Puebla' },
+   115→  { value: 'playa_carmen', labelEs: 'Playa del Carmen', labelEn: 'Playa del Carmen' },
+   116→  { value: 'los_cabos', labelEs: 'Los Cabos', labelEn: 'Los Cabos' },
+   117→  { value: 'veracruz', labelEs: 'Veracruz', labelEn: 'Veracruz' },
+   118→  { value: 'otros', labelEs: 'Otros', labelEn: 'Other' },
+   119→]
+   120→
+   121→const planes = [
+   122→  { value: 'boutique', labelEs: 'Boutique', labelEn: 'Boutique' },
+   123→  { value: 'growth', labelEs: 'Growth', labelEn: 'Growth' },
+   124→  { value: 'enterprise', labelEs: 'Enterprise', labelEn: 'Enterprise' },
+   125→]
+   126→
+   127→const monedas = [
+   128→  { value: 'MXN', label: 'MXN' },
+   129→  { value: 'USD', label: 'USD' },
+   130→  { value: 'EUR', label: 'EUR' },
+   131→]
+   132→
+   133→// ─── Helpers ─────────────────────────────────────────────────
+   134→function getTipoIcon(tipo: string) {
+   135→  const found = tiposPropiedad.find(t => t.value === tipo)
+   136→  return found ? found.icon : Building2
+   137→}
+   138→
+   139→function getTipoLabel(tipo: string, locale: string) {
+   140→  const found = tiposPropiedad.find(t => t.value === tipo)
+   141→  if (!found) return tipo
+   142→  return locale === 'es' ? found.labelEs : found.labelEn
+   143→}
+   144→
+   145→function getRegionLabel(region: string, locale: string) {
+   146→  const found = regiones.find(r => r.value === region)
+   147→  if (!found) return region
+   148→  return locale === 'es' ? found.labelEs : found.labelEn
+   149→}
+   150→
+   151→function getPlanBadge(plan: string) {
+   152→  switch (plan) {
+   153→    case 'enterprise':
+   154→      return 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400'
+   155→    case 'growth':
+   156→      return 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400'
+   157→    default:
+   158→      return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+   159→  }
+   160→}
+   161→
+   162→// ─── Main Component ──────────────────────────────────────────
+   163→export function PropiedadesModule() {
+   164→  const { locale } = useAppStore()
+   165→  const t = translations[locale].propiedades
+   166→  const tc = translations[locale].common
+   167→
+   168→  const [propiedades, setPropiedades] = useState<Propiedad[]>([])
+   169→  const [loading, setLoading] = useState(true)
+   170→  const [search, setSearch] = useState('')
+   171→  const [filterRegion, setFilterRegion] = useState('all')
+   172→  const [filterTipo, setFilterTipo] = useState('all')
+   173→
+   174→  // Dialog state
+   175→  const [showDialog, setShowDialog] = useState(false)
+   176→  const [editingId, setEditingId] = useState<string | null>(null)
+   177→  const [formData, setFormData] = useState<FormData>(emptyForm)
+   178→  const [saving, setSaving] = useState(false)
+   179→
+   180→  // Delete confirmation state
+   181→  const [deleteTarget, setDeleteTarget] = useState<Propiedad | null>(null)
+   182→
+   183→  const fetchPropiedades = useCallback(async () => {
+   184→    setLoading(true)
+   185→    try {
+   186→      const params = new URLSearchParams()
+   187→      if (filterRegion !== 'all') params.set('region', filterRegion)
+   188→      if (filterTipo !== 'all') params.set('tipo', filterTipo)
+   189→      const res = await fetch(`/api/propiedades?${params}`)
+   190→      const data = await res.json()
+   191→      setPropiedades(Array.isArray(data) ? data : [])
+   192→    } catch (err) {
+   193→      console.error('Error fetching propiedades:', err)
+   194→    } finally {
+   195→      setLoading(false)
+   196→    }
+   197→  }, [filterRegion, filterTipo])
+   198→
+   199→  useEffect(() => {
+   200→    fetchPropiedades()
+   201→  }, [fetchPropiedades])
+   202→
+   203→  // Filter by search on client side
+   204→  const filtered = propiedades.filter(p => {
+   205→    if (!search) return true
+   206→    const q = search.toLowerCase()
+   207→    return (
+   208→      p.nombre.toLowerCase().includes(q) ||
+   209→      (p.nombreEn && p.nombreEn.toLowerCase().includes(q)) ||
+   210→      p.ubicacion.toLowerCase().includes(q)
+   211→    )
+   212→  })
+   213→
+   214→  // Stats
+   215→  const totalPropiedades = propiedades.length
+   216→  const propiedadesActivas = propiedades.filter(p => p.activo).length
+   217→  const totalEmpleados = propiedades.reduce((sum, p) => sum + (p.empleadosActivos || 0), 0)
+   218→
+   219→  // ─── Dialog handlers ─────────────────────────────────────
+   220→  const openCreate = () => {
+   221→    setEditingId(null)
+   222→    setFormData(emptyForm)
+   223→    setShowDialog(true)
+   224→  }
+   225→
+   226→  const openEdit = (prop: Propiedad) => {
+   227→    setEditingId(prop.id)
+   228→    setFormData({
+   229→      nombre: prop.nombre,
+   230→      nombreEn: prop.nombreEn || '',
+   231→      tipo: prop.tipo,
+   232→      ubicacion: prop.ubicacion,
+   233→      region: prop.region,
+   234→      plan: prop.plan,
+   235→      moneda: prop.moneda,
+   236→      activo: prop.activo,
+   237→    })
+   238→    setShowDialog(true)
+   239→  }
+   240→
+   241→  const handleSave = async () => {
+   242→    if (!formData.nombre.trim()) {
+   243→      toast.error(locale === 'es' ? 'El nombre es obligatorio' : 'Name is required')
+   244→      return
+   245→    }
+   246→    if (!formData.ubicacion.trim()) {
+   247→      toast.error(locale === 'es' ? 'La ubicación es obligatoria' : 'Location is required')
+   248→      return
+   249→    }
+   250→
+   251→    setSaving(true)
+   252→    try {
+   253→      const payload = {
+   254→        nombre: formData.nombre.trim(),
+   255→        nombreEn: formData.nombreEn.trim() || null,
+   256→        tipo: formData.tipo,
+   257→        ubicacion: formData.ubicacion.trim(),
+   258→        region: formData.region,
+   259→        plan: formData.plan,
+   260→        moneda: formData.moneda,
+   261→        activo: formData.activo,
+   262→      }
+   263→
+   264→      if (editingId) {
+   265→        const res = await fetch(`/api/propiedades/${editingId}`, {
+   266→          method: 'PUT',
+   267→          headers: { 'Content-Type': 'application/json' },
+   268→          body: JSON.stringify(payload),
+   269→        })
+   270→        const data = await res.json()
+   271→        if (data.error) {
+   272→          toast.error(data.error)
+   273→        } else {
+   274→          toast.success(t.actualizada)
+   275→          setShowDialog(false)
+   276→          fetchPropiedades()
+   277→        }
+   278→      } else {
+   279→        const res = await fetch('/api/propiedades', {
+   280→          method: 'POST',
+   281→          headers: { 'Content-Type': 'application/json' },
+   282→          body: JSON.stringify(payload),
+   283→        })
+   284→        const data = await res.json()
+   285→        if (data.error) {
+   286→          toast.error(data.error)
+   287→        } else {
+   288→          toast.success(t.creada)
+   289→          setShowDialog(false)
+   290→          fetchPropiedades()
+   291→        }
+   292→      }
+   293→    } catch {
+   294→      toast.error(tc.error)
+   295→    } finally {
+   296→      setSaving(false)
+   297→    }
+   298→  }
+   299→
+   300→  const handleDelete = async () => {
+   301→    if (!deleteTarget) return
+   302→    try {
+   303→      const res = await fetch(`/api/propiedades/${deleteTarget.id}`, { method: 'DELETE' })
+   304→      const data = await res.json()
+   305→      if (data.error) {
+   306→        toast.error(data.error)
+   307→      } else {
+   308→        toast.success(t.eliminada)
+   309→        setDeleteTarget(null)
+   310→        fetchPropiedades()
+   311→      }
+   312→    } catch {
+   313→      toast.error(tc.error)
+   314→    }
+   315→  }
+   316→
+   317→  // ─── Render ───────────────────────────────────────────────
+   318→  return (
+   319→    <div className="space-y-6">
+   320→      {/* Header */}
+   321→      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+   322→        <div>
+   323→          <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
+   324→          <p className="text-sm text-muted-foreground">{t.subtitle}</p>
+   325→        </div>
+   326→        <Button
+   327→          className="bg-teal-600 hover:bg-teal-700 text-white gap-1.5 shrink-0"
+   328→          onClick={openCreate}
+   329→        >
+   330→          <Plus className="size-4" />
+   331→          {t.agregar}
+   332→        </Button>
+   333→      </div>
+   334→
+   335→      {/* Stats Row */}
+   336→      <div className="grid grid-cols-3 gap-3">
+   337→        <Card>
+   338→          <CardContent className="pt-4 pb-4 text-center">
+   339→            <Building2 className="size-5 text-teal-600 mx-auto mb-1" />
+   340→            <div className="text-xl font-bold">{totalPropiedades}</div>
+   341→            <div className="text-xs text-muted-foreground">{t.totalPropiedades}</div>
+   342→          </CardContent>
+   343→        </Card>
+   344→        <Card>
+   345→          <CardContent className="pt-4 pb-4 text-center">
+   346→            <CheckCircle2 className="size-5 text-emerald-600 mx-auto mb-1" />
+   347→            <div className="text-xl font-bold">{propiedadesActivas}</div>
+   348→            <div className="text-xs text-muted-foreground">{t.activas}</div>
+   349→          </CardContent>
+   350→        </Card>
+   351→        <Card>
+   352→          <CardContent className="pt-4 pb-4 text-center">
+   353→            <Users className="size-5 text-violet-600 mx-auto mb-1" />
+   354→            <div className="text-xl font-bold">{totalEmpleados}</div>
+   355→            <div className="text-xs text-muted-foreground">{t.totalEmpleados}</div>
+   356→          </CardContent>
+   357→        </Card>
+   358→      </div>
+   359→
+   360→      {/* Filters */}
+   361→      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+   362→        <div className="relative flex-1 max-w-sm">
+   363→          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+   364→          <Input
+   365→            placeholder={t.buscar}
+   366→            value={search}
+   367→            onChange={e => setSearch(e.target.value)}
+   368→            className="pl-9"
+   369→          />
+   370→        </div>
+   371→        <Select value={filterRegion} onValueChange={setFilterRegion}>
+   372→          <SelectTrigger className="w-[180px]">
+   373→            <SelectValue placeholder={t.region} />
+   374→          </SelectTrigger>
+   375→          <SelectContent>
+   376→            <SelectItem value="all">{t.todas}</SelectItem>
+   377→            {regiones.map(r => (
+   378→              <SelectItem key={r.value} value={r.value}>
+   379→                {locale === 'es' ? r.labelEs : r.labelEn}
+   380→              </SelectItem>
+   381→            ))}
+   382→          </SelectContent>
+   383→        </Select>
+   384→        <Select value={filterTipo} onValueChange={setFilterTipo}>
+   385→          <SelectTrigger className="w-[160px]">
+   386→            <SelectValue placeholder={t.tipo} />
+   387→          </SelectTrigger>
+   388→          <SelectContent>
+   389→            <SelectItem value="all">{t.todos}</SelectItem>
+   390→            {tiposPropiedad.map(tp => (
+   391→              <SelectItem key={tp.value} value={tp.value}>
+   392→                {locale === 'es' ? tp.labelEs : tp.labelEn}
+   393→              </SelectItem>
+   394→            ))}
+   395→          </SelectContent>
+   396→        </Select>
+   397→      </div>
+   398→
+   399→      {/* Property Cards */}
+   400→      {loading ? (
+   401→        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+   402→          {Array.from({ length: 6 }).map((_, i) => (
+   403→            <Card key={i}>
+   404→              <CardContent className="p-4">
+   405→                <div className="h-44 animate-pulse rounded bg-muted" />
+   406→              </CardContent>
+   407→            </Card>
+   408→          ))}
+   409→        </div>
+   410→      ) : filtered.length === 0 ? (
+   411→        <div className="text-center py-12">
+   412→          <Building2 className="size-12 text-muted-foreground mx-auto mb-3" />
+   413→          <p className="text-muted-foreground">{t.noPropiedades}</p>
+   414→        </div>
+   415→      ) : (
+   416→        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+   417→          {filtered.map(prop => {
+   418→            const TipoIcon = getTipoIcon(prop.tipo)
+   419→            return (
+   420→              <Card
+   421→                key={prop.id}
+   422→                className="hover:shadow-md transition-shadow overflow-hidden"
+   423→              >
+   424→                {/* Color accent bar at top */}
+   425→                <div className={`h-1.5 ${
+   426→                  prop.activo
+   427→                    ? 'bg-teal-500'
+   428→                    : 'bg-gray-400'
+   429→                }`} />
+   430→                <CardContent className="p-4">
+   431→                  {/* Header row */}
+   432→                  <div className="flex items-start justify-between gap-2">
+   433→                    <div className="flex items-start gap-3 min-w-0 flex-1">
+   434→                      <div className="size-10 shrink-0 rounded-lg bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center">
+   435→                        <TipoIcon className="size-5 text-teal-600 dark:text-teal-400" />
+   436→                      </div>
+   437→                      <div className="min-w-0">
+   438→                        <h3 className="font-semibold text-sm truncate">
+   439→                          {locale === 'es' ? prop.nombre : (prop.nombreEn || prop.nombre)}
+   440→                        </h3>
+   441→                        {prop.nombreEn && locale === 'es' && (
+   442→                          <p className="text-[11px] text-muted-foreground truncate">{prop.nombreEn}</p>
+   443→                        )}
+   444→                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+   445→                          <MapPin className="size-3" />
+   446→                          {prop.ubicacion}
+   447→                        </p>
+   448→                      </div>
+   449→                    </div>
+   450→                    {/* Status badge */}
+   451→                    <Badge
+   452→                      variant="outline"
+   453→                      className={`shrink-0 text-[10px] px-1.5 ${
+   454→                        prop.activo
+   455→                          ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+   456→                          : 'bg-gray-50 text-gray-500 dark:bg-gray-900/30 dark:text-gray-400'
+   457→                      }`}
+   458→                    >
+   459→                      {prop.activo ? (
+   460→                        <CheckCircle2 className="size-3 mr-0.5" />
+   461→                      ) : (
+   462→                        <XCircle className="size-3 mr-0.5" />
+   463→                      )}
+   464→                      {prop.activo ? t.activa : t.inactiva}
+   465→                    </Badge>
+   466→                  </div>
+   467→
+   468→                  {/* Info badges */}
+   469→                  <div className="flex flex-wrap gap-1.5 mt-3">
+   470→                    <Badge variant="outline" className="text-[10px] px-1.5">
+   471→                      {getTipoLabel(prop.tipo, locale)}
+   472→                    </Badge>
+   473→                    <Badge variant="outline" className="text-[10px] px-1.5">
+   474→                      {getRegionLabel(prop.region, locale)}
+   475→                    </Badge>
+   476→                    <Badge className={`text-[10px] px-1.5 ${getPlanBadge(prop.plan)}`}>
+   477→                      {prop.plan.charAt(0).toUpperCase() + prop.plan.slice(1)}
+   478→                    </Badge>
+   479→                    <Badge variant="outline" className="text-[10px] px-1.5">
+   480→                      <CreditCard className="size-3 mr-0.5" />
+   481→                      {prop.moneda}
+   482→                    </Badge>
+   483→                  </div>
+   484→
+   485→                  {/* Stats row */}
+   486→                  <div className="flex items-center justify-between mt-3 pt-3 border-t text-xs text-muted-foreground">
+   487→                    <span className="flex items-center gap-1">
+   488→                      <Users className="size-3" />
+   489→                      {prop.empleadosActivos} {t.empleados}
+   490→                    </span>
+   491→                    <span className="flex items-center gap-1">
+   492→                      <Star className="size-3" />
+   493→                      {prop.totalVentas} {t.ventas}
+   494→                    </span>
+   495→                  </div>
+   496→
+   497→                  {/* Action buttons */}
+   498→                  <div className="flex items-center gap-2 mt-3 pt-3 border-t">
+   499→                    <Button
+   500→                      variant="outline"
+   501→                      size="sm"
+   502→                      className="flex-1 gap-1.5 text-xs h-8"
+   503→                      onClick={(e) => {
+   504→                        e.stopPropagation()
+   505→                        openEdit(prop)
+   506→                      }}
+   507→                    >
+   508→                      <Pencil className="size-3" />
+   509→                      {tc.editar}
+   510→                    </Button>
+   511→                    <Button
+   512→                      variant="outline"
+   513→                      size="sm"
+   514→                      className="flex-1 gap-1.5 text-xs h-8 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+   515→                      onClick={(e) => {
+   516→                        e.stopPropagation()
+   517→                        setDeleteTarget(prop)
+   518→                      }}
+   519→                    >
+   520→                      <Trash2 className="size-3" />
+   521→                      {tc.eliminar}
+   522→                    </Button>
+   523→                  </div>
+   524→                </CardContent>
+   525→              </Card>
+   526→            )
+   527→          })}
+   528→        </div>
+   529→      )}
+   530→
+   531→      {/* Create / Edit Dialog */}
+   532→      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+   533→        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+   534→          <DialogHeader>
+   535→            <DialogTitle className="flex items-center gap-2">
+   536→              <Building2 className="size-5 text-teal-600" />
+   537→              {editingId ? t.editar : t.agregar}
+   538→            </DialogTitle>
+   539→            <DialogDescription>
+   540→              {editingId ? t.editarDescripcion : t.agregarDescripcion}
+   541→            </DialogDescription>
+   542→          </DialogHeader>
+   543→
+   544→          <div className="space-y-4 py-2">
+   545→            {/* Nombre */}
+   546→            <div className="space-y-2">
+   547→              <Label htmlFor="nombre">{t.nombre} *</Label>
+   548→              <Input
+   549→                id="nombre"
+   550→                value={formData.nombre}
+   551→                onChange={e => setFormData(prev => ({ ...prev, nombre: e.target.value }))}
+   552→                placeholder={t.nombrePlaceholder}
+   553→              />
+   554→            </div>
+   555→
+   556→            {/* Nombre En */}
+   557→            <div className="space-y-2">
+   558→              <Label htmlFor="nombreEn">{t.nombreEn}</Label>
+   559→              <Input
+   560→                id="nombreEn"
+   561→                value={formData.nombreEn}
+   562→                onChange={e => setFormData(prev => ({ ...prev, nombreEn: e.target.value }))}
+   563→                placeholder={t.nombreEnPlaceholder}
+   564→              />
+   565→            </div>
+   566→
+   567→            {/* Tipo + Region */}
+   568→            <div className="grid grid-cols-2 gap-4">
+   569→              <div className="space-y-2">
+   570→                <Label>{t.tipo}</Label>
+   571→                <Select
+   572→                  value={formData.tipo}
+   573→                  onValueChange={value => setFormData(prev => ({ ...prev, tipo: value }))}
+   574→                >
+   575→                  <SelectTrigger>
+   576→                    <SelectValue />
+   577→                  </SelectTrigger>
+   578→                  <SelectContent>
+   579→                    {tiposPropiedad.map(tp => (
+   580→                      <SelectItem key={tp.value} value={tp.value}>
+   581→                        {locale === 'es' ? tp.labelEs : tp.labelEn}
+   582→                      </SelectItem>
+   583→                    ))}
+   584→                  </SelectContent>
+   585→                </Select>
+   586→              </div>
+   587→              <div className="space-y-2">
+   588→                <Label>{t.region}</Label>
+   589→                <Select
+   590→                  value={formData.region}
+   591→                  onValueChange={value => setFormData(prev => ({ ...prev, region: value }))}
+   592→                >
+   593→                  <SelectTrigger>
+   594→                    <SelectValue />
+   595→                  </SelectTrigger>
+   596→                  <SelectContent>
+   597→                    {regiones.map(r => (
+   598→                      <SelectItem key={r.value} value={r.value}>
+   599→                        {locale === 'es' ? r.labelEs : r.labelEn}
+   600→                      </SelectItem>
+   601→                    ))}
+   602→                  </SelectContent>
+   603→                </Select>
+   604→              </div>
+   605→            </div>
+   606→
+   607→            {/* Ubicacion */}
+   608→            <div className="space-y-2">
+   609→              <Label htmlFor="ubicacion">{t.ubicacion} *</Label>
+   610→              <Input
+   611→                id="ubicacion"
+   612→                value={formData.ubicacion}
+   613→                onChange={e => setFormData(prev => ({ ...prev, ubicacion: e.target.value }))}
+   614→                placeholder={t.ubicacionPlaceholder}
+   615→              />
+   616→            </div>
+   617→
+   618→            {/* Plan + Moneda */}
+   619→            <div className="grid grid-cols-2 gap-4">
+   620→              <div className="space-y-2">
+   621→                <Label>{t.plan}</Label>
+   622→                <Select
+   623→                  value={formData.plan}
+   624→                  onValueChange={value => setFormData(prev => ({ ...prev, plan: value }))}
+   625→                >
+   626→                  <SelectTrigger>
+   627→                    <SelectValue />
+   628→                  </SelectTrigger>
+   629→                  <SelectContent>
+   630→                    {planes.map(p => (
+   631→                      <SelectItem key={p.value} value={p.value}>
+   632→                        {locale === 'es' ? p.labelEs : p.labelEn}
+   633→                      </SelectItem>
+   634→                    ))}
+   635→                  </SelectContent>
+   636→                </Select>
+   637→              </div>
+   638→              <div className="space-y-2">
+   639→                <Label>{t.moneda}</Label>
+   640→                <Select
+   641→                  value={formData.moneda}
+   642→                  onValueChange={value => setFormData(prev => ({ ...prev, moneda: value }))}
+   643→                >
+   644→                  <SelectTrigger>
+   645→                    <SelectValue />
+   646→                  </SelectTrigger>
+   647→                  <SelectContent>
+   648→                    {monedas.map(m => (
+   649→                      <SelectItem key={m.value} value={m.value}>
+   650→                        {m.label}
+   651→                      </SelectItem>
+   652→                    ))}
+   653→                  </SelectContent>
+   654→                </Select>
+   655→              </div>
+   656→            </div>
+   657→
+   658→            {/* Activo checkbox */}
+   659→            <div className="flex items-center gap-2">
+   660→              <Checkbox
+   661→                id="activo"
+   662→                checked={formData.activo}
+   663→                onCheckedChange={(checked) =>
+   664→                  setFormData(prev => ({ ...prev, activo: checked === true }))
+   665→                }
+   666→              />
+   667→              <Label htmlFor="activo" className="cursor-pointer">
+   668→                {t.activo}
+   669→              </Label>
+   670→            </div>
+   671→          </div>
+   672→
+   673→          <DialogFooter className="gap-2">
+   674→            <Button
+   675→              variant="outline"
+   676→              onClick={() => setShowDialog(false)}
+   677→              disabled={saving}
+   678→            >
+   679→              {tc.cancelar}
+   680→            </Button>
+   681→            <Button
+   682→              className="bg-teal-600 hover:bg-teal-700 text-white"
+   683→              onClick={handleSave}
+   684→              disabled={saving}
+   685→            >
+   686→              {saving ? (
+   687→                <div className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+   688→              ) : editingId ? (
+   689→                tc.actualizar
+   690→              ) : (
+   691→                tc.crear
+   692→              )}
+   693→            </Button>
+   694→          </DialogFooter>
+   695→        </DialogContent>
+   696→      </Dialog>
+   697→
+   698→      {/* Delete Confirmation */}
+   699→      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}>
+   700→        <AlertDialogContent>
+   701→          <AlertDialogHeader>
+   702→            <AlertDialogTitle>{t.confirmarEliminar}</AlertDialogTitle>
+   703→            <AlertDialogDescription>
+   704→              {t.confirmarEliminarMensaje?.replace('{nombre}', deleteTarget?.nombre || '')}
+   705→            </AlertDialogDescription>
+   706→          </AlertDialogHeader>
+   707→          <AlertDialogFooter>
+   708→            <AlertDialogCancel>{tc.cancelar}</AlertDialogCancel>
+   709→            <AlertDialogAction
+   710→              onClick={handleDelete}
+   711→              className="bg-destructive text-white hover:bg-destructive/90"
+   712→            >
+   713→              {tc.eliminar}
+   714→            </AlertDialogAction>
+   715→          </AlertDialogFooter>
+   716→        </AlertDialogContent>
+   717→      </AlertDialog>
+   718→    </div>
+   719→  )
+   720→}
+   721→

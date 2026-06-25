@@ -1,0 +1,1225 @@
+     1→'use client'
+     2→
+     3→import { useState, useEffect, useCallback } from 'react'
+     4→import {
+     5→  Search,
+     6→  Users,
+     7→  AlertTriangle,
+     8→  Bot,
+     9→  ArrowLeft,
+    10→  Star,
+    11→  BookOpen,
+    12→  DollarSign,
+    13→  ChevronRight,
+    14→  Brain,
+    15→  TrendingUp,
+    16→  MapPin,
+    17→  Clock,
+    18→  Calendar,
+    19→  Briefcase,
+    20→  Plus,
+    21→  UserPlus,
+    22→  Sun,
+    23→  Moon,
+    24→  Sunset,
+    25→  Shuffle,
+    26→} from 'lucide-react'
+    27→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+    28→import { Badge } from '@/components/ui/badge'
+    29→import { Button } from '@/components/ui/button'
+    30→import { Input } from '@/components/ui/input'
+    31→import { Progress } from '@/components/ui/progress'
+    32→import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+    33→import {
+    34→  Select,
+    35→  SelectContent,
+    36→  SelectItem,
+    37→  SelectTrigger,
+    38→  SelectValue,
+    39→} from '@/components/ui/select'
+    40→import {
+    41→  Dialog,
+    42→  DialogContent,
+    43→  DialogHeader,
+    44→  DialogTitle,
+    45→  DialogDescription,
+    46→  DialogFooter,
+    47→} from '@/components/ui/dialog'
+    48→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+    49→import { Separator } from '@/components/ui/separator'
+    50→import { Switch } from '@/components/ui/switch'
+    51→import { Checkbox } from '@/components/ui/checkbox'
+    52→import { Label } from '@/components/ui/label'
+    53→import { useAppStore } from '@/lib/store'
+    54→import { translations } from '@/lib/i18n'
+    55→import { toast } from 'sonner'
+    56→
+    57→// ─── Types ───────────────────────────────────────────────────
+    58→interface Empleado {
+    59→  id: string
+    60→  empleadoId: string
+    61→  nombre: string
+    62→  posicion: string
+    63→  posicionEn: string | null
+    64→  departamento: string
+    65→  departamentoEn: string | null
+    66→  foto: string | null
+    67→  fechaIngreso: string
+    68→  estado: string
+    69→  nivelCarrera: number
+    70→  rutaCarrera: string | null
+    71→  // Horario y jornada laboral
+    72→  tipoJornada: string
+    73→  horarioEntrada: string | null
+    74→  horarioSalida: string | null
+    75→  diasTrabajo: string | null
+    76→  cubreTurnos: boolean
+    77→  turnoPreferido: string | null
+    78→  salario: number | null
+    79→  tipoContrato: string | null
+    80→  fechaFinContrato: string | null
+    81→  // Scores
+    82→  puntuacionConocimiento: number
+    83→  puntuacionVentas: number
+    84→  puntuacionHospitalidad: number
+    85→  puntuacionTotal: number
+    86→  totalUpselling: number
+    87→  npsPromedio: number
+    88→  cursosCompletados: number
+    89→  cursosEnProgreso: number
+    90→  indiceFelicidad: number
+    91→  riesgoBaja: number
+    92→  nivelRiesgoBaja: string
+    93→  justificacionRiesgo: string | null
+    94→  sugerenciaCapacitacion: string | null
+    95→  propiedad: { id: string; nombre: string; nombreEn: string | null; region: string }
+    96→  _count: { cursos: number; alertas: number; ventas: number }
+    97→}
+    98→
+    99→interface Propiedad {
+   100→  id: string
+   101→  nombre: string
+   102→  nombreEn: string | null
+   103→}
+   104→
+   105→interface AIAnalysis {
+   106→  success: boolean
+   107→  analisis: {
+   108→    severidad: string
+   109→    probabilidad_abandono: number
+   110→    justificacion: string
+   111→    sugerencia_capacitacion: string
+   112→    factores_riesgo: string[]
+   113→    acciones_recomendadas: string[]
+   114→  }
+   115→}
+   116→
+   117→// ─── Departamento mapping ────────────────────────────────────
+   118→const DEPARTAMENTOS = [
+   119→  { es: 'Alimentos y Bebidas', en: 'Food & Beverage', code: 'AYB' },
+   120→  { es: 'Conserjería', en: 'Concierge', code: 'CON' },
+   121→  { es: 'Recepción', en: 'Reception', code: 'REC' },
+   122→  { es: 'Cocina', en: 'Kitchen', code: 'COC' },
+   123→  { es: 'Spa y Bienestar', en: 'Spa & Wellness', code: 'SPA' },
+   124→  { es: 'Mantenimiento', en: 'Maintenance', code: 'MAN' },
+   125→  { es: 'Seguridad', en: 'Security', code: 'SEG' },
+   126→  { es: 'Administración', en: 'Administration', code: 'ADM' },
+   127→]
+   128→
+   129→const DIAS_SEMANA = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo']
+   130→
+   131→// ─── Helpers ─────────────────────────────────────────────────
+   132→function getInitials(name: string): string {
+   133→  return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+   134→}
+   135→
+   136→function getEstadoBadge(estado: string, t: typeof translations.es.employees): { color: string; label: string } {
+   137→  switch (estado) {
+   138→    case 'activo': return { color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400', label: t.activo }
+   139→    case 'onboarding': return { color: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400', label: t.onboarding }
+   140→    case 'offboarding': return { color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400', label: t.offboarding }
+   141→    default: return { color: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400', label: t.inactivo }
+   142→  }
+   143→}
+   144→
+   145→function getRiskColor(level: string): string {
+   146→  switch (level) {
+   147→    case 'critico': return 'bg-red-500 text-white'
+   148→    case 'alto': return 'bg-amber-500 text-white'
+   149→    case 'medio': return 'bg-yellow-500 text-white'
+   150→    default: return 'bg-green-500 text-white'
+   151→  }
+   152→}
+   153→
+   154→function getScoreColor(score: number): string {
+   155→  if (score >= 80) return '[&>[data-slot=progress-indicator]]:bg-emerald-500'
+   156→  if (score >= 60) return '[&>[data-slot=progress-indicator]]:bg-teal-500'
+   157→  if (score >= 40) return '[&>[data-slot=progress-indicator]]:bg-amber-500'
+   158→  return '[&>[data-slot=progress-indicator]]:bg-red-500'
+   159→}
+   160→
+   161→function getJornadaBadge(tipo: string, t: typeof translations.es.employees): { color: string; label: string } {
+   162→  switch (tipo) {
+   163→    case 'fijo': return { color: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400', label: t.fijo }
+   164→    case 'mixto': return { color: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400', label: t.mixto }
+   165→    case 'variable': return { color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400', label: t.variable }
+   166→    default: return { color: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400', label: tipo }
+   167→  }
+   168→}
+   169→
+   170→function getTurnoIcon(turno: string | null) {
+   171→  switch (turno) {
+   172→    case 'matutino': return Sun
+   173→    case 'vespertino': return Sunset
+   174→    case 'nocturno': return Moon
+   175→    default: return Shuffle
+   176→  }
+   177→}
+   178→
+   179→function parseDiasTrabajo(diasJson: string | null): string[] {
+   180→  if (!diasJson) return []
+   181→  try {
+   182→    return JSON.parse(diasJson)
+   183→  } catch {
+   184→    return []
+   185→  }
+   186→}
+   187→
+   188→function formatDiaName(dia: string, locale: string): string {
+   189→  const diasEs: Record<string, string> = {
+   190→    lunes: 'Lun', martes: 'Mar', miercoles: 'Mié', jueves: 'Jue',
+   191→    viernes: 'Vie', sabado: 'Sáb', domingo: 'Dom',
+   192→  }
+   193→  const diasEn: Record<string, string> = {
+   194→    lunes: 'Mon', martes: 'Tue', miercoles: 'Wed', jueves: 'Thu',
+   195→    viernes: 'Fri', sabado: 'Sat', domingo: 'Sun',
+   196→  }
+   197→  return locale === 'es' ? (diasEs[dia] || dia) : (diasEn[dia] || dia)
+   198→}
+   199→
+   200→// ─── Main Component ──────────────────────────────────────────
+   201→export function EmpleadosModule() {
+   202→  const { locale, selectedProperty, selectedEmployee, setSelectedEmployee } = useAppStore()
+   203→  const t = translations[locale].employees
+   204→  const tc = translations[locale].common
+   205→
+   206→  const [empleados, setEmpleados] = useState<Empleado[]>([])
+   207→  const [loading, setLoading] = useState(true)
+   208→  const [search, setSearch] = useState('')
+   209→  const [filterDepto, setFilterDepto] = useState('todos')
+   210→  const [filterRiesgo, setFilterRiesgo] = useState('todos')
+   211→  const [analyzing, setAnalyzing] = useState<string | null>(null)
+   212→  const [aiResult, setAiResult] = useState<AIAnalysis | null>(null)
+   213→  const [showAIDialog, setShowAIDialog] = useState(false)
+   214→
+   215→  // Add Employee dialog state
+   216→  const [showCreateDialog, setShowCreateDialog] = useState(false)
+   217→  const [saving, setSaving] = useState(false)
+   218→  const [propiedades, setPropiedades] = useState<Propiedad[]>([])
+   219→
+   220→  // Form state
+   221→  const [formNombre, setFormNombre] = useState('')
+   222→  const [formEmpleadoId, setFormEmpleadoId] = useState('')
+   223→  const [formPosicion, setFormPosicion] = useState('')
+   224→  const [formPosicionEn, setFormPosicionEn] = useState('')
+   225→  const [formDepartamento, setFormDepartamento] = useState('')
+   226→  const [formPropiedadId, setFormPropiedadId] = useState('')
+   227→  const [formFechaIngreso, setFormFechaIngreso] = useState('')
+   228→  const [formFoto, setFormFoto] = useState('')
+   229→  const [formTipoJornada, setFormTipoJornada] = useState('fijo')
+   230→  const [formHorarioEntrada, setFormHorarioEntrada] = useState('08:00')
+   231→  const [formHorarioSalida, setFormHorarioSalida] = useState('16:00')
+   232→  const [formDiasTrabajo, setFormDiasTrabajo] = useState<string[]>(['lunes', 'martes', 'miercoles', 'jueves', 'viernes'])
+   233→  const [formCubreTurnos, setFormCubreTurnos] = useState(false)
+   234→  const [formTurnoPreferido, setFormTurnoPreferido] = useState('matutino')
+   235→  const [formSalario, setFormSalario] = useState('')
+   236→  const [formTipoContrato, setFormTipoContrato] = useState('indefinido')
+   237→  const [formFechaFinContrato, setFormFechaFinContrato] = useState('')
+   238→  const [formEstado, setFormEstado] = useState('onboarding')
+   239→
+   240→  const fetchEmpleados = useCallback(async () => {
+   241→    setLoading(true)
+   242→    try {
+   243→      const params = new URLSearchParams()
+   244→      if (selectedProperty !== 'all') params.set('propiedadId', selectedProperty)
+   245→      if (search) params.set('search', search)
+   246→      if (filterDepto !== 'todos') params.set('departamento', filterDepto)
+   247→      if (filterRiesgo !== 'todos') params.set('nivelRiesgoBaja', filterRiesgo)
+   248→      const res = await fetch(`/api/empleados?${params}`)
+   249→      const data = await res.json()
+   250→      setEmpleados(Array.isArray(data) ? data : [])
+   251→    } catch (err) {
+   252→      console.error('Error fetching empleados:', err)
+   253→    } finally {
+   254→      setLoading(false)
+   255→    }
+   256→  }, [selectedProperty, search, filterDepto, filterRiesgo])
+   257→
+   258→  const fetchPropiedades = useCallback(async () => {
+   259→    try {
+   260→      const res = await fetch('/api/propiedades')
+   261→      const data = await res.json()
+   262→      setPropiedades(Array.isArray(data) ? data.map((p: { id: string; nombre: string; nombreEn: string | null }) => ({ id: p.id, nombre: p.nombre, nombreEn: p.nombreEn })) : [])
+   263→    } catch {
+   264→      // ignore
+   265→    }
+   266→  }, [])
+   267→
+   268→  useEffect(() => {
+   269→    fetchEmpleados()
+   270→  }, [fetchEmpleados])
+   271→
+   272→  useEffect(() => {
+   273→    fetchPropiedades()
+   274→  }, [fetchPropiedades])
+   275→
+   276→  const handleAnalizarIA = async (empleadoId: string) => {
+   277→    setAnalyzing(empleadoId)
+   278→    try {
+   279→      const res = await fetch('/api/agents/performance', {
+   280→        method: 'POST',
+   281→        headers: { 'Content-Type': 'application/json' },
+   282→        body: JSON.stringify({ empleadoId }),
+   283→      })
+   284→      const data = await res.json()
+   285→      if (data.success) {
+   286→        setAiResult(data)
+   287→        setShowAIDialog(true)
+   288→        toast.success(t.analisisCompleto)
+   289→        fetchEmpleados()
+   290→      } else {
+   291→        toast.error(data.error || tc.error)
+   292→      }
+   293→    } catch {
+   294→      toast.error(tc.error)
+   295→    } finally {
+   296→      setAnalyzing(null)
+   297→    }
+   298→  }
+   299→
+   300→  const resetForm = () => {
+   301→    setFormNombre('')
+   302→    setFormEmpleadoId('')
+   303→    setFormPosicion('')
+   304→    setFormPosicionEn('')
+   305→    setFormDepartamento('')
+   306→    setFormPropiedadId(selectedProperty !== 'all' ? selectedProperty : '')
+   307→    setFormFechaIngreso(new Date().toISOString().split('T')[0])
+   308→    setFormFoto('')
+   309→    setFormTipoJornada('fijo')
+   310→    setFormHorarioEntrada('08:00')
+   311→    setFormHorarioSalida('16:00')
+   312→    setFormDiasTrabajo(['lunes', 'martes', 'miercoles', 'jueves', 'viernes'])
+   313→    setFormCubreTurnos(false)
+   314→    setFormTurnoPreferido('matutino')
+   315→    setFormSalario('')
+   316→    setFormTipoContrato('indefinido')
+   317→    setFormFechaFinContrato('')
+   318→    setFormEstado('onboarding')
+   319→  }
+   320→
+   321→  const handleDepartamentoChange = (depto: string) => {
+   322→    setFormDepartamento(depto)
+   323→    const deptoMap = DEPARTAMENTOS.find(d => d.es === depto)
+   324→    if (deptoMap) {
+   325→      const num = Math.floor(Math.random() * 900) + 100
+   326→      setFormEmpleadoId(`${deptoMap.code}-${num}`)
+   327→    }
+   328→  }
+   329→
+   330→  const handleDiaToggle = (dia: string) => {
+   331→    setFormDiasTrabajo(prev =>
+   332→      prev.includes(dia) ? prev.filter(d => d !== dia) : [...prev, dia]
+   333→    )
+   334→  }
+   335→
+   336→  const handleCreateEmpleado = async () => {
+   337→    if (!formNombre.trim()) {
+   338→      toast.error(t.nombreRequerido)
+   339→      return
+   340→    }
+   341→    if (!formEmpleadoId.trim()) {
+   342→      toast.error(t.idEmpleadoRequerido)
+   343→      return
+   344→    }
+   345→    if (!formPosicion.trim()) {
+   346→      toast.error(t.puestoRequerido)
+   347→      return
+   348→    }
+   349→
+   350→    setSaving(true)
+   351→    try {
+   352→      const payload = {
+   353→        nombre: formNombre.trim(),
+   354→        empleadoId: formEmpleadoId.trim(),
+   355→        posicion: formPosicion.trim(),
+   356→        posicionEn: formPosicionEn.trim() || null,
+   357→        departamento: formDepartamento,
+   358→        departamentoEn: DEPARTAMENTOS.find(d => d.es === formDepartamento)?.en || null,
+   359→        foto: formFoto.trim() || null,
+   360→        fechaIngreso: formFechaIngreso || new Date().toISOString(),
+   361→        estado: formEstado,
+   362→        tipoJornada: formTipoJornada,
+   363→        horarioEntrada: formHorarioEntrada || null,
+   364→        horarioSalida: formHorarioSalida || null,
+   365→        diasTrabajo: formDiasTrabajo.length > 0 ? JSON.stringify(formDiasTrabajo) : null,
+   366→        cubreTurnos: formCubreTurnos,
+   367→        turnoPreferido: formTurnoPreferido,
+   368→        salario: formSalario ? parseFloat(formSalario) : null,
+   369→        tipoContrato: formTipoContrato,
+   370→        fechaFinContrato: formTipoContrato !== 'indefinido' && formFechaFinContrato ? formFechaFinContrato : null,
+   371→        propiedadId: formPropiedadId || selectedProperty !== 'all' ? (formPropiedadId || selectedProperty) : propiedades[0]?.id,
+   372→      }
+   373→
+   374→      const res = await fetch('/api/empleados', {
+   375→        method: 'POST',
+   376→        headers: { 'Content-Type': 'application/json' },
+   377→        body: JSON.stringify(payload),
+   378→      })
+   379→
+   380→      if (res.ok) {
+   381→        toast.success(t.empleadoCreado)
+   382→        setShowCreateDialog(false)
+   383→        resetForm()
+   384→        fetchEmpleados()
+   385→      } else {
+   386→        toast.error(t.errorCrear)
+   387→      }
+   388→    } catch {
+   389→      toast.error(t.errorCrear)
+   390→    } finally {
+   391→      setSaving(false)
+   392→    }
+   393→  }
+   394→
+   395→  // Unique departments for filter
+   396→  const departamentos = [...new Set(empleados.map(e => e.departamento))]
+   397→
+   398→  // Selected employee detail
+   399→  const empleadoDetalle = selectedEmployee ? empleados.find(e => e.id === selectedEmployee) : null
+   400→
+   401→  // ─── Detail View ─────────────────────────────────────────
+   402→  if (empleadoDetalle) {
+   403→    const diasParsed = parseDiasTrabajo(empleadoDetalle.diasTrabajo)
+   404→    const TurnoIcon = getTurnoIcon(empleadoDetalle.turnoPreferido)
+   405→
+   406→    return (
+   407→      <div className="space-y-6">
+   408→        <Button variant="ghost" className="gap-1.5" onClick={() => setSelectedEmployee(null)}>
+   409→          <ArrowLeft className="size-4" />
+   410→          {t.volver}
+   411→        </Button>
+   412→
+   413→        <div className="grid gap-6 lg:grid-cols-3">
+   414→          {/* Profile Card */}
+   415→          <Card className="lg:col-span-1">
+   416→            <CardContent className="pt-6">
+   417→              <div className="flex flex-col items-center text-center">
+   418→                <Avatar className="size-20 mb-3">
+   419→                  <AvatarFallback className="bg-teal-100 text-teal-700 text-xl font-bold dark:bg-teal-900/40 dark:text-teal-300">
+   420→                    {getInitials(empleadoDetalle.nombre)}
+   421→                  </AvatarFallback>
+   422→                </Avatar>
+   423→                <h2 className="text-lg font-bold">{empleadoDetalle.nombre}</h2>
+   424→                <p className="text-sm text-muted-foreground">{empleadoDetalle.posicion}</p>
+   425→                <p className="text-xs text-muted-foreground">{empleadoDetalle.empleadoId} · {empleadoDetalle.propiedad.nombre}</p>
+   426→
+   427→                <div className="flex flex-wrap gap-2 mt-3 justify-center">
+   428→                  <Badge className={getEstadoBadge(empleadoDetalle.estado, t).color}>
+   429→                    {getEstadoBadge(empleadoDetalle.estado, t).label}
+   430→                  </Badge>
+   431→                  <Badge className={getRiskColor(empleadoDetalle.nivelRiesgoBaja)}>
+   432→                    {empleadoDetalle.nivelRiesgoBaja.toUpperCase()}
+   433→                  </Badge>
+   434→                </div>
+   435→
+   436→                <Separator className="my-4" />
+   437→
+   438→                <div className="w-full space-y-3 text-sm">
+   439→                  <div className="flex justify-between">
+   440→                    <span className="text-muted-foreground">{t.fechaIngreso}</span>
+   441→                    <span>{new Date(empleadoDetalle.fechaIngreso).toLocaleDateString(locale === 'es' ? 'es-MX' : 'en-US')}</span>
+   442→                  </div>
+   443→                  <div className="flex justify-between">
+   444→                    <span className="text-muted-foreground">{t.felicidad}</span>
+   445→                    <span className="font-medium">{empleadoDetalle.indiceFelicidad.toFixed(0)}/100</span>
+   446→                  </div>
+   447→                  <div className="flex justify-between">
+   448→                    <span className="text-muted-foreground">NPS</span>
+   449→                    <span className="font-medium">{empleadoDetalle.npsPromedio.toFixed(1)}</span>
+   450→                  </div>
+   451→                  <div className="flex justify-between">
+   452→                    <span className="text-muted-foreground">{t.ventas}</span>
+   453→                    <span className="font-medium">${empleadoDetalle.totalUpselling.toFixed(0)}</span>
+   454→                  </div>
+   455→                </div>
+   456→
+   457→                <Button
+   458→                  className="w-full mt-4 bg-teal-600 hover:bg-teal-700 text-white gap-1.5"
+   459→                  onClick={() => handleAnalizarIA(empleadoDetalle.id)}
+   460→                  disabled={analyzing === empleadoDetalle.id}
+   461→                >
+   462→                  {analyzing === empleadoDetalle.id ? (
+   463→                    <>
+   464→                      <div className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+   465→                      {t.analizando}
+   466→                    </>
+   467→                  ) : (
+   468→                    <>
+   469→                      <Brain className="size-4" />
+   470→                      {t.analizarIA}
+   471→                    </>
+   472→                  )}
+   473→                </Button>
+   474→              </div>
+   475→            </CardContent>
+   476→          </Card>
+   477→
+   478→          {/* Scores + Career Path + Schedule + Contract */}
+   479→          <div className="lg:col-span-2 space-y-4">
+   480→            {/* Score Integral */}
+   481→            <Card>
+   482→              <CardHeader className="pb-3">
+   483→                <CardTitle className="text-base">{locale === 'es' ? 'Score Integral' : 'Integral Score'}</CardTitle>
+   484→              </CardHeader>
+   485→              <CardContent className="space-y-4">
+   486→                <div className="space-y-3">
+   487→                  <div>
+   488→                    <div className="flex justify-between mb-1">
+   489→                      <span className="text-sm font-medium">{t.scoreConocimiento}</span>
+   490→                      <span className="text-sm font-bold">{empleadoDetalle.puntuacionConocimiento.toFixed(0)}</span>
+   491→                    </div>
+   492→                    <Progress value={empleadoDetalle.puntuacionConocimiento} className={`h-2.5 ${getScoreColor(empleadoDetalle.puntuacionConocimiento)}`} />
+   493→                  </div>
+   494→                  <div>
+   495→                    <div className="flex justify-between mb-1">
+   496→                      <span className="text-sm font-medium">{t.scoreVentas}</span>
+   497→                      <span className="text-sm font-bold">{empleadoDetalle.puntuacionVentas.toFixed(0)}</span>
+   498→                    </div>
+   499→                    <Progress value={empleadoDetalle.puntuacionVentas} className={`h-2.5 ${getScoreColor(empleadoDetalle.puntuacionVentas)}`} />
+   500→                  </div>
+   501→                  <div>
+   502→                    <div className="flex justify-between mb-1">
+   503→                      <span className="text-sm font-medium">{t.scoreHospitalidad}</span>
+   504→                      <span className="text-sm font-bold">{empleadoDetalle.puntuacionHospitalidad.toFixed(0)}</span>
+   505→                    </div>
+   506→                    <Progress value={empleadoDetalle.puntuacionHospitalidad} className={`h-2.5 ${getScoreColor(empleadoDetalle.puntuacionHospitalidad)}`} />
+   507→                  </div>
+   508→                  <Separator />
+   509→                  <div>
+   510→                    <div className="flex justify-between mb-1">
+   511→                      <span className="text-sm font-bold">{locale === 'es' ? 'Puntuación Total' : 'Total Score'}</span>
+   512→                      <span className="text-lg font-bold">{empleadoDetalle.puntuacionTotal.toFixed(0)}/100</span>
+   513→                    </div>
+   514→                    <Progress value={empleadoDetalle.puntuacionTotal} className={`h-3 ${getScoreColor(empleadoDetalle.puntuacionTotal)}`} />
+   515→                  </div>
+   516→                </div>
+   517→              </CardContent>
+   518→            </Card>
+   519→
+   520→            {/* Schedule (Horario) */}
+   521→            <Card>
+   522→              <CardHeader className="pb-3">
+   523→                <CardTitle className="text-base flex items-center gap-2">
+   524→                  <Clock className="size-4 text-teal-600" />
+   525→                  {t.horario}
+   526→                </CardTitle>
+   527→              </CardHeader>
+   528→              <CardContent>
+   529→                <div className="grid grid-cols-2 gap-4">
+   530→                  <div>
+   531→                    <span className="text-xs text-muted-foreground">{t.jornada}</span>
+   532→                    <div className="mt-1">
+   533→                      <Badge className={getJornadaBadge(empleadoDetalle.tipoJornada, t).color}>
+   534→                        {getJornadaBadge(empleadoDetalle.tipoJornada, t).label}
+   535→                      </Badge>
+   536→                    </div>
+   537→                  </div>
+   538→                  <div>
+   539→                    <span className="text-xs text-muted-foreground">{t.turnoPreferido}</span>
+   540→                    <div className="mt-1 flex items-center gap-1.5">
+   541→                      <TurnoIcon className="size-4 text-teal-600" />
+   542→                      <span className="text-sm font-medium">
+   543→                        {empleadoDetalle.turnoPreferido === 'matutino' ? t.matutino
+   544→                          : empleadoDetalle.turnoPreferido === 'vespertino' ? t.vespertino
+   545→                          : empleadoDetalle.turnoPreferido === 'nocturno' ? t.nocturno
+   546→                          : t.mixto}
+   547→                      </span>
+   548→                    </div>
+   549→                  </div>
+   550→                  <div>
+   551→                    <span className="text-xs text-muted-foreground">{t.entrada}</span>
+   552→                    <p className="text-sm font-semibold mt-0.5">{empleadoDetalle.horarioEntrada || '—'}</p>
+   553→                  </div>
+   554→                  <div>
+   555→                    <span className="text-xs text-muted-foreground">{t.salida}</span>
+   556→                    <p className="text-sm font-semibold mt-0.5">{empleadoDetalle.horarioSalida || '—'}</p>
+   557→                  </div>
+   558→                </div>
+   559→
+   560→                <Separator className="my-3" />
+   561→
+   562→                <div>
+   563→                  <span className="text-xs text-muted-foreground">{t.dias}</span>
+   564→                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+   565→                    {DIAS_SEMANA.map(dia => {
+   566→                      const isActive = diasParsed.includes(dia)
+   567→                      return (
+   568→                        <span
+   569→                          key={dia}
+   570→                          className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+   571→                            isActive
+   572→                              ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400'
+   573→                              : 'bg-muted text-muted-foreground'
+   574→                          }`}
+   575→                        >
+   576→                          {formatDiaName(dia, locale)}
+   577→                        </span>
+   578→                      )
+   579→                    })}
+   580→                  </div>
+   581→                </div>
+   582→
+   583→                <Separator className="my-3" />
+   584→
+   585→                <div className="flex items-center gap-2">
+   586→                  <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${
+   587→                    empleadoDetalle.cubreTurnos
+   588→                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+   589→                      : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
+   590→                  }`}>
+   591→                    {empleadoDetalle.cubreTurnos ? t.siCubre : t.noCubre}
+   592→                  </span>
+   593→                </div>
+   594→              </CardContent>
+   595→            </Card>
+   596→
+   597→            {/* Contract (Contrato) */}
+   598→            <Card>
+   599→              <CardHeader className="pb-3">
+   600→                <CardTitle className="text-base flex items-center gap-2">
+   601→                  <Briefcase className="size-4 text-teal-600" />
+   602→                  {t.contrato}
+   603→                </CardTitle>
+   604→              </CardHeader>
+   605→              <CardContent>
+   606→                <div className="grid grid-cols-2 gap-4">
+   607→                  <div>
+   608→                    <span className="text-xs text-muted-foreground">{t.tipoContrato}</span>
+   609→                    <p className="text-sm font-semibold mt-0.5">
+   610→                      {empleadoDetalle.tipoContrato === 'indefinido' ? t.indefinido
+   611→                        : empleadoDetalle.tipoContrato === 'temporal' ? t.temporal
+   612→                        : empleadoDetalle.tipoContrato === 'eventual' ? t.eventual
+   613→                        : empleadoDetalle.tipoContrato === 'practica' ? t.practica
+   614→                        : empleadoDetalle.tipoContrato || '—'}
+   615→                    </p>
+   616→                  </div>
+   617→                  <div>
+   618→                    <span className="text-xs text-muted-foreground">{t.salario}</span>
+   619→                    <p className="text-sm font-semibold mt-0.5">
+   620→                      {empleadoDetalle.salario ? `$${empleadoDetalle.salario.toLocaleString()}` : '—'}
+   621→                    </p>
+   622→                  </div>
+   623→                  {empleadoDetalle.tipoContrato && empleadoDetalle.tipoContrato !== 'indefinido' && (
+   624→                    <div>
+   625→                      <span className="text-xs text-muted-foreground">{t.fechaFinContrato}</span>
+   626→                      <p className="text-sm font-semibold mt-0.5">
+   627→                        {empleadoDetalle.fechaFinContrato
+   628→                          ? new Date(empleadoDetalle.fechaFinContrato).toLocaleDateString(locale === 'es' ? 'es-MX' : 'en-US')
+   629→                          : '—'}
+   630→                      </p>
+   631→                    </div>
+   632→                  )}
+   633→                </div>
+   634→              </CardContent>
+   635→            </Card>
+   636→
+   637→            {/* Career Path */}
+   638→            {empleadoDetalle.rutaCarrera && (
+   639→              <Card>
+   640→                <CardHeader className="pb-3">
+   641→                  <CardTitle className="text-base flex items-center gap-2">
+   642→                    <TrendingUp className="size-4 text-teal-600" />
+   643→                    {t.rutaCarrera}
+   644→                  </CardTitle>
+   645→                </CardHeader>
+   646→                <CardContent>
+   647→                  <div className="flex items-center gap-2 flex-wrap">
+   648→                    {empleadoDetalle.rutaCarrera.split('→').map((step, idx, arr) => (
+   649→                      <div key={idx} className="flex items-center gap-2">
+   650→                        <Badge
+   651→                          variant={idx < empleadoDetalle.nivelCarrera ? 'default' : 'outline'}
+   652→                          className={idx < empleadoDetalle.nivelCarrera
+   653→                            ? 'bg-teal-600 text-white'
+   654→                            : idx === empleadoDetalle.nivelCarrera
+   655→                              ? 'border-teal-500 text-teal-700 dark:text-teal-400'
+   656→                              : ''}
+   657→                        >
+   658→                          {step.trim()}
+   659→                        </Badge>
+   660→                        {idx < arr.length - 1 && <ChevronRight className="size-4 text-muted-foreground" />}
+   661→                      </div>
+   662→                    ))}
+   663→                  </div>
+   664→                  <div className="mt-2 text-xs text-muted-foreground">
+   665→                    {locale === 'es' ? `Nivel actual: ${empleadoDetalle.nivelCarrera}` : `Current level: ${empleadoDetalle.nivelCarrera}`}
+   666→                  </div>
+   667→                </CardContent>
+   668→              </Card>
+   669→            )}
+   670→
+   671→            {/* AI Justification */}
+   672→            {empleadoDetalle.justificacionRiesgo && (
+   673→              <Card className="border-amber-200 dark:border-amber-800">
+   674→                <CardHeader className="pb-3">
+   675→                  <CardTitle className="text-base flex items-center gap-2">
+   676→                    <Bot className="size-4 text-violet-500" />
+   677→                    {locale === 'es' ? 'Análisis del Agente de IA' : 'AI Agent Analysis'}
+   678→                  </CardTitle>
+   679→                </CardHeader>
+   680→                <CardContent className="space-y-3">
+   681→                  <div>
+   682→                    <span className="text-sm font-medium">{locale === 'es' ? 'Justificación:' : 'Justification:'}</span>
+   683→                    <p className="text-sm text-muted-foreground mt-1">{empleadoDetalle.justificacionRiesgo}</p>
+   684→                  </div>
+   685→                  {empleadoDetalle.sugerenciaCapacitacion && (
+   686→                    <div>
+   687→                      <span className="text-sm font-medium">{locale === 'es' ? 'Sugerencia de capacitación:' : 'Training suggestion:'}</span>
+   688→                      <p className="text-sm text-muted-foreground mt-1">{empleadoDetalle.sugerenciaCapacitacion}</p>
+   689→                    </div>
+   690→                  )}
+   691→                </CardContent>
+   692→              </Card>
+   693→            )}
+   694→
+   695→            {/* Stats row */}
+   696→            <div className="grid grid-cols-3 gap-3">
+   697→              <Card>
+   698→                <CardContent className="pt-4 pb-4 text-center">
+   699→                  <BookOpen className="size-5 text-teal-600 mx-auto mb-1" />
+   700→                  <div className="text-xl font-bold">{empleadoDetalle.cursosCompletados}</div>
+   701→                  <div className="text-xs text-muted-foreground">{t.cursos}</div>
+   702→                </CardContent>
+   703→              </Card>
+   704→              <Card>
+   705→                <CardContent className="pt-4 pb-4 text-center">
+   706→                  <DollarSign className="size-5 text-emerald-600 mx-auto mb-1" />
+   707→                  <div className="text-xl font-bold">${empleadoDetalle.totalUpselling.toFixed(0)}</div>
+   708→                  <div className="text-xs text-muted-foreground">{t.ventas}</div>
+   709→                </CardContent>
+   710→              </Card>
+   711→              <Card>
+   712→                <CardContent className="pt-4 pb-4 text-center">
+   713→                  <Star className="size-5 text-amber-500 mx-auto mb-1" />
+   714→                  <div className="text-xl font-bold">{empleadoDetalle.npsPromedio.toFixed(1)}</div>
+   715→                  <div className="text-xs text-muted-foreground">{t.nps}</div>
+   716→                </CardContent>
+   717→              </Card>
+   718→            </div>
+   719→          </div>
+   720→        </div>
+   721→
+   722→        {/* AI Result Dialog */}
+   723→        <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
+   724→          <DialogContent className="sm:max-w-lg">
+   725→            <DialogHeader>
+   726→              <DialogTitle className="flex items-center gap-2">
+   727→                <Bot className="size-5 text-violet-500" />
+   728→                {locale === 'es' ? 'Resultado del Análisis de IA' : 'AI Analysis Result'}
+   729→              </DialogTitle>
+   730→              <DialogDescription>
+   731→                {aiResult?.analisis?.justificacion?.substring(0, 100)}...
+   732→              </DialogDescription>
+   733→            </DialogHeader>
+   734→            {aiResult?.analisis && (
+   735→              <div className="space-y-3">
+   736→                <div className="flex items-center gap-2">
+   737→                  <Badge className={getRiskColor(aiResult.analisis.severidad)}>
+   738→                    {aiResult.analisis.severidad.toUpperCase()}
+   739→                  </Badge>
+   740→                  <span className="text-sm">
+   741→                    {locale === 'es' ? 'Probabilidad de abandono' : 'Churn probability'}: <strong>{aiResult.analisis.probabilidad_abandono}%</strong>
+   742→                  </span>
+   743→                </div>
+   744→                <div>
+   745→                  <span className="text-sm font-medium">{locale === 'es' ? 'Factores de riesgo' : 'Risk factors'}:</span>
+   746→                  <div className="flex flex-wrap gap-1 mt-1">
+   747→                    {aiResult.analisis.factores_riesgo.map((f, i) => (
+   748→                      <Badge key={i} variant="outline" className="text-xs">{f}</Badge>
+   749→                    ))}
+   750→                  </div>
+   751→                </div>
+   752→                <div>
+   753→                  <span className="text-sm font-medium">{locale === 'es' ? 'Acciones recomendadas' : 'Recommended actions'}:</span>
+   754→                  <ul className="list-disc list-inside text-sm text-muted-foreground mt-1">
+   755→                    {aiResult.analisis.acciones_recomendadas.map((a, i) => (
+   756→                      <li key={i}>{a}</li>
+   757→                    ))}
+   758→                  </ul>
+   759→                </div>
+   760→                <div>
+   761→                  <span className="text-sm font-medium">{locale === 'es' ? 'Sugerencia de capacitación' : 'Training suggestion'}:</span>
+   762→                  <p className="text-sm text-muted-foreground mt-1">{aiResult.analisis.sugerencia_capacitacion}</p>
+   763→                </div>
+   764→              </div>
+   765→            )}
+   766→          </DialogContent>
+   767→        </Dialog>
+   768→      </div>
+   769→    )
+   770→  }
+   771→
+   772→  // ─── List View ───────────────────────────────────────────
+   773→  return (
+   774→    <div className="space-y-6">
+   775→      {/* Header */}
+   776→      <div className="flex items-center justify-between">
+   777→        <div>
+   778→          <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
+   779→          <p className="text-sm text-muted-foreground">
+   780→            {locale === 'es' ? 'Gestión de personal, scores y rutas de carrera' : 'Staff management, scores and career paths'}
+   781→          </p>
+   782→        </div>
+   783→        <Button
+   784→          className="bg-teal-600 hover:bg-teal-700 text-white gap-1.5"
+   785→          onClick={() => {
+   786→            resetForm()
+   787→            setShowCreateDialog(true)
+   788→          }}
+   789→        >
+   790→          <UserPlus className="size-4" />
+   791→          {t.agregarEmpleado}
+   792→        </Button>
+   793→      </div>
+   794→
+   795→      {/* Filters */}
+   796→      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+   797→        <div className="relative flex-1 max-w-sm">
+   798→          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+   799→          <Input
+   800→            placeholder={t.search}
+   801→            value={search}
+   802→            onChange={e => setSearch(e.target.value)}
+   803→            className="pl-9"
+   804→          />
+   805→        </div>
+   806→        <Select value={filterDepto} onValueChange={setFilterDepto}>
+   807→          <SelectTrigger className="w-[180px]">
+   808→            <SelectValue placeholder={t.departamento} />
+   809→          </SelectTrigger>
+   810→          <SelectContent>
+   811→            <SelectItem value="todos">{t.todos}</SelectItem>
+   812→            {departamentos.map(d => (
+   813→              <SelectItem key={d} value={d}>{d}</SelectItem>
+   814→            ))}
+   815→          </SelectContent>
+   816→        </Select>
+   817→        <Select value={filterRiesgo} onValueChange={setFilterRiesgo}>
+   818→          <SelectTrigger className="w-[150px]">
+   819→            <SelectValue placeholder={t.riesgo} />
+   820→          </SelectTrigger>
+   821→          <SelectContent>
+   822→            <SelectItem value="todos">{t.todos}</SelectItem>
+   823→            <SelectItem value="critico">{locale === 'es' ? 'Crítico' : 'Critical'}</SelectItem>
+   824→            <SelectItem value="alto">{locale === 'es' ? 'Alto' : 'High'}</SelectItem>
+   825→            <SelectItem value="medio">{locale === 'es' ? 'Medio' : 'Medium'}</SelectItem>
+   826→            <SelectItem value="bajo">{locale === 'es' ? 'Bajo' : 'Low'}</SelectItem>
+   827→          </SelectContent>
+   828→        </Select>
+   829→      </div>
+   830→
+   831→      {/* Employee Cards */}
+   832→      {loading ? (
+   833→        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+   834→          {Array.from({ length: 6 }).map((_, i) => (
+   835→            <Card key={i}>
+   836→              <CardContent className="p-4">
+   837→                <div className="h-40 animate-pulse rounded bg-muted" />
+   838→              </CardContent>
+   839→            </Card>
+   840→          ))}
+   841→        </div>
+   842→      ) : empleados.length === 0 ? (
+   843→        <div className="text-center py-12">
+   844→          <Users className="size-12 text-muted-foreground mx-auto mb-3" />
+   845→          <p className="text-muted-foreground">{t.noResultados}</p>
+   846→        </div>
+   847→      ) : (
+   848→        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+   849→          {empleados.map(empleado => (
+   850→            <Card
+   851→              key={empleado.id}
+   852→              className="hover:shadow-md transition-shadow cursor-pointer"
+   853→              onClick={() => setSelectedEmployee(empleado.id)}
+   854→            >
+   855→              <CardContent className="p-4">
+   856→                <div className="flex items-start gap-3">
+   857→                  <Avatar className="size-12 shrink-0">
+   858→                    <AvatarFallback className="bg-teal-100 text-teal-700 text-sm font-semibold dark:bg-teal-900/40 dark:text-teal-300">
+   859→                      {getInitials(empleado.nombre)}
+   860→                    </AvatarFallback>
+   861→                  </Avatar>
+   862→                  <div className="flex-1 min-w-0">
+   863→                    <div className="flex items-center justify-between gap-2">
+   864→                      <span className="font-semibold text-sm truncate">{empleado.nombre}</span>
+   865→                      <Badge className={`text-[9px] px-1 py-0 shrink-0 ${getRiskColor(empleado.nivelRiesgoBaja)}`}>
+   866→                        {empleado.nivelRiesgoBaja}
+   867→                      </Badge>
+   868→                    </div>
+   869→                    <p className="text-xs text-muted-foreground truncate">{empleado.posicion}</p>
+   870→                    <p className="text-[11px] text-muted-foreground truncate flex items-center gap-1">
+   871→                      <MapPin className="size-3" />
+   872→                      {empleado.propiedad.nombre}
+   873→                    </p>
+   874→                    <div className="flex gap-1 mt-2">
+   875→                      <Badge variant="outline" className={`text-[10px] px-1.5 ${getEstadoBadge(empleado.estado, t).color}`}>
+   876→                        {getEstadoBadge(empleado.estado, t).label}
+   877→                      </Badge>
+   878→                      <Badge variant="outline" className="text-[10px] px-1.5">
+   879→                        {empleado.empleadoId}
+   880→                      </Badge>
+   881→                    </div>
+   882→                  </div>
+   883→                </div>
+   884→
+   885→                {/* Score bars */}
+   886→                <div className="mt-3 space-y-2">
+   887→                  <div>
+   888→                    <div className="flex justify-between text-[11px] mb-0.5">
+   889→                      <span>{t.scoreConocimiento}</span>
+   890→                      <span className="font-medium">{empleado.puntuacionConocimiento.toFixed(0)}</span>
+   891→                    </div>
+   892→                    <Progress value={empleado.puntuacionConocimiento} className={`h-1.5 ${getScoreColor(empleado.puntuacionConocimiento)}`} />
+   893→                  </div>
+   894→                  <div>
+   895→                    <div className="flex justify-between text-[11px] mb-0.5">
+   896→                      <span>{t.scoreVentas}</span>
+   897→                      <span className="font-medium">{empleado.puntuacionVentas.toFixed(0)}</span>
+   898→                    </div>
+   899→                    <Progress value={empleado.puntuacionVentas} className={`h-1.5 ${getScoreColor(empleado.puntuacionVentas)}`} />
+   900→                  </div>
+   901→                  <div>
+   902→                    <div className="flex justify-between text-[11px] mb-0.5">
+   903→                      <span>{t.scoreHospitalidad}</span>
+   904→                      <span className="font-medium">{empleado.puntuacionHospitalidad.toFixed(0)}</span>
+   905→                    </div>
+   906→                    <Progress value={empleado.puntuacionHospitalidad} className={`h-1.5 ${getScoreColor(empleado.puntuacionHospitalidad)}`} />
+   907→                  </div>
+   908→                </div>
+   909→
+   910→                {/* Footer stats */}
+   911→                <div className="flex items-center justify-between mt-3 pt-3 border-t text-xs text-muted-foreground">
+   912→                  <span className="flex items-center gap-1"><BookOpen className="size-3" /> {empleado.cursosCompletados} {t.cursos}</span>
+   913→                  <span className="flex items-center gap-1"><DollarSign className="size-3" /> ${empleado.totalUpselling.toFixed(0)}</span>
+   914→                  <span className="flex items-center gap-1"><Star className="size-3" /> {empleado.npsPromedio.toFixed(1)}</span>
+   915→                </div>
+   916→              </CardContent>
+   917→            </Card>
+   918→          ))}
+   919→        </div>
+   920→      )}
+   921→
+   922→      {/* ─── Create Employee Dialog ─────────────────────────────── */}
+   923→      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+   924→        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+   925→          <DialogHeader>
+   926→            <DialogTitle className="flex items-center gap-2">
+   927→              <UserPlus className="size-5 text-teal-600" />
+   928→              {t.agregarEmpleado}
+   929→            </DialogTitle>
+   930→            <DialogDescription>
+   931→              {locale === 'es'
+   932→                ? 'Complete la información del nuevo empleado'
+   933→                : 'Fill in the new employee information'}
+   934→            </DialogDescription>
+   935→          </DialogHeader>
+   936→
+   937→          <Tabs defaultValue="personal" className="w-full">
+   938→            <TabsList className="grid w-full grid-cols-2">
+   939→              <TabsTrigger value="personal" className="gap-1.5">
+   940→                <Users className="size-3.5" />
+   941→                {t.infoPersonal}
+   942→              </TabsTrigger>
+   943→              <TabsTrigger value="horario" className="gap-1.5">
+   944→                <Clock className="size-3.5" />
+   945→                {t.horarioContrato}
+   946→              </TabsTrigger>
+   947→            </TabsList>
+   948→
+   949→            {/* Tab 1: Información Personal */}
+   950→            <TabsContent value="personal" className="space-y-4 mt-4">
+   951→              <div className="grid gap-4 sm:grid-cols-2">
+   952→                <div className="space-y-2">
+   953→                  <Label htmlFor="nombre">{t.nombre} *</Label>
+   954→                  <Input
+   955→                    id="nombre"
+   956→                    placeholder={locale === 'es' ? 'Nombre completo' : 'Full name'}
+   957→                    value={formNombre}
+   958→                    onChange={e => setFormNombre(e.target.value)}
+   959→                  />
+   960→                </div>
+   961→                <div className="space-y-2">
+   962→                  <Label htmlFor="empleadoId">{t.idEmpleado} *</Label>
+   963→                  <Input
+   964→                    id="empleadoId"
+   965→                    placeholder="MES-401"
+   966→                    value={formEmpleadoId}
+   967→                    onChange={e => setFormEmpleadoId(e.target.value)}
+   968→                  />
+   969→                </div>
+   970→                <div className="space-y-2">
+   971→                  <Label htmlFor="posicion">{t.puesto} *</Label>
+   972→                  <Input
+   973→                    id="posicion"
+   974→                    placeholder={locale === 'es' ? 'Ej: Mesero Jr.' : 'e.g. Jr. Waiter'}
+   975→                    value={formPosicion}
+   976→                    onChange={e => setFormPosicion(e.target.value)}
+   977→                  />
+   978→                </div>
+   979→                <div className="space-y-2">
+   980→                  <Label htmlFor="posicionEn">{t.puestoEn}</Label>
+   981→                  <Input
+   982→                    id="posicionEn"
+   983→                    placeholder="e.g. Jr. Waiter"
+   984→                    value={formPosicionEn}
+   985→                    onChange={e => setFormPosicionEn(e.target.value)}
+   986→                  />
+   987→                </div>
+   988→                <div className="space-y-2">
+   989→                  <Label>{t.departamento}</Label>
+   990→                  <Select value={formDepartamento} onValueChange={handleDepartamentoChange}>
+   991→                    <SelectTrigger>
+   992→                      <SelectValue placeholder={t.seleccionar} />
+   993→                    </SelectTrigger>
+   994→                    <SelectContent>
+   995→                      {DEPARTAMENTOS.map(d => (
+   996→                        <SelectItem key={d.es} value={d.es}>
+   997→                          {locale === 'es' ? d.es : d.en}
+   998→                        </SelectItem>
+   999→                      ))}
+  1000→                    </SelectContent>
+  1001→                  </Select>
+  1002→                </div>
+  1003→                <div className="space-y-2">
+  1004→                  <Label>{t.propiedad}</Label>
+  1005→                  <Select
+  1006→                    value={formPropiedadId || (selectedProperty !== 'all' ? selectedProperty : '')}
+  1007→                    onValueChange={setFormPropiedadId}
+  1008→                  >
+  1009→                    <SelectTrigger>
+  1010→                      <SelectValue placeholder={t.seleccionar} />
+  1011→                    </SelectTrigger>
+  1012→                    <SelectContent>
+  1013→                      {propiedades.map(p => (
+  1014→                        <SelectItem key={p.id} value={p.id}>
+  1015→                          {locale === 'es' ? p.nombre : (p.nombreEn || p.nombre)}
+  1016→                        </SelectItem>
+  1017→                      ))}
+  1018→                    </SelectContent>
+  1019→                  </Select>
+  1020→                </div>
+  1021→                <div className="space-y-2">
+  1022→                  <Label htmlFor="fechaIngreso" className="flex items-center gap-1.5">
+  1023→                    <Calendar className="size-3.5" />
+  1024→                    {t.fechaIngreso}
+  1025→                  </Label>
+  1026→                  <Input
+  1027→                    id="fechaIngreso"
+  1028→                    type="date"
+  1029→                    value={formFechaIngreso}
+  1030→                    onChange={e => setFormFechaIngreso(e.target.value)}
+  1031→                  />
+  1032→                </div>
+  1033→                <div className="space-y-2">
+  1034→                  <Label htmlFor="foto" className="flex items-center gap-1.5">
+  1035→                    {t.foto}
+  1036→                  </Label>
+  1037→                  <Input
+  1038→                    id="foto"
+  1039→                    placeholder="https://..."
+  1040→                    value={formFoto}
+  1041→                    onChange={e => setFormFoto(e.target.value)}
+  1042→                  />
+  1043→                </div>
+  1044→              </div>
+  1045→            </TabsContent>
+  1046→
+  1047→            {/* Tab 2: Horario y Contrato */}
+  1048→            <TabsContent value="horario" className="space-y-4 mt-4">
+  1049→              <div className="grid gap-4 sm:grid-cols-2">
+  1050→                <div className="space-y-2">
+  1051→                  <Label className="flex items-center gap-1.5">
+  1052→                    <Clock className="size-3.5" />
+  1053→                    {t.tipoJornada}
+  1054→                  </Label>
+  1055→                  <Select value={formTipoJornada} onValueChange={setFormTipoJornada}>
+  1056→                    <SelectTrigger>
+  1057→                      <SelectValue />
+  1058→                    </SelectTrigger>
+  1059→                    <SelectContent>
+  1060→                      <SelectItem value="fijo">{t.fijo}</SelectItem>
+  1061→                      <SelectItem value="mixto">{t.mixto}</SelectItem>
+  1062→                      <SelectItem value="variable">{t.variable}</SelectItem>
+  1063→                    </SelectContent>
+  1064→                  </Select>
+  1065→                </div>
+  1066→                <div className="space-y-2">
+  1067→                  <Label className="flex items-center gap-1.5">
+  1068→                    <Sun className="size-3.5" />
+  1069→                    {t.turnoPreferido}
+  1070→                  </Label>
+  1071→                  <Select value={formTurnoPreferido} onValueChange={setFormTurnoPreferido}>
+  1072→                    <SelectTrigger>
+  1073→                      <SelectValue />
+  1074→                    </SelectTrigger>
+  1075→                    <SelectContent>
+  1076→                      <SelectItem value="matutino">{t.matutino}</SelectItem>
+  1077→                      <SelectItem value="vespertino">{t.vespertino}</SelectItem>
+  1078→                      <SelectItem value="nocturno">{t.nocturno}</SelectItem>
+  1079→                      <SelectItem value="mixto">{t.mixto}</SelectItem>
+  1080→                    </SelectContent>
+  1081→                  </Select>
+  1082→                </div>
+  1083→                <div className="space-y-2">
+  1084→                  <Label htmlFor="horarioEntrada">{t.horarioEntrada}</Label>
+  1085→                  <Input
+  1086→                    id="horarioEntrada"
+  1087→                    type="time"
+  1088→                    value={formHorarioEntrada}
+  1089→                    onChange={e => setFormHorarioEntrada(e.target.value)}
+  1090→                  />
+  1091→                </div>
+  1092→                <div className="space-y-2">
+  1093→                  <Label htmlFor="horarioSalida">{t.horarioSalida}</Label>
+  1094→                  <Input
+  1095→                    id="horarioSalida"
+  1096→                    type="time"
+  1097→                    value={formHorarioSalida}
+  1098→                    onChange={e => setFormHorarioSalida(e.target.value)}
+  1099→                  />
+  1100→                </div>
+  1101→              </div>
+  1102→
+  1103→              {/* Días de trabajo */}
+  1104→              <div className="space-y-2">
+  1105→                <Label>{t.diasTrabajo}</Label>
+  1106→                <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
+  1107→                  {DIAS_SEMANA.map(dia => (
+  1108→                    <div key={dia} className="flex items-center gap-1.5">
+  1109→                      <Checkbox
+  1110→                        id={`dia-${dia}`}
+  1111→                        checked={formDiasTrabajo.includes(dia)}
+  1112→                        onCheckedChange={() => handleDiaToggle(dia)}
+  1113→                      />
+  1114→                      <Label htmlFor={`dia-${dia}`} className="text-xs cursor-pointer">
+  1115→                        {formatDiaName(dia, locale)}
+  1116→                      </Label>
+  1117→                    </div>
+  1118→                  ))}
+  1119→                </div>
+  1120→              </div>
+  1121→
+  1122→              {/* Cubre turnos */}
+  1123→              <div className="flex items-center gap-3">
+  1124→                <Switch
+  1125→                  id="cubreTurnos"
+  1126→                  checked={formCubreTurnos}
+  1127→                  onCheckedChange={setFormCubreTurnos}
+  1128→                />
+  1129→                <Label htmlFor="cubreTurnos" className="cursor-pointer">{t.cubreTurnos}</Label>
+  1130→              </div>
+  1131→
+  1132→              <Separator />
+  1133→
+  1134→              {/* Contrato */}
+  1135→              <div className="grid gap-4 sm:grid-cols-2">
+  1136→                <div className="space-y-2">
+  1137→                  <Label className="flex items-center gap-1.5">
+  1138→                    <Briefcase className="size-3.5" />
+  1139→                    {t.tipoContrato}
+  1140→                  </Label>
+  1141→                  <Select value={formTipoContrato} onValueChange={setFormTipoContrato}>
+  1142→                    <SelectTrigger>
+  1143→                      <SelectValue />
+  1144→                    </SelectTrigger>
+  1145→                    <SelectContent>
+  1146→                      <SelectItem value="indefinido">{t.indefinido}</SelectItem>
+  1147→                      <SelectItem value="temporal">{t.temporal}</SelectItem>
+  1148→                      <SelectItem value="eventual">{t.eventual}</SelectItem>
+  1149→                      <SelectItem value="practica">{t.practica}</SelectItem>
+  1150→                    </SelectContent>
+  1151→                  </Select>
+  1152→                </div>
+  1153→                <div className="space-y-2">
+  1154→                  <Label htmlFor="salario" className="flex items-center gap-1.5">
+  1155→                    <DollarSign className="size-3.5" />
+  1156→                    {t.salario}
+  1157→                  </Label>
+  1158→                  <Input
+  1159→                    id="salario"
+  1160→                    type="number"
+  1161→                    placeholder="0.00"
+  1162→                    value={formSalario}
+  1163→                    onChange={e => setFormSalario(e.target.value)}
+  1164→                  />
+  1165→                </div>
+  1166→                {formTipoContrato !== 'indefinido' && (
+  1167→                  <div className="space-y-2">
+  1168→                    <Label htmlFor="fechaFinContrato" className="flex items-center gap-1.5">
+  1169→                      <Calendar className="size-3.5" />
+  1170→                      {t.fechaFinContrato}
+  1171→                    </Label>
+  1172→                    <Input
+  1173→                      id="fechaFinContrato"
+  1174→                      type="date"
+  1175→                      value={formFechaFinContrato}
+  1176→                      onChange={e => setFormFechaFinContrato(e.target.value)}
+  1177→                    />
+  1178→                  </div>
+  1179→                )}
+  1180→                <div className="space-y-2">
+  1181→                  <Label>{t.estado}</Label>
+  1182→                  <Select value={formEstado} onValueChange={setFormEstado}>
+  1183→                    <SelectTrigger>
+  1184→                      <SelectValue />
+  1185→                    </SelectTrigger>
+  1186→                    <SelectContent>
+  1187→                      <SelectItem value="onboarding">{t.onboarding}</SelectItem>
+  1188→                      <SelectItem value="activo">{t.activo}</SelectItem>
+  1189→                      <SelectItem value="offboarding">{t.offboarding}</SelectItem>
+  1190→                      <SelectItem value="inactivo">{t.inactivo}</SelectItem>
+  1191→                    </SelectContent>
+  1192→                  </Select>
+  1193→                </div>
+  1194→              </div>
+  1195→            </TabsContent>
+  1196→          </Tabs>
+  1197→
+  1198→          <DialogFooter className="gap-2 sm:gap-0">
+  1199→            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+  1200→              {tc.cancel}
+  1201→            </Button>
+  1202→            <Button
+  1203→              className="bg-teal-600 hover:bg-teal-700 text-white"
+  1204→              onClick={handleCreateEmpleado}
+  1205→              disabled={saving}
+  1206→            >
+  1207→              {saving ? (
+  1208→                <>
+  1209→                  <div className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+  1210→                  {t.guardando}
+  1211→                </>
+  1212→              ) : (
+  1213→                <>
+  1214→                  <Plus className="size-4" />
+  1215→                  {t.guardar}
+  1216→                </>
+  1217→              )}
+  1218→            </Button>
+  1219→          </DialogFooter>
+  1220→        </DialogContent>
+  1221→      </Dialog>
+  1222→    </div>
+  1223→  )
+  1224→}
+  1225→

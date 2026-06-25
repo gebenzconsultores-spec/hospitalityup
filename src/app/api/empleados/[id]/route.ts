@@ -104,6 +104,17 @@ export async function PATCH(
         ...(body.nivelCarrera !== undefined && { nivelCarrera: body.nivelCarrera }),
         ...(body.rutaCarrera !== undefined && { rutaCarrera: body.rutaCarrera }),
         ...(body.rutaCarreraEn !== undefined && { rutaCarreraEn: body.rutaCarreraEn }),
+        // Horario y jornada laboral
+        ...(body.tipoJornada !== undefined && { tipoJornada: body.tipoJornada }),
+        ...(body.horarioEntrada !== undefined && { horarioEntrada: body.horarioEntrada }),
+        ...(body.horarioSalida !== undefined && { horarioSalida: body.horarioSalida }),
+        ...(body.diasTrabajo !== undefined && { diasTrabajo: body.diasTrabajo }),
+        ...(body.cubreTurnos !== undefined && { cubreTurnos: body.cubreTurnos }),
+        ...(body.turnoPreferido !== undefined && { turnoPreferido: body.turnoPreferido }),
+        ...(body.salario !== undefined && { salario: body.salario }),
+        ...(body.tipoContrato !== undefined && { tipoContrato: body.tipoContrato }),
+        ...(body.fechaFinContrato !== undefined && { fechaFinContrato: body.fechaFinContrato ? new Date(body.fechaFinContrato) : null }),
+        // Scores
         ...(body.puntuacionConocimiento !== undefined && { puntuacionConocimiento: body.puntuacionConocimiento }),
         ...(body.puntuacionVentas !== undefined && { puntuacionVentas: body.puntuacionVentas }),
         ...(body.puntuacionHospitalidad !== undefined && { puntuacionHospitalidad: body.puntuacionHospitalidad }),

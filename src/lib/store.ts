@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { Locale } from './i18n'
 
-export type ViewMode = 'dashboard' | 'empleados' | 'ventas' | 'capacitacion' | 'bolsa' | 'configuracion' | 'trabajador' | 'servicios'
+export type ViewMode = 'dashboard' | 'empleados' | 'ventas' | 'capacitacion' | 'bolsa' | 'configuracion' | 'trabajador' | 'servicios' | 'propiedades'
 
 interface AppState {
   // Navigation

@@ -50,6 +50,16 @@ model Empleado {
   nivelCarrera        Int      @default(1)
   rutaCarrera         String?  // "Mesero Jr. → Mesero Sr. → Capitán → Gerente A&B"
   rutaCarreraEn       String?
+  // Horario y jornada laboral
+  tipoJornada         String   @default("fijo") // fijo, mixto, variable
+  horarioEntrada      String?  // Ej: "08:00"
+  horarioSalida       String?  // Ej: "16:00"
+  diasTrabajo         String?  // JSON: ["lunes","martes","miercoles","jueves","viernes"]
+  cubreTurnos         Boolean  @default(false) // ¿Cubre turnos de otros?
+  turnoPreferido      String?  // matutino, vespertino, nocturno, mixto
+  salario             Float?
+  tipoContrato        String?  // indefinido, temporal, eventual, practica
+  fechaFinContrato    DateTime?
   // Scores del "Score Integral" del Empleado
   puntuacionConocimiento Float @default(0)  // 0-100, desde cursos
   puntuacionVentas       Float @default(0)  // 0-100, desde upselling

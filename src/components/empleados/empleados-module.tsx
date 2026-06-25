@@ -14,6 +14,15 @@ import {
   Brain,
   TrendingUp,
   MapPin,
+  Clock,
+  Calendar,
+  Briefcase,
+  Plus,
+  UserPlus,
+  Sun,
+  Moon,
+  Sunset,
+  Shuffle,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -34,8 +43,13 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
+import { Switch } from '@/components/ui/switch'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
 import { useAppStore } from '@/lib/store'
 import { translations } from '@/lib/i18n'
 import { toast } from 'sonner'
@@ -54,6 +68,17 @@ interface Empleado {
   estado: string
   nivelCarrera: number
   rutaCarrera: string | null
+  // Horario y jornada laboral
+  tipoJornada: string
+  horarioEntrada: string | null
+  horarioSalida: string | null
+  diasTrabajo: string | null
+  cubreTurnos: boolean
+  turnoPreferido: string | null
+  salario: number | null
+  tipoContrato: string | null
+  fechaFinContrato: string | null
+  // Scores
   puntuacionConocimiento: number
   puntuacionVentas: number
   puntuacionHospitalidad: number
@@ -71,6 +96,12 @@ interface Empleado {
   _count: { cursos: number; alertas: number; ventas: number }
 }
 
+interface Propiedad {
+  id: string
+  nombre: string
+  nombreEn: string | null
+}
+
 interface AIAnalysis {
   success: boolean
   analisis: {
@@ -82,6 +113,20 @@ interface AIAnalysis {
     acciones_recomendadas: string[]
   }
 }
+
+// ─── Departamento mapping ────────────────────────────────────
+const DEPARTAMENTOS = [
+  { es: 'Alimentos y Bebidas', en: 'Food & Beverage', code: 'AYB' },
+  { es: 'Conserjería', en: 'Concierge', code: 'CON' },
+  { es: 'Recepción', en: 'Reception', code: 'REC' },
+  { es: 'Cocina', en: 'Kitchen', code: 'COC' },
+  { es: 'Spa y Bienestar', en: 'Spa & Wellness', code: 'SPA' },
+  { es: 'Mantenimiento', en: 'Maintenance', code: 'MAN' },
+  { es: 'Seguridad', en: 'Security', code: 'SEG' },
+  { es: 'Administración', en: 'Administration', code: 'ADM' },
+]
+
+const DIAS_SEMANA = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo']
 
 // ─── Helpers ─────────────────────────────────────────────────
 function getInitials(name: string): string {
@@ -113,6 +158,45 @@ function getScoreColor(score: number): string {
   return '[&>[data-slot=progress-indicator]]:bg-red-500'
 }
 
+function getJornadaBadge(tipo: string, t: typeof translations.es.employees): { color: string; label: string } {
+  switch (tipo) {
+    case 'fijo': return { color: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400', label: t.fijo }
+    case 'mixto': return { color: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400', label: t.mixto }
+    case 'variable': return { color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400', label: t.variable }
+    default: return { color: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400', label: tipo }
+  }
+}
+
+function getTurnoIcon(turno: string | null) {
+  switch (turno) {
+    case 'matutino': return Sun
+    case 'vespertino': return Sunset
+    case 'nocturno': return Moon
+    default: return Shuffle
+  }
+}
+
+function parseDiasTrabajo(diasJson: string | null): string[] {
+  if (!diasJson) return []
+  try {
+    return JSON.parse(diasJson)
+  } catch {
+    return []
+  }
+}
+
+function formatDiaName(dia: string, locale: string): string {
+  const diasEs: Record<string, string> = {
+    lunes: 'Lun', martes: 'Mar', miercoles: 'Mié', jueves: 'Jue',
+    viernes: 'Vie', sabado: 'Sáb', domingo: 'Dom',
+  }
+  const diasEn: Record<string, string> = {
+    lunes: 'Mon', martes: 'Tue', miercoles: 'Wed', jueves: 'Thu',
+    viernes: 'Fri', sabado: 'Sat', domingo: 'Sun',
+  }
+  return locale === 'es' ? (diasEs[dia] || dia) : (diasEn[dia] || dia)
+}
+
 // ─── Main Component ──────────────────────────────────────────
 export function EmpleadosModule() {
   const { locale, selectedProperty, selectedEmployee, setSelectedEmployee } = useAppStore()
@@ -127,6 +211,31 @@ export function EmpleadosModule() {
   const [analyzing, setAnalyzing] = useState<string | null>(null)
   const [aiResult, setAiResult] = useState<AIAnalysis | null>(null)
   const [showAIDialog, setShowAIDialog] = useState(false)
+
+  // Add Employee dialog state
+  const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [propiedades, setPropiedades] = useState<Propiedad[]>([])
+
+  // Form state
+  const [formNombre, setFormNombre] = useState('')
+  const [formEmpleadoId, setFormEmpleadoId] = useState('')
+  const [formPosicion, setFormPosicion] = useState('')
+  const [formPosicionEn, setFormPosicionEn] = useState('')
+  const [formDepartamento, setFormDepartamento] = useState('')
+  const [formPropiedadId, setFormPropiedadId] = useState('')
+  const [formFechaIngreso, setFormFechaIngreso] = useState('')
+  const [formFoto, setFormFoto] = useState('')
+  const [formTipoJornada, setFormTipoJornada] = useState('fijo')
+  const [formHorarioEntrada, setFormHorarioEntrada] = useState('08:00')
+  const [formHorarioSalida, setFormHorarioSalida] = useState('16:00')
+  const [formDiasTrabajo, setFormDiasTrabajo] = useState<string[]>(['lunes', 'martes', 'miercoles', 'jueves', 'viernes'])
+  const [formCubreTurnos, setFormCubreTurnos] = useState(false)
+  const [formTurnoPreferido, setFormTurnoPreferido] = useState('matutino')
+  const [formSalario, setFormSalario] = useState('')
+  const [formTipoContrato, setFormTipoContrato] = useState('indefinido')
+  const [formFechaFinContrato, setFormFechaFinContrato] = useState('')
+  const [formEstado, setFormEstado] = useState('onboarding')
 
   const fetchEmpleados = useCallback(async () => {
     setLoading(true)
@@ -146,9 +255,23 @@ export function EmpleadosModule() {
     }
   }, [selectedProperty, search, filterDepto, filterRiesgo])
 
+  const fetchPropiedades = useCallback(async () => {
+    try {
+      const res = await fetch('/api/propiedades')
+      const data = await res.json()
+      setPropiedades(Array.isArray(data) ? data.map((p: { id: string; nombre: string; nombreEn: string | null }) => ({ id: p.id, nombre: p.nombre, nombreEn: p.nombreEn })) : [])
+    } catch {
+      // ignore
+    }
+  }, [])
+
   useEffect(() => {
     fetchEmpleados()
   }, [fetchEmpleados])
+
+  useEffect(() => {
+    fetchPropiedades()
+  }, [fetchPropiedades])
 
   const handleAnalizarIA = async (empleadoId: string) => {
     setAnalyzing(empleadoId)
@@ -174,6 +297,101 @@ export function EmpleadosModule() {
     }
   }
 
+  const resetForm = () => {
+    setFormNombre('')
+    setFormEmpleadoId('')
+    setFormPosicion('')
+    setFormPosicionEn('')
+    setFormDepartamento('')
+    setFormPropiedadId(selectedProperty !== 'all' ? selectedProperty : '')
+    setFormFechaIngreso(new Date().toISOString().split('T')[0])
+    setFormFoto('')
+    setFormTipoJornada('fijo')
+    setFormHorarioEntrada('08:00')
+    setFormHorarioSalida('16:00')
+    setFormDiasTrabajo(['lunes', 'martes', 'miercoles', 'jueves', 'viernes'])
+    setFormCubreTurnos(false)
+    setFormTurnoPreferido('matutino')
+    setFormSalario('')
+    setFormTipoContrato('indefinido')
+    setFormFechaFinContrato('')
+    setFormEstado('onboarding')
+  }
+
+  const handleDepartamentoChange = (depto: string) => {
+    setFormDepartamento(depto)
+    const deptoMap = DEPARTAMENTOS.find(d => d.es === depto)
+    if (deptoMap) {
+      const num = Math.floor(Math.random() * 900) + 100
+      setFormEmpleadoId(`${deptoMap.code}-${num}`)
+    }
+  }
+
+  const handleDiaToggle = (dia: string) => {
+    setFormDiasTrabajo(prev =>
+      prev.includes(dia) ? prev.filter(d => d !== dia) : [...prev, dia]
+    )
+  }
+
+  const handleCreateEmpleado = async () => {
+    if (!formNombre.trim()) {
+      toast.error(t.nombreRequerido)
+      return
+    }
+    if (!formEmpleadoId.trim()) {
+      toast.error(t.idEmpleadoRequerido)
+      return
+    }
+    if (!formPosicion.trim()) {
+      toast.error(t.puestoRequerido)
+      return
+    }
+
+    setSaving(true)
+    try {
+      const payload = {
+        nombre: formNombre.trim(),
+        empleadoId: formEmpleadoId.trim(),
+        posicion: formPosicion.trim(),
+        posicionEn: formPosicionEn.trim() || null,
+        departamento: formDepartamento,
+        departamentoEn: DEPARTAMENTOS.find(d => d.es === formDepartamento)?.en || null,
+        foto: formFoto.trim() || null,
+        fechaIngreso: formFechaIngreso || new Date().toISOString(),
+        estado: formEstado,
+        tipoJornada: formTipoJornada,
+        horarioEntrada: formHorarioEntrada || null,
+        horarioSalida: formHorarioSalida || null,
+        diasTrabajo: formDiasTrabajo.length > 0 ? JSON.stringify(formDiasTrabajo) : null,
+        cubreTurnos: formCubreTurnos,
+        turnoPreferido: formTurnoPreferido,
+        salario: formSalario ? parseFloat(formSalario) : null,
+        tipoContrato: formTipoContrato,
+        fechaFinContrato: formTipoContrato !== 'indefinido' && formFechaFinContrato ? formFechaFinContrato : null,
+        propiedadId: formPropiedadId || selectedProperty !== 'all' ? (formPropiedadId || selectedProperty) : propiedades[0]?.id,
+      }
+
+      const res = await fetch('/api/empleados', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (res.ok) {
+        toast.success(t.empleadoCreado)
+        setShowCreateDialog(false)
+        resetForm()
+        fetchEmpleados()
+      } else {
+        toast.error(t.errorCrear)
+      }
+    } catch {
+      toast.error(t.errorCrear)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   // Unique departments for filter
   const departamentos = [...new Set(empleados.map(e => e.departamento))]
 
@@ -182,6 +400,9 @@ export function EmpleadosModule() {
 
   // ─── Detail View ─────────────────────────────────────────
   if (empleadoDetalle) {
+    const diasParsed = parseDiasTrabajo(empleadoDetalle.diasTrabajo)
+    const TurnoIcon = getTurnoIcon(empleadoDetalle.turnoPreferido)
+
     return (
       <div className="space-y-6">
         <Button variant="ghost" className="gap-1.5" onClick={() => setSelectedEmployee(null)}>
@@ -254,7 +475,7 @@ export function EmpleadosModule() {
             </CardContent>
           </Card>
 
-          {/* Scores + Career Path */}
+          {/* Scores + Career Path + Schedule + Contract */}
           <div className="lg:col-span-2 space-y-4">
             {/* Score Integral */}
             <Card>
@@ -292,6 +513,123 @@ export function EmpleadosModule() {
                     </div>
                     <Progress value={empleadoDetalle.puntuacionTotal} className={`h-3 ${getScoreColor(empleadoDetalle.puntuacionTotal)}`} />
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Schedule (Horario) */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Clock className="size-4 text-teal-600" />
+                  {t.horario}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-xs text-muted-foreground">{t.jornada}</span>
+                    <div className="mt-1">
+                      <Badge className={getJornadaBadge(empleadoDetalle.tipoJornada, t).color}>
+                        {getJornadaBadge(empleadoDetalle.tipoJornada, t).label}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-xs text-muted-foreground">{t.turnoPreferido}</span>
+                    <div className="mt-1 flex items-center gap-1.5">
+                      <TurnoIcon className="size-4 text-teal-600" />
+                      <span className="text-sm font-medium">
+                        {empleadoDetalle.turnoPreferido === 'matutino' ? t.matutino
+                          : empleadoDetalle.turnoPreferido === 'vespertino' ? t.vespertino
+                          : empleadoDetalle.turnoPreferido === 'nocturno' ? t.nocturno
+                          : t.mixto}
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-xs text-muted-foreground">{t.entrada}</span>
+                    <p className="text-sm font-semibold mt-0.5">{empleadoDetalle.horarioEntrada || '—'}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-muted-foreground">{t.salida}</span>
+                    <p className="text-sm font-semibold mt-0.5">{empleadoDetalle.horarioSalida || '—'}</p>
+                  </div>
+                </div>
+
+                <Separator className="my-3" />
+
+                <div>
+                  <span className="text-xs text-muted-foreground">{t.dias}</span>
+                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                    {DIAS_SEMANA.map(dia => {
+                      const isActive = diasParsed.includes(dia)
+                      return (
+                        <span
+                          key={dia}
+                          className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                            isActive
+                              ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400'
+                              : 'bg-muted text-muted-foreground'
+                          }`}
+                        >
+                          {formatDiaName(dia, locale)}
+                        </span>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <Separator className="my-3" />
+
+                <div className="flex items-center gap-2">
+                  <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${
+                    empleadoDetalle.cubreTurnos
+                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                      : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
+                  }`}>
+                    {empleadoDetalle.cubreTurnos ? t.siCubre : t.noCubre}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Contract (Contrato) */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Briefcase className="size-4 text-teal-600" />
+                  {t.contrato}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-xs text-muted-foreground">{t.tipoContrato}</span>
+                    <p className="text-sm font-semibold mt-0.5">
+                      {empleadoDetalle.tipoContrato === 'indefinido' ? t.indefinido
+                        : empleadoDetalle.tipoContrato === 'temporal' ? t.temporal
+                        : empleadoDetalle.tipoContrato === 'eventual' ? t.eventual
+                        : empleadoDetalle.tipoContrato === 'practica' ? t.practica
+                        : empleadoDetalle.tipoContrato || '—'}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-muted-foreground">{t.salario}</span>
+                    <p className="text-sm font-semibold mt-0.5">
+                      {empleadoDetalle.salario ? `$${empleadoDetalle.salario.toLocaleString()}` : '—'}
+                    </p>
+                  </div>
+                  {empleadoDetalle.tipoContrato && empleadoDetalle.tipoContrato !== 'indefinido' && (
+                    <div>
+                      <span className="text-xs text-muted-foreground">{t.fechaFinContrato}</span>
+                      <p className="text-sm font-semibold mt-0.5">
+                        {empleadoDetalle.fechaFinContrato
+                          ? new Date(empleadoDetalle.fechaFinContrato).toLocaleDateString(locale === 'es' ? 'es-MX' : 'en-US')
+                          : '—'}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -435,11 +773,23 @@ export function EmpleadosModule() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
-        <p className="text-sm text-muted-foreground">
-          {locale === 'es' ? 'Gestión de personal, scores y rutas de carrera' : 'Staff management, scores and career paths'}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
+          <p className="text-sm text-muted-foreground">
+            {locale === 'es' ? 'Gestión de personal, scores y rutas de carrera' : 'Staff management, scores and career paths'}
+          </p>
+        </div>
+        <Button
+          className="bg-teal-600 hover:bg-teal-700 text-white gap-1.5"
+          onClick={() => {
+            resetForm()
+            setShowCreateDialog(true)
+          }}
+        >
+          <UserPlus className="size-4" />
+          {t.agregarEmpleado}
+        </Button>
       </div>
 
       {/* Filters */}
@@ -568,6 +918,307 @@ export function EmpleadosModule() {
           ))}
         </div>
       )}
+
+      {/* ─── Create Employee Dialog ─────────────────────────────── */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="size-5 text-teal-600" />
+              {t.agregarEmpleado}
+            </DialogTitle>
+            <DialogDescription>
+              {locale === 'es'
+                ? 'Complete la información del nuevo empleado'
+                : 'Fill in the new employee information'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <Tabs defaultValue="personal" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="personal" className="gap-1.5">
+                <Users className="size-3.5" />
+                {t.infoPersonal}
+              </TabsTrigger>
+              <TabsTrigger value="horario" className="gap-1.5">
+                <Clock className="size-3.5" />
+                {t.horarioContrato}
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Tab 1: Información Personal */}
+            <TabsContent value="personal" className="space-y-4 mt-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="nombre">{t.nombre} *</Label>
+                  <Input
+                    id="nombre"
+                    placeholder={locale === 'es' ? 'Nombre completo' : 'Full name'}
+                    value={formNombre}
+                    onChange={e => setFormNombre(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="empleadoId">{t.idEmpleado} *</Label>
+                  <Input
+                    id="empleadoId"
+                    placeholder="MES-401"
+                    value={formEmpleadoId}
+                    onChange={e => setFormEmpleadoId(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="posicion">{t.puesto} *</Label>
+                  <Input
+                    id="posicion"
+                    placeholder={locale === 'es' ? 'Ej: Mesero Jr.' : 'e.g. Jr. Waiter'}
+                    value={formPosicion}
+                    onChange={e => setFormPosicion(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="posicionEn">{t.puestoEn}</Label>
+                  <Input
+                    id="posicionEn"
+                    placeholder="e.g. Jr. Waiter"
+                    value={formPosicionEn}
+                    onChange={e => setFormPosicionEn(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>{t.departamento}</Label>
+                  <Select value={formDepartamento} onValueChange={handleDepartamentoChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t.seleccionar} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DEPARTAMENTOS.map(d => (
+                        <SelectItem key={d.es} value={d.es}>
+                          {locale === 'es' ? d.es : d.en}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>{t.propiedad}</Label>
+                  <Select
+                    value={formPropiedadId || (selectedProperty !== 'all' ? selectedProperty : '')}
+                    onValueChange={setFormPropiedadId}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={t.seleccionar} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {propiedades.map(p => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {locale === 'es' ? p.nombre : (p.nombreEn || p.nombre)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="fechaIngreso" className="flex items-center gap-1.5">
+                    <Calendar className="size-3.5" />
+                    {t.fechaIngreso}
+                  </Label>
+                  <Input
+                    id="fechaIngreso"
+                    type="date"
+                    value={formFechaIngreso}
+                    onChange={e => setFormFechaIngreso(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="foto" className="flex items-center gap-1.5">
+                    {t.foto}
+                  </Label>
+                  <Input
+                    id="foto"
+                    placeholder="https://..."
+                    value={formFoto}
+                    onChange={e => setFormFoto(e.target.value)}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* Tab 2: Horario y Contrato */}
+            <TabsContent value="horario" className="space-y-4 mt-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5">
+                    <Clock className="size-3.5" />
+                    {t.tipoJornada}
+                  </Label>
+                  <Select value={formTipoJornada} onValueChange={setFormTipoJornada}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="fijo">{t.fijo}</SelectItem>
+                      <SelectItem value="mixto">{t.mixto}</SelectItem>
+                      <SelectItem value="variable">{t.variable}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5">
+                    <Sun className="size-3.5" />
+                    {t.turnoPreferido}
+                  </Label>
+                  <Select value={formTurnoPreferido} onValueChange={setFormTurnoPreferido}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="matutino">{t.matutino}</SelectItem>
+                      <SelectItem value="vespertino">{t.vespertino}</SelectItem>
+                      <SelectItem value="nocturno">{t.nocturno}</SelectItem>
+                      <SelectItem value="mixto">{t.mixto}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="horarioEntrada">{t.horarioEntrada}</Label>
+                  <Input
+                    id="horarioEntrada"
+                    type="time"
+                    value={formHorarioEntrada}
+                    onChange={e => setFormHorarioEntrada(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="horarioSalida">{t.horarioSalida}</Label>
+                  <Input
+                    id="horarioSalida"
+                    type="time"
+                    value={formHorarioSalida}
+                    onChange={e => setFormHorarioSalida(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Días de trabajo */}
+              <div className="space-y-2">
+                <Label>{t.diasTrabajo}</Label>
+                <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
+                  {DIAS_SEMANA.map(dia => (
+                    <div key={dia} className="flex items-center gap-1.5">
+                      <Checkbox
+                        id={`dia-${dia}`}
+                        checked={formDiasTrabajo.includes(dia)}
+                        onCheckedChange={() => handleDiaToggle(dia)}
+                      />
+                      <Label htmlFor={`dia-${dia}`} className="text-xs cursor-pointer">
+                        {formatDiaName(dia, locale)}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Cubre turnos */}
+              <div className="flex items-center gap-3">
+                <Switch
+                  id="cubreTurnos"
+                  checked={formCubreTurnos}
+                  onCheckedChange={setFormCubreTurnos}
+                />
+                <Label htmlFor="cubreTurnos" className="cursor-pointer">{t.cubreTurnos}</Label>
+              </div>
+
+              <Separator />
+
+              {/* Contrato */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5">
+                    <Briefcase className="size-3.5" />
+                    {t.tipoContrato}
+                  </Label>
+                  <Select value={formTipoContrato} onValueChange={setFormTipoContrato}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="indefinido">{t.indefinido}</SelectItem>
+                      <SelectItem value="temporal">{t.temporal}</SelectItem>
+                      <SelectItem value="eventual">{t.eventual}</SelectItem>
+                      <SelectItem value="practica">{t.practica}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="salario" className="flex items-center gap-1.5">
+                    <DollarSign className="size-3.5" />
+                    {t.salario}
+                  </Label>
+                  <Input
+                    id="salario"
+                    type="number"
+                    placeholder="0.00"
+                    value={formSalario}
+                    onChange={e => setFormSalario(e.target.value)}
+                  />
+                </div>
+                {formTipoContrato !== 'indefinido' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="fechaFinContrato" className="flex items-center gap-1.5">
+                      <Calendar className="size-3.5" />
+                      {t.fechaFinContrato}
+                    </Label>
+                    <Input
+                      id="fechaFinContrato"
+                      type="date"
+                      value={formFechaFinContrato}
+                      onChange={e => setFormFechaFinContrato(e.target.value)}
+                    />
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label>{t.estado}</Label>
+                  <Select value={formEstado} onValueChange={setFormEstado}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="onboarding">{t.onboarding}</SelectItem>
+                      <SelectItem value="activo">{t.activo}</SelectItem>
+                      <SelectItem value="offboarding">{t.offboarding}</SelectItem>
+                      <SelectItem value="inactivo">{t.inactivo}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+              {tc.cancel}
+            </Button>
+            <Button
+              className="bg-teal-600 hover:bg-teal-700 text-white"
+              onClick={handleCreateEmpleado}
+              disabled={saving}
+            >
+              {saving ? (
+                <>
+                  <div className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  {t.guardando}
+                </>
+              ) : (
+                <>
+                  <Plus className="size-4" />
+                  {t.guardar}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

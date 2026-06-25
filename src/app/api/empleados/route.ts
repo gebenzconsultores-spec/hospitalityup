@@ -72,6 +72,17 @@ export async function POST(request: Request) {
         nivelCarrera: body.nivelCarrera || 1,
         rutaCarrera: body.rutaCarrera,
         rutaCarreraEn: body.rutaCarreraEn,
+        // Horario y jornada laboral
+        tipoJornada: body.tipoJornada || 'fijo',
+        horarioEntrada: body.horarioEntrada || null,
+        horarioSalida: body.horarioSalida || null,
+        diasTrabajo: body.diasTrabajo || null,
+        cubreTurnos: body.cubreTurnos || false,
+        turnoPreferido: body.turnoPreferido || null,
+        salario: body.salario || null,
+        tipoContrato: body.tipoContrato || null,
+        fechaFinContrato: body.fechaFinContrato ? new Date(body.fechaFinContrato) : null,
+        // Scores
         puntuacionConocimiento: body.puntuacionConocimiento || 0,
         puntuacionVentas: body.puntuacionVentas || 0,
         puntuacionHospitalidad: body.puntuacionHospitalidad || 0,

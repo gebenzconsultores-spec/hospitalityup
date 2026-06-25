@@ -144,6 +144,8 @@ export function getMockEmpleados() {
     {
       id: 'emp1', empleadoId: 'CAP-501', nombre: 'Laura Hernández', posicion: 'Capitana', posicionEn: 'Captain', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
       fechaIngreso: '2022-03-15T00:00:00.000Z', estado: 'activo', nivelCarrera: 4, rutaCarrera: 'Mesera Jr. → Mesera Sr. → Capitana → Gerente A&B', rutaCarreraEn: 'Jr. Waitress → Sr. Waitress → Captain → F&B Manager',
+      tipoJornada: 'fijo', horarioEntrada: '07:00', horarioSalida: '15:00', diasTrabajo: '["lunes","martes","miercoles","jueves","viernes"]', cubreTurnos: false, turnoPreferido: 'matutino',
+      salario: 18000, tipoContrato: 'indefinido', fechaFinContrato: null,
       puntuacionConocimiento: 95, puntuacionVentas: 98, puntuacionHospitalidad: 96, puntuacionTotal: 96.3,
       totalUpselling: 8920, npsPromedio: 9.8, cursosCompletados: 8, cursosEnProgreso: 1,
       indiceFelicidad: 95, riesgoBaja: 5, nivelRiesgoBaja: 'bajo',
@@ -157,6 +159,8 @@ export function getMockEmpleados() {
     {
       id: 'emp2', empleadoId: 'GER-001', nombre: 'Carmen Delgado', posicion: 'Gerente A&B', posicionEn: 'F&B Manager', departamento: 'Gerencia', departamentoEn: 'Management', foto: null,
       fechaIngreso: '2020-01-10T00:00:00.000Z', estado: 'activo', nivelCarrera: 5, rutaCarrera: 'Mesera → Capitana → Subgerente → Gerente A&B', rutaCarreraEn: 'Waitress → Captain → Asst. Manager → F&B Manager',
+      tipoJornada: 'mixto', horarioEntrada: '08:00', horarioSalida: '18:00', diasTrabajo: '["lunes","martes","miercoles","jueves","viernes","sabado"]', cubreTurnos: true, turnoPreferido: 'mixto',
+      salario: 35000, tipoContrato: 'indefinido', fechaFinContrato: null,
       puntuacionConocimiento: 92, puntuacionVentas: 99, puntuacionHospitalidad: 97, puntuacionTotal: 96,
       totalUpselling: 12500, npsPromedio: 9.5, cursosCompletados: 10, cursosEnProgreso: 0,
       indiceFelicidad: 92, riesgoBaja: 3, nivelRiesgoBaja: 'bajo',
@@ -170,6 +174,8 @@ export function getMockEmpleados() {
     {
       id: 'emp3', empleadoId: 'MES-401', nombre: 'Juan Pérez', posicion: 'Mesero Sr.', posicionEn: 'Sr. Waiter', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
       fechaIngreso: '2023-02-20T00:00:00.000Z', estado: 'activo', nivelCarrera: 3, rutaCarrera: 'Mesero Jr. → Mesero Sr. → Capitán', rutaCarreraEn: 'Jr. Waiter → Sr. Waiter → Captain',
+      tipoJornada: 'fijo', horarioEntrada: '06:00', horarioSalida: '14:00', diasTrabajo: '["martes","miercoles","jueves","viernes","sabado","domingo"]', cubreTurnos: true, turnoPreferido: 'matutino',
+      salario: 14000, tipoContrato: 'indefinido', fechaFinContrato: null,
       puntuacionConocimiento: 82, puntuacionVentas: 90, puntuacionHospitalidad: 92, puntuacionTotal: 88.3,
       totalUpselling: 4580, npsPromedio: 9.2, cursosCompletados: 5, cursosEnProgreso: 2,
       indiceFelicidad: 88, riesgoBaja: 12, nivelRiesgoBaja: 'bajo',
@@ -183,6 +189,8 @@ export function getMockEmpleados() {
     {
       id: 'emp4', empleadoId: 'MES-301', nombre: 'Roberto Sánchez', posicion: 'Mesero', posicionEn: 'Waiter', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
       fechaIngreso: '2023-06-01T00:00:00.000Z', estado: 'activo', nivelCarrera: 2, rutaCarrera: 'Mesero Jr. → Mesero → Mesero Sr.', rutaCarreraEn: 'Jr. Waiter → Waiter → Sr. Waiter',
+      tipoJornada: 'fijo', horarioEntrada: '14:00', horarioSalida: '22:00', diasTrabajo: '["lunes","martes","miercoles","jueves","viernes"]', cubreTurnos: false, turnoPreferido: 'vespertino',
+      salario: 12000, tipoContrato: 'indefinido', fechaFinContrato: null,
       puntuacionConocimiento: 70, puntuacionVentas: 75, puntuacionHospitalidad: 80, puntuacionTotal: 75.2,
       totalUpselling: 2350, npsPromedio: 8.5, cursosCompletados: 3, cursosEnProgreso: 1,
       indiceFelicidad: 78, riesgoBaja: 25, nivelRiesgoBaja: 'medio',
@@ -196,6 +204,8 @@ export function getMockEmpleados() {
     {
       id: 'emp5', empleadoId: 'BAR-201', nombre: 'Miguel Torres', posicion: 'Bartender', posicionEn: 'Bartender', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
       fechaIngreso: '2023-08-15T00:00:00.000Z', estado: 'activo', nivelCarrera: 2, rutaCarrera: 'Barback → Bartender → Bartender Sr.', rutaCarreraEn: 'Barback → Bartender → Sr. Bartender',
+      tipoJornada: 'variable', horarioEntrada: '18:00', horarioSalida: '02:00', diasTrabajo: '["miercoles","jueves","viernes","sabado"]', cubreTurnos: true, turnoPreferido: 'nocturno',
+      salario: 13000, tipoContrato: 'indefinido', fechaFinContrato: null,
       puntuacionConocimiento: 78, puntuacionVentas: 85, puntuacionHospitalidad: 82, puntuacionTotal: 82,
       totalUpselling: 3200, npsPromedio: 8.8, cursosCompletados: 4, cursosEnProgreso: 1,
       indiceFelicidad: 82, riesgoBaja: 18, nivelRiesgoBaja: 'bajo',
@@ -209,6 +219,8 @@ export function getMockEmpleados() {
     {
       id: 'emp6', empleadoId: 'ONB-101', nombre: 'Ana Martínez', posicion: 'Mesera Jr.', posicionEn: 'Jr. Waitress', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
       fechaIngreso: '2024-05-01T00:00:00.000Z', estado: 'onboarding', nivelCarrera: 1, rutaCarrera: 'Mesera Jr. → Mesera → Mesera Sr.', rutaCarreraEn: 'Jr. Waitress → Waitress → Sr. Waitress',
+      tipoJornada: 'fijo', horarioEntrada: '07:00', horarioSalida: '15:00', diasTrabajo: '["lunes","martes","miercoles","jueves","viernes"]', cubreTurnos: false, turnoPreferido: 'matutino',
+      salario: 9000, tipoContrato: 'temporal', fechaFinContrato: '2024-11-01T00:00:00.000Z',
       puntuacionConocimiento: 45, puntuacionVentas: 30, puntuacionHospitalidad: 60, puntuacionTotal: 44.3,
       totalUpselling: 0, npsPromedio: 0, cursosCompletados: 0, cursosEnProgreso: 2,
       indiceFelicidad: 75, riesgoBaja: 15, nivelRiesgoBaja: 'bajo',
@@ -222,6 +234,8 @@ export function getMockEmpleados() {
     {
       id: 'emp7', empleadoId: 'ONB-102', nombre: 'Carlos López', posicion: 'Recepcionista', posicionEn: 'Receptionist', departamento: 'Recepción', departamentoEn: 'Reception', foto: null,
       fechaIngreso: '2024-04-15T00:00:00.000Z', estado: 'onboarding', nivelCarrera: 1, rutaCarrera: 'Recepcionista Jr. → Recepcionista → Concierge', rutaCarreraEn: 'Jr. Receptionist → Receptionist → Concierge',
+      tipoJornada: 'fijo', horarioEntrada: '07:00', horarioSalida: '15:00', diasTrabajo: '["lunes","martes","miercoles","jueves","viernes"]', cubreTurnos: false, turnoPreferido: 'matutino',
+      salario: 10000, tipoContrato: 'practica', fechaFinContrato: '2024-10-15T00:00:00.000Z',
       puntuacionConocimiento: 55, puntuacionVentas: 40, puntuacionHospitalidad: 70, puntuacionTotal: 54.8,
       totalUpselling: 200, npsPromedio: 7.5, cursosCompletados: 1, cursosEnProgreso: 1,
       indiceFelicidad: 72, riesgoBaja: 20, nivelRiesgoBaja: 'medio',
@@ -235,6 +249,8 @@ export function getMockEmpleados() {
     {
       id: 'emp8', empleadoId: 'MES-402', nombre: 'María García', posicion: 'Mesera Jr.', posicionEn: 'Jr. Waitress', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
       fechaIngreso: '2023-11-01T00:00:00.000Z', estado: 'activo', nivelCarrera: 1, rutaCarrera: 'Mesera Jr. → Mesera', rutaCarreraEn: 'Jr. Waitress → Waitress',
+      tipoJornada: 'fijo', horarioEntrada: '14:00', horarioSalida: '22:00', diasTrabajo: '["lunes","martes","miercoles","jueves","viernes"]', cubreTurnos: false, turnoPreferido: 'vespertino',
+      salario: 9500, tipoContrato: 'eventual', fechaFinContrato: '2024-12-01T00:00:00.000Z',
       puntuacionConocimiento: 50, puntuacionVentas: 40, puntuacionHospitalidad: 55, puntuacionTotal: 48.3,
       totalUpselling: 450, npsPromedio: 6.1, cursosCompletados: 1, cursosEnProgreso: 0,
       indiceFelicidad: 42, riesgoBaja: 78, nivelRiesgoBaja: 'alto',
@@ -248,6 +264,8 @@ export function getMockEmpleados() {
     {
       id: 'emp9', empleadoId: 'REC-801', nombre: 'Diego Flores', posicion: 'Recepcionista Jr.', posicionEn: 'Jr. Receptionist', departamento: 'Recepción', departamentoEn: 'Reception', foto: null,
       fechaIngreso: '2023-09-10T00:00:00.000Z', estado: 'activo', nivelCarrera: 1, rutaCarrera: 'Recepcionista Jr. → Recepcionista', rutaCarreraEn: 'Jr. Receptionist → Receptionist',
+      tipoJornada: 'mixto', horarioEntrada: '06:00', horarioSalida: '14:00', diasTrabajo: '["lunes","miercoles","viernes","sabado","domingo"]', cubreTurnos: false, turnoPreferido: 'matutino',
+      salario: 11000, tipoContrato: 'indefinido', fechaFinContrato: null,
       puntuacionConocimiento: 55, puntuacionVentas: 45, puntuacionHospitalidad: 60, puntuacionTotal: 53.3,
       totalUpselling: 600, npsPromedio: 6.8, cursosCompletados: 2, cursosEnProgreso: 0,
       indiceFelicidad: 48, riesgoBaja: 65, nivelRiesgoBaja: 'alto',
@@ -261,6 +279,8 @@ export function getMockEmpleados() {
     {
       id: 'emp10', empleadoId: 'MES-701', nombre: 'Patricia Ruiz', posicion: 'Mesera', posicionEn: 'Waitress', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
       fechaIngreso: '2022-07-01T00:00:00.000Z', estado: 'activo', nivelCarrera: 2, rutaCarrera: 'Mesera Jr. → Mesera', rutaCarreraEn: 'Jr. Waitress → Waitress',
+      tipoJornada: 'variable', horarioEntrada: null, horarioSalida: null, diasTrabajo: '["lunes","martes","miercoles","jueves","viernes","sabado","domingo"]', cubreTurnos: true, turnoPreferido: 'mixto',
+      salario: 10500, tipoContrato: 'eventual', fechaFinContrato: '2024-09-30T00:00:00.000Z',
       puntuacionConocimiento: 40, puntuacionVentas: 30, puntuacionHospitalidad: 35, puntuacionTotal: 34.8,
       totalUpselling: 120, npsPromedio: 5.2, cursosCompletados: 0, cursosEnProgreso: 0,
       indiceFelicidad: 35, riesgoBaja: 92, nivelRiesgoBaja: 'critico',
@@ -274,6 +294,8 @@ export function getMockEmpleados() {
     {
       id: 'emp11', empleadoId: 'ONB-103', nombre: 'Sofía Ramírez', posicion: 'Mesera Jr.', posicionEn: 'Jr. Waitress', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
       fechaIngreso: '2024-06-01T00:00:00.000Z', estado: 'onboarding', nivelCarrera: 1, rutaCarrera: 'Mesera Jr. → Mesera', rutaCarreraEn: 'Jr. Waitress → Waitress',
+      tipoJornada: 'fijo', horarioEntrada: '07:00', horarioSalida: '15:00', diasTrabajo: '["lunes","martes","miercoles","jueves","viernes"]', cubreTurnos: false, turnoPreferido: 'matutino',
+      salario: 9000, tipoContrato: 'temporal', fechaFinContrato: '2024-12-01T00:00:00.000Z',
       puntuacionConocimiento: 30, puntuacionVentas: 20, puntuacionHospitalidad: 50, puntuacionTotal: 33.5,
       totalUpselling: 0, npsPromedio: 0, cursosCompletados: 0, cursosEnProgreso: 3,
       indiceFelicidad: 80, riesgoBaja: 10, nivelRiesgoBaja: 'bajo',
@@ -287,6 +309,8 @@ export function getMockEmpleados() {
     {
       id: 'emp12', empleadoId: 'OFF-001', nombre: 'Fernando Morales', posicion: 'Bartender Sr.', posicionEn: 'Sr. Bartender', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
       fechaIngreso: '2021-05-15T00:00:00.000Z', estado: 'offboarding', nivelCarrera: 3, rutaCarrera: 'Bartender → Bartender Sr. → Bar Manager', rutaCarreraEn: 'Bartender → Sr. Bartender → Bar Manager',
+      tipoJornada: 'fijo', horarioEntrada: '18:00', horarioSalida: '02:00', diasTrabajo: '["jueves","viernes","sabado"]', cubreTurnos: false, turnoPreferido: 'nocturno',
+      salario: 16000, tipoContrato: 'indefinido', fechaFinContrato: null,
       puntuacionConocimiento: 75, puntuacionVentas: 70, puntuacionHospitalidad: 72, puntuacionTotal: 72.3,
       totalUpselling: 1800, npsPromedio: 7.8, cursosCompletados: 4, cursosEnProgreso: 0,
       indiceFelicidad: 55, riesgoBaja: 85, nivelRiesgoBaja: 'alto',
