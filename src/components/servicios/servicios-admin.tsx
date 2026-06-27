@@ -303,9 +303,16 @@ export function ServiciosAdmin() {
       })
       if (!res.ok) throw new Error('Error')
       const updated = await res.json()
-      setServicios(prev => prev.map(s => s.id === servicio.id ? updated : s))
+      // Handle demo mode response (no real service object returned)
+      if (updated.demo) {
+        setServicios(prev => prev.map(s => s.id === servicio.id ? { ...s, disponible: !s.disponible } : s))
+        toast.success(!servicio.disponible ? 'Servicio activado' : 'Servicio desactivado')
+      } else {
+        setServicios(prev => prev.map(s => s.id === servicio.id ? { ...s, ...updated } : s))
+        toast.success(!servicio.disponible ? 'Servicio activado' : 'Servicio desactivado')
+      }
     } catch {
-      toast.error('Error')
+      toast.error('Error al cambiar disponibilidad')
     }
   }
 

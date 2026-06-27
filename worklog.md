@@ -743,3 +743,92 @@ Stage Summary:
 - Sidebar navigation item added and wired
 - Bilingual support complete
 - Lint passes cleanly, dev server running without errors
+
+---
+Task ID: 3-roles-system
+Agent: Roles System Agent
+Task: Build 3-role access system with login, role-specific UI, and improved Bolsa de Trabajo
+
+Work Log:
+- Updated `src/lib/store.ts`:
+  - Added UserRole type: 'admin' | 'empresa' | 'empleado' | null
+  - Added auth state: userRole, userName, userPropiedadId, userEmpleadoId, isLoggedIn
+  - Added setter functions and logout() method that resets all auth state
+  - Extended ViewMode with 'nps-survey' and 'clima'
+
+- Updated `src/lib/i18n.ts`:
+  - Added nav translations for 'nps-survey' and 'clima' in both ES and EN
+  - Added `login` translation block (ES/EN): admin/empresa/empleado labels, email, password, property, ingresar, credenciales, etc.
+  - Added `npsSurvey` translation block (ES/EN): survey UI labels, rating descriptions, promotores/pasivos/detractores
+  - Added `clima` translation block (ES/EN): 5 evaluation questions, 1-5 scale labels, submit, history
+  - Extended `bolsa` translation block (ES/EN): agregarCandidato, vincularReemplazo, ternaReemplazos, fuente options
+
+- Created `src/components/auth/login-screen.tsx`:
+  - Beautiful gradient login screen with HospitalityUP branding
+  - 3-tab interface for Admin/Empresa/Empleado login
+  - Admin: email (admin@hospitalityup.com) + password (admin123)
+  - Empresa: property dropdown + password (property name normalized)
+  - Empleado: employee ID + password (1234)
+  - Framer Motion animations for tab transitions
+  - Password visibility toggle, Enter key support
+  - Sets all auth state in store on successful login
+
+- Created `src/components/empleado/nps-survey.tsx`:
+  - Service selection dropdown filtered by employee's property
+  - Visual 0-10 rating scale with color-coded buttons and emoji feedback
+  - NPS category display (Promotor/Pasivo/Detractor) with badges
+  - Optional client comment textarea
+  - Submits to /api/ventas POST with NPS data
+  - Success animation with option to submit new survey
+  - History sidebar showing previous surveys with stats
+
+- Created `src/components/empleado/clima-organizacional.tsx`:
+  - 5 satisfaction questions: work environment, supervisor support, tools, growth, work-life balance
+  - 1-5 scale with emoji buttons (😡😕😐🙂😄)
+  - Progress bar showing completion
+  - Average score display
+  - Optional comments field
+  - Submits to /api/clima POST
+  - History sidebar with past evaluations and averages
+
+- Updated `src/components/app-sidebar.tsx`:
+  - Role-based navigation filtering: all nav items now have a `roles` array
+  - Admin sees: dashboard, trabajador, servicios, propiedades, empleados, ventas, capacitacion, bolsa, configuracion
+  - Empresa sees: dashboard, servicios, empleados, ventas, capacitacion, bolsa
+  - Empleado sees: servicios, nps-survey, clima
+  - Property selector disabled for empresa (auto-set to their property)
+  - Notifications only shown for admin/empresa
+  - Logout button with red hover effect
+  - Dynamic user avatar showing initials and role name
+
+- Updated `src/components/bolsa-trabajo/bolsa-trabajo.tsx`:
+  - Added "Agregar Candidato" button with full form dialog
+  - Form fields: nombre, email, telefono, posicion, region, experiencia, habilidades, fuente (dropdown), notas
+  - Added "Vincular como Reemplazo" button on each candidato card
+  - Dialog to select at-risk empleado (riesgoBaja > 30)
+  - On confirm, updates candidato.empleadoReemplazaId and estado = 'en_proceso'
+  - Added "Terna de Reemplazos" tab showing at-risk empleados with their linked candidates
+  - Terna cards show risk level badge, replacement candidate count, candidate details
+  - Property filtering respects user role (empresa only sees their property)
+
+- Updated `src/app/page.tsx`:
+  - Login guard: shows LoginScreen when isLoggedIn === false
+  - Added dynamic imports for LoginScreen, NpsSurvey, ClimaOrganizacional
+  - Extended ContentArea switch with 'nps-survey' and 'clima' cases
+  - Updated viewLabels with new view mode translations
+
+- Created `src/app/api/clima/route.ts`:
+  - GET: Lists clima evaluations (stored in RespuestaNPS with fuente='clima')
+  - POST: Creates clima evaluation with encoded JSON in comentario field
+  - Mock data fallback when database is unavailable
+
+Stage Summary:
+- 3-role authentication system fully functional (admin/empresa/empleado)
+- Login screen with gradient design and Framer Motion animations
+- Role-based sidebar navigation with filtered menu items
+- Employee NPS Survey module with visual rating scale
+- Employee Clima Organizacional module with 5-question satisfaction survey
+- Improved Bolsa de Trabajo: add candidates, link replacements, terna view
+- All new i18n translations in ES/EN
+- API route for clima evaluations with database and mock data support
+- Lint passes cleanly, dev server running without errors

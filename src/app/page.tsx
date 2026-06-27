@@ -30,11 +30,22 @@ const CapacitacionModule = dynamic(() => import('@/components/capacitacion/capac
 const BolsaTrabajo = dynamic(() => import('@/components/bolsa-trabajo/bolsa-trabajo').then(m => ({ default: m.BolsaTrabajo })), { loading: () => <Loading /> })
 const ConfiguracionModule = dynamic(() => import('@/components/configuracion/configuracion').then(m => ({ default: m.ConfiguracionModule })), { loading: () => <Loading /> })
 const PropiedadesModule = dynamic(() => import('@/components/propiedades/propiedades-module').then(m => ({ default: m.PropiedadesModule })), { loading: () => <Loading /> })
+const LoginScreen = dynamic(() => import('@/components/auth/login-screen').then(m => ({ default: m.LoginScreen })), { loading: () => <FullPageLoading /> })
+const NpsSurvey = dynamic(() => import('@/components/empleado/nps-survey').then(m => ({ default: m.NpsSurvey })), { loading: () => <Loading /> })
+const ClimaOrganizacional = dynamic(() => import('@/components/empleado/clima-organizacional').then(m => ({ default: m.ClimaOrganizacional })), { loading: () => <Loading /> })
 
 function Loading() {
   return (
     <div className="flex items-center justify-center py-20">
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
+    </div>
+  )
+}
+
+function FullPageLoading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-900 via-emerald-900 to-teal-800">
+      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-teal-300"></div>
     </div>
   )
 }
@@ -50,6 +61,8 @@ const viewLabels: Record<Locale, Record<ViewMode, string>> = {
     capacitacion: 'Capacitación',
     bolsa: 'Bolsa de Trabajo',
     configuracion: 'Configuración',
+    'nps-survey': 'Encuesta NPS',
+    clima: 'Clima Organizacional',
   },
   en: {
     dashboard: 'Dashboard',
@@ -61,12 +74,20 @@ const viewLabels: Record<Locale, Record<ViewMode, string>> = {
     capacitacion: 'Training',
     bolsa: 'Job Pool',
     configuracion: 'Settings',
+    'nps-survey': 'NPS Survey',
+    clima: 'Org. Climate',
   },
 }
 
 export default function Home() {
-  const { currentView, locale } = useAppStore()
+  const { currentView, locale, isLoggedIn } = useAppStore()
   const t = translations[locale]
+
+  // Show login screen if not logged in
+  if (!isLoggedIn) {
+    return <LoginScreen />
+  }
+
   const pageTitle = viewLabels[locale][currentView]
 
   return (
@@ -123,6 +144,8 @@ function ContentArea({ currentView }: { currentView: ViewMode }) {
     case 'capacitacion': return <CapacitacionModule />
     case 'bolsa': return <BolsaTrabajo />
     case 'configuracion': return <ConfiguracionModule />
+    case 'nps-survey': return <NpsSurvey />
+    case 'clima': return <ClimaOrganizacional />
     default: return <DashboardGerencial />
   }
 }

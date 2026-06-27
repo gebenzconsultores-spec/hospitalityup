@@ -1,7 +1,9 @@
 import { create } from 'zustand'
 import type { Locale } from './i18n'
 
-export type ViewMode = 'dashboard' | 'empleados' | 'ventas' | 'capacitacion' | 'bolsa' | 'configuracion' | 'trabajador' | 'servicios' | 'propiedades'
+export type ViewMode = 'dashboard' | 'empleados' | 'ventas' | 'capacitacion' | 'bolsa' | 'configuracion' | 'trabajador' | 'servicios' | 'propiedades' | 'nps-survey' | 'clima'
+
+export type UserRole = 'admin' | 'empresa' | 'empleado' | null
 
 interface AppState {
   // Navigation
@@ -40,6 +42,19 @@ interface AppState {
   setReemplazoPosicion: (pos: string | null) => void
   reemplazoRegion: string | null
   setReemplazoRegion: (region: string | null) => void
+
+  // Auth / Role system
+  userRole: UserRole
+  setUserRole: (role: UserRole) => void
+  userName: string
+  setUserName: (name: string) => void
+  userPropiedadId: string | null
+  setUserPropiedadId: (id: string | null) => void
+  userEmpleadoId: string | null
+  setUserEmpleadoId: (id: string | null) => void
+  isLoggedIn: boolean
+  setIsLoggedIn: (val: boolean) => void
+  logout: () => void
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -72,4 +87,27 @@ export const useAppStore = create<AppState>((set) => ({
   setReemplazoPosicion: (pos) => set({ reemplazoPosicion: pos }),
   reemplazoRegion: null,
   setReemplazoRegion: (region) => set({ reemplazoRegion: region }),
+
+  // Auth / Role system
+  userRole: null,
+  setUserRole: (role) => set({ userRole: role }),
+  userName: '',
+  setUserName: (name) => set({ userName: name }),
+  userPropiedadId: null,
+  setUserPropiedadId: (id) => set({ userPropiedadId: id }),
+  userEmpleadoId: null,
+  setUserEmpleadoId: (id) => set({ userEmpleadoId: id }),
+  isLoggedIn: false,
+  setIsLoggedIn: (val) => set({ isLoggedIn: val }),
+  logout: () => set({
+    userRole: null,
+    userName: '',
+    userPropiedadId: null,
+    userEmpleadoId: null,
+    isLoggedIn: false,
+    currentView: 'dashboard',
+    selectedProperty: 'all',
+    selectedEmployee: null,
+    selectedCourse: null,
+  }),
 }))
