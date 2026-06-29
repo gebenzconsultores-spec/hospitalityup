@@ -19,7 +19,7 @@ try {
     console.log('⚠️ SQLite not supported on Vercel - using mock data mode')
   } else if (dbUrl) {
     // Check if the cached client has the same schema version by testing for new fields
-    const currentVersion = 'v2-schedule-fields'
+    const currentVersion = 'v3-password-contacto-fields'
     const needsRecreate = globalForPrisma.prismaClientVersion !== currentVersion
     
     if (needsRecreate) {

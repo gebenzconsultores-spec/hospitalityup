@@ -30,6 +30,8 @@ const CapacitacionModule = dynamic(() => import('@/components/capacitacion/capac
 const BolsaTrabajo = dynamic(() => import('@/components/bolsa-trabajo/bolsa-trabajo').then(m => ({ default: m.BolsaTrabajo })), { loading: () => <Loading /> })
 const ConfiguracionModule = dynamic(() => import('@/components/configuracion/configuracion').then(m => ({ default: m.ConfiguracionModule })), { loading: () => <Loading /> })
 const PropiedadesModule = dynamic(() => import('@/components/propiedades/propiedades-module').then(m => ({ default: m.PropiedadesModule })), { loading: () => <Loading /> })
+const EmpresasAccesos = dynamic(() => import('@/components/admin/empresas-accesos').then(m => ({ default: m.EmpresasAccesos })), { loading: () => <Loading /> })
+const LoginScreen = dynamic(() => import('@/components/auth/login-screen').then(m => ({ default: m.LoginScreen })), { loading: () => <Loading /> })
 
 function Loading() {
   return (
@@ -45,6 +47,7 @@ const viewLabels: Record<Locale, Record<ViewMode, string>> = {
     trabajador: 'Vista Trabajador',
     servicios: 'Menú & Servicios',
     propiedades: 'Propiedades',
+    'empresas-accesos': 'Empresas y Accesos',
     empleados: 'Empleados',
     ventas: 'Ventas & NPS',
     capacitacion: 'Capacitación',
@@ -56,6 +59,7 @@ const viewLabels: Record<Locale, Record<ViewMode, string>> = {
     trabajador: 'Worker View',
     servicios: 'Menu & Services',
     propiedades: 'Properties',
+    'empresas-accesos': 'Companies & Access',
     empleados: 'Employees',
     ventas: 'Sales & NPS',
     capacitacion: 'Training',
@@ -65,7 +69,13 @@ const viewLabels: Record<Locale, Record<ViewMode, string>> = {
 }
 
 export default function Home() {
-  const { currentView, locale } = useAppStore()
+  const { currentView, locale, isAuthenticated } = useAppStore()
+
+  // If not authenticated, show the login screen (full-page, no sidebar)
+  if (!isAuthenticated) {
+    return <LoginScreen />
+  }
+
   const t = translations[locale]
   const pageTitle = viewLabels[locale][currentView]
 
@@ -118,6 +128,7 @@ function ContentArea({ currentView }: { currentView: ViewMode }) {
     case 'trabajador': return <VistaTrabajador />
     case 'servicios': return <ServiciosAdmin />
     case 'propiedades': return <PropiedadesModule />
+    case 'empresas-accesos': return <EmpresasAccesos />
     case 'empleados': return <EmpleadosModule />
     case 'ventas': return <VentasModule />
     case 'capacitacion': return <CapacitacionModule />

@@ -14,6 +14,8 @@ import {
   ShoppingCart,
   Package,
   Building2,
+  KeyRound,
+  LogOut,
 } from 'lucide-react'
 
 import {
@@ -40,18 +42,20 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { useAppStore } from '@/lib/store'
 import { translations } from '@/lib/i18n'
-import type { ViewMode } from '@/lib/store'
+import type { ViewMode, UserRole } from '@/lib/store'
 
-const navItems: { key: ViewMode; icon: React.ElementType }[] = [
-  { key: 'dashboard', icon: LayoutDashboard },
-  { key: 'trabajador', icon: ShoppingCart },
-  { key: 'servicios', icon: Package },
-  { key: 'propiedades', icon: Building2 },
-  { key: 'empleados', icon: Users },
-  { key: 'ventas', icon: DollarSign },
-  { key: 'capacitacion', icon: GraduationCap },
-  { key: 'bolsa', icon: Briefcase },
-  { key: 'configuracion', icon: Settings },
+// All nav items (admin sees everything)
+const allNavItems: { key: ViewMode; icon: React.ElementType; roles: UserRole[] }[] = [
+  { key: 'dashboard', icon: LayoutDashboard, roles: ['admin', 'empresa'] },
+  { key: 'trabajador', icon: ShoppingCart, roles: ['admin', 'empresa', 'empleado'] },
+  { key: 'servicios', icon: Package, roles: ['admin', 'empresa'] },
+  { key: 'propiedades', icon: Building2, roles: ['admin'] },
+  { key: 'empresas-accesos', icon: KeyRound, roles: ['admin'] },
+  { key: 'empleados', icon: Users, roles: ['admin', 'empresa'] },
+  { key: 'ventas', icon: DollarSign, roles: ['admin', 'empresa'] },
+  { key: 'capacitacion', icon: GraduationCap, roles: ['admin', 'empresa'] },
+  { key: 'bolsa', icon: Briefcase, roles: ['admin', 'empresa'] },
+  { key: 'configuracion', icon: Settings, roles: ['admin'] },
 ]
 
 interface Propiedad {
@@ -63,7 +67,19 @@ interface Propiedad {
 }
 
 export function AppSidebar() {
-  const { currentView, setCurrentView, locale, setLocale, selectedProperty, setSelectedProperty, unreadNotifications, setShowNotifications } = useAppStore()
+  const {
+    currentView,
+    setCurrentView,
+    locale,
+    setLocale,
+    selectedProperty,
+    setSelectedProperty,
+    unreadNotifications,
+    setShowNotifications,
+    user,
+    isAuthenticated,
+    logout,
+  } = useAppStore()
   const t = translations[locale]
   const [propiedades, setPropiedades] = useState<Propiedad[]>([])
 
@@ -73,6 +89,31 @@ export function AppSidebar() {
       .then(data => setPropiedades(Array.isArray(data) ? data : []))
       .catch(() => {})
   }, [])
+
+  // Filter nav items by role
+  const role: UserRole = user?.role || 'admin'
+  const visibleNavItems = isAuthenticated
+    ? allNavItems.filter(item => item.roles.includes(role))
+    : allNavItems
+
+  // For empresa role, lock property selector to their propiedad
+  const isEmpresa = role === 'empresa' && user?.propiedadId
+  const effectiveSelectedProperty = isEmpresa ? user!.propiedadId! : selectedProperty
+
+  const handleSetSelectedProperty = (id: string) => {
+    if (isEmpresa) return // Locked
+    setSelectedProperty(id)
+  }
+
+  // Build user display
+  const userInitials = user?.nombre
+    ? user.nombre.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+    : 'AD'
+  const userRoleLabel = user?.role === 'admin'
+    ? (locale === 'es' ? 'Administrador' : 'Administrator')
+    : user?.role === 'empresa'
+      ? (locale === 'es' ? 'Empresa' : 'Company')
+      : (locale === 'es' ? 'Empleado' : 'Employee')
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
@@ -124,22 +165,30 @@ export function AppSidebar() {
             </div>
           </div>
 
-          {/* Property Selector */}
-          <Select value={selectedProperty} onValueChange={setSelectedProperty}>
-            <SelectTrigger className="h-8 w-full border-sidebar-border bg-sidebar-accent/50 text-sidebar-foreground text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">
-                {locale === 'es' ? 'Todas las Propiedades' : 'All Properties'}
-              </SelectItem>
-              {propiedades.map((property) => (
-                <SelectItem key={property.id} value={property.id}>
-                  {locale === 'es' ? property.nombre : (property.nombreEn || property.nombre)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* Property Selector - hidden for empleado role */}
+          {role !== 'empleado' && (
+            <Select
+              value={effectiveSelectedProperty}
+              onValueChange={handleSetSelectedProperty}
+              disabled={isEmpresa}
+            >
+              <SelectTrigger className="h-8 w-full border-sidebar-border bg-sidebar-accent/50 text-sidebar-foreground text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {!isEmpresa && (
+                  <SelectItem value="all">
+                    {locale === 'es' ? 'Todas las Propiedades' : 'All Properties'}
+                  </SelectItem>
+                )}
+                {propiedades.map((property) => (
+                  <SelectItem key={property.id} value={property.id}>
+                    {locale === 'es' ? property.nombre : (property.nombreEn || property.nombre)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </SidebarHeader>
 
@@ -148,7 +197,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => {
+              {visibleNavItems.map((item) => {
                 const Icon = item.icon
                 const isActive = currentView === item.key
                 const label = t.nav[item.key]
@@ -166,6 +215,11 @@ export function AppSidebar() {
                     >
                       <Icon className="size-4" />
                       <span>{label}</span>
+                      {item.key === 'empresas-accesos' && (
+                        <span className="ml-auto text-[9px] uppercase tracking-wide opacity-70 group-data-[collapsible=icon]:hidden">
+                          {t.empresasAccesos.adminOnly}
+                        </span>
+                      )}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )
@@ -179,69 +233,86 @@ export function AppSidebar() {
       <SidebarFooter className="p-3">
         <SidebarSeparator className="mx-0" />
 
-        {/* Notification Bell */}
-        <div className="group-data-[collapsible=icon]:hidden">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-2 text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-            onClick={() => setShowNotifications(true)}
-          >
-            <div className="relative">
-              <Bell className="size-4" />
-              {unreadNotifications > 0 && (
-                <span className="absolute -right-1.5 -top-1.5 flex size-3.5 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-white">
-                  {unreadNotifications}
+        {/* Notification Bell - only for admin/empresa */}
+        {role !== 'empleado' && (
+          <>
+            <div className="group-data-[collapsible=icon]:hidden">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start gap-2 text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                onClick={() => setShowNotifications(true)}
+              >
+                <div className="relative">
+                  <Bell className="size-4" />
+                  {unreadNotifications > 0 && (
+                    <span className="absolute -right-1.5 -top-1.5 flex size-3.5 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-white">
+                      {unreadNotifications}
+                    </span>
+                  )}
+                </div>
+                <span className="text-xs">
+                  {locale === 'es' ? 'Notificaciones' : 'Notifications'}
                 </span>
-              )}
+                {unreadNotifications > 0 && (
+                  <span className="ml-auto rounded-full bg-destructive/15 px-1.5 py-0.5 text-[10px] font-semibold text-destructive">
+                    {unreadNotifications}
+                  </span>
+                )}
+              </Button>
             </div>
-            <span className="text-xs">
-              {locale === 'es' ? 'Notificaciones' : 'Notifications'}
-            </span>
-            {unreadNotifications > 0 && (
-              <span className="ml-auto rounded-full bg-destructive/15 px-1.5 py-0.5 text-[10px] font-semibold text-destructive">
-                {unreadNotifications}
-              </span>
-            )}
-          </Button>
-        </div>
 
-        {/* Collapsed notification icon */}
-        <div className="hidden group-data-[collapsible=icon]:flex justify-center">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="relative text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-            onClick={() => setShowNotifications(true)}
-          >
-            <Bell className="size-4" />
-            {unreadNotifications > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 flex size-3.5 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-white">
-                {unreadNotifications}
-              </span>
-            )}
-          </Button>
-        </div>
+            {/* Collapsed notification icon */}
+            <div className="hidden group-data-[collapsible=icon]:flex justify-center">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                onClick={() => setShowNotifications(true)}
+              >
+                <Bell className="size-4" />
+                {unreadNotifications > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 flex size-3.5 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-white">
+                    {unreadNotifications}
+                  </span>
+                )}
+              </Button>
+            </div>
+          </>
+        )}
 
-        {/* User Avatar */}
+        {/* User Avatar + Logout */}
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               size="lg"
               className="hover:bg-sidebar-accent"
-              tooltip="Admin"
+              tooltip={user?.nombre || 'Admin'}
             >
               <Avatar className="size-8 border border-sidebar-border">
                 <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs font-bold">
-                  AD
+                  {userInitials}
                 </AvatarFallback>
               </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                <span className="truncate font-medium">Admin</span>
-                <span className="truncate text-xs opacity-60">
-                  {locale === 'es' ? 'Administrador' : 'Administrator'}
-                </span>
+              <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden min-w-0">
+                <span className="truncate font-medium">{user?.nombre || 'Admin'}</span>
+                <span className="truncate text-xs opacity-60">{userRoleLabel}</span>
               </div>
+              {isAuthenticated && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-7 text-sidebar-foreground/70 hover:text-destructive hover:bg-destructive/10 group-data-[collapsible=icon]:hidden"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    logout()
+                  }}
+                  aria-label={t.login.logout}
+                  title={t.login.logout}
+                >
+                  <LogOut className="size-3.5" />
+                </Button>
+              )}
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

@@ -5,7 +5,15 @@ import { getMockPropiedades, getDemoModeResponse } from '@/lib/api-helpers'
 export async function GET(request: Request) {
   try {
     if (!isDatabaseAvailable()) {
-      return NextResponse.json(getMockPropiedades())
+      // Augment mock propiedades with password + contacto fields
+      const mocks = getMockPropiedades().map((p) => ({
+        ...p,
+        password: 'empresa123',
+        contactoNombre: 'Contacto ' + p.nombre,
+        contactoEmail: 'contacto@' + p.nombre.toLowerCase().replace(/[^a-z]/g, '') + '.com',
+        contactoTelefono: '+52 555 123 4567',
+      }))
+      return NextResponse.json(mocks)
     }
 
     const { searchParams } = new URL(request.url)
@@ -44,6 +52,10 @@ export async function GET(request: Request) {
       plan: p.plan,
       moneda: p.moneda,
       activo: p.activo,
+      password: p.password,
+      contactoNombre: p.contactoNombre,
+      contactoEmail: p.contactoEmail,
+      contactoTelefono: p.contactoTelefono,
       createdAt: p.createdAt,
       updatedAt: p.updatedAt,
       empleadosActivos: p._count.empleados,
@@ -54,7 +66,14 @@ export async function GET(request: Request) {
     return NextResponse.json(propiedadesWithStats)
   } catch (error) {
     console.error('Propiedades GET error:', error)
-    return NextResponse.json(getMockPropiedades())
+    const mocks = getMockPropiedades().map((p) => ({
+      ...p,
+      password: 'empresa123',
+      contactoNombre: 'Contacto ' + p.nombre,
+      contactoEmail: 'contacto@' + p.nombre.toLowerCase().replace(/[^a-z]/g, '') + '.com',
+      contactoTelefono: '+52 555 123 4567',
+    }))
+    return NextResponse.json(mocks)
   }
 }
 
@@ -77,6 +96,11 @@ export async function POST(request: Request) {
         plan: body.plan || 'boutique',
         moneda: body.moneda || 'MXN',
         activo: body.activo !== undefined ? body.activo : true,
+        // Credentials & contact (default to empresa123 if not provided)
+        password: body.password || 'empresa123',
+        contactoNombre: body.contactoNombre || null,
+        contactoEmail: body.contactoEmail || null,
+        contactoTelefono: body.contactoTelefono || null,
       },
     })
 

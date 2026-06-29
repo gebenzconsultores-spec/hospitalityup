@@ -25,6 +25,10 @@ model Propiedad {
   plan            String   @default("boutique") // boutique, growth, enterprise
   moneda          String   @default("USD")
   activo          Boolean  @default(true)
+  password        String   @default("empresa123") // Password para acceso de empresa/gerente
+  contactoNombre  String?  // Nombre del contacto principal de la empresa
+  contactoEmail   String?  // Email del contacto
+  contactoTelefono String? // Teléfono del contacto
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   empleados       Empleado[]
@@ -39,6 +43,7 @@ model Propiedad {
 model Empleado {
   id                  String   @id @default(cuid())
   empleadoId          String   @unique // ID interno: MES-401, BEL-101, etc.
+  password            String   @default("1234") // Password para acceso de empleado
   nombre              String
   posicion            String
   posicionEn          String?

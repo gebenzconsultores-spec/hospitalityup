@@ -129,12 +129,12 @@ export function getMockDashboard() {
 // ─── Propiedades mock data ─────────────────────────────────────
 export function getMockPropiedades() {
   return [
-    { id: 'prop1', nombre: 'Hotel Playa Cancún', nombreEn: 'Cancún Beach Hotel', tipo: 'hotel', ubicacion: 'Blvd. Kukulcán KM 12.5, Cancún', region: 'cancun', plan: 'growth', moneda: 'MXN', activo: true, createdAt: '2024-01-15T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', empleadosActivos: 7, capacitacionesActivas: 3, totalVentas: 14 },
-    { id: 'prop2', nombre: 'Restaurante La Terraza', nombreEn: 'La Terraza Restaurant', tipo: 'restaurante', ubicacion: 'Calle 5 de Mayo 208, Puebla', region: 'puebla', plan: 'boutique', moneda: 'MXN', activo: true, createdAt: '2024-02-01T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', empleadosActivos: 1, capacitacionesActivas: 0, totalVentas: 1 },
-    { id: 'prop3', nombre: 'Gran Hotel CDMX', nombreEn: 'Grand Hotel Mexico City', tipo: 'hotel', ubicacion: 'Av. Juárez 70, CDMX', region: 'cdmx', plan: 'enterprise', moneda: 'MXN', activo: true, createdAt: '2024-03-01T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', empleadosActivos: 2, capacitacionesActivas: 0, totalVentas: 4 },
-    { id: 'prop4', nombre: 'Bar Mar Azul', nombreEn: 'Blue Sea Bar', tipo: 'bar', ubicacion: 'Av. 10, Playa del Carmen', region: 'playa_carmen', plan: 'boutique', moneda: 'MXN', activo: true, createdAt: '2024-04-01T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', empleadosActivos: 1, capacitacionesActivas: 1, totalVentas: 2 },
-    { id: 'prop5', nombre: 'Resort Los Cabos', nombreEn: 'Los Cabos Resort', tipo: 'hotel', ubicacion: 'Carretera Transpeninsular KM 7, Los Cabos', region: 'los_cabos', plan: 'growth', moneda: 'USD', activo: true, createdAt: '2024-05-01T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', empleadosActivos: 0, capacitacionesActivas: 0, totalVentas: 3 },
-    { id: 'prop6', nombre: 'Restaurante Puerto Veracruz', nombreEn: 'Veracruz Port Restaurant', tipo: 'restaurante', ubicacion: 'Boulevard Manuel Ávila Camacho 1200', region: 'veracruz', plan: 'boutique', moneda: 'MXN', activo: true, createdAt: '2024-06-01T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', empleadosActivos: 0, capacitacionesActivas: 0, totalVentas: 0 },
+    { id: 'prop1', nombre: 'Hotel Playa Cancún', nombreEn: 'Cancún Beach Hotel', tipo: 'hotel', ubicacion: 'Blvd. Kukulcán KM 12.5, Cancún', region: 'cancun', plan: 'growth', moneda: 'MXN', activo: true, password: 'empresa123', contactoNombre: 'María Fernández', contactoEmail: 'mfernandez@hotelplayacancun.com', contactoTelefono: '+52 998 123 4567', createdAt: '2024-01-15T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', empleadosActivos: 7, capacitacionesActivas: 3, totalVentas: 14 },
+    { id: 'prop2', nombre: 'Restaurante La Terraza', nombreEn: 'La Terraza Restaurant', tipo: 'restaurante', ubicacion: 'Calle 5 de Mayo 208, Puebla', region: 'puebla', plan: 'boutique', moneda: 'MXN', activo: true, password: 'empresa123', contactoNombre: 'Jorge Mendoza', contactoEmail: 'jorge@laterraza.mx', contactoTelefono: '+52 222 555 1212', createdAt: '2024-02-01T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', empleadosActivos: 1, capacitacionesActivas: 0, totalVentas: 1 },
+    { id: 'prop3', nombre: 'Gran Hotel CDMX', nombreEn: 'Grand Hotel Mexico City', tipo: 'hotel', ubicacion: 'Av. Juárez 70, CDMX', region: 'cdmx', plan: 'enterprise', moneda: 'MXN', activo: true, password: 'empresa123', contactoNombre: 'Patricia Luna', contactoEmail: 'pluna@granhoteldmx.com', contactoTelefono: '+52 55 5000 1000', createdAt: '2024-03-01T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', empleadosActivos: 2, capacitacionesActivas: 0, totalVentas: 4 },
+    { id: 'prop4', nombre: 'Bar Mar Azul', nombreEn: 'Blue Sea Bar', tipo: 'bar', ubicacion: 'Av. 10, Playa del Carmen', region: 'playa_carmen', plan: 'boutique', moneda: 'MXN', activo: true, password: 'empresa123', contactoNombre: 'Eduardo Ríos', contactoEmail: 'edu@marazul.mx', contactoTelefono: '+52 984 111 2222', createdAt: '2024-04-01T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', empleadosActivos: 1, capacitacionesActivas: 1, totalVentas: 2 },
+    { id: 'prop5', nombre: 'Resort Los Cabos', nombreEn: 'Los Cabos Resort', tipo: 'hotel', ubicacion: 'Carretera Transpeninsular KM 7, Los Cabos', region: 'los_cabos', plan: 'growth', moneda: 'USD', activo: true, password: 'empresa123', contactoNombre: 'Sandra Hill', contactoEmail: 'sandra@loscabosresort.com', contactoTelefono: '+52 624 999 8888', createdAt: '2024-05-01T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', empleadosActivos: 0, capacitacionesActivas: 0, totalVentas: 3 },
+    { id: 'prop6', nombre: 'Restaurante Puerto Veracruz', nombreEn: 'Veracruz Port Restaurant', tipo: 'restaurante', ubicacion: 'Boulevard Manuel Ávila Camacho 1200', region: 'veracruz', plan: 'boutique', moneda: 'MXN', activo: false, password: 'empresa123', contactoNombre: 'Ricardo Vera', contactoEmail: 'ricardo@puertoveracruz.mx', contactoTelefono: '+52 229 333 4444', createdAt: '2024-06-01T10:00:00.000Z', updatedAt: '2024-06-01T10:00:00.000Z', empleadosActivos: 0, capacitacionesActivas: 0, totalVentas: 0 },
   ]
 }
 
@@ -142,7 +142,7 @@ export function getMockPropiedades() {
 export function getMockEmpleados() {
   return [
     {
-      id: 'emp1', empleadoId: 'CAP-501', nombre: 'Laura Hernández', posicion: 'Capitana', posicionEn: 'Captain', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
+      id: 'emp1', empleadoId: 'CAP-501', nombre: 'Laura Hernández', posicion: 'Capitana', posicionEn: 'Captain', departamento: 'A&B', departamentoEn: 'F&B', password: '1234', foto: null,
       fechaIngreso: '2022-03-15T00:00:00.000Z', estado: 'activo', nivelCarrera: 4, rutaCarrera: 'Mesera Jr. → Mesera Sr. → Capitana → Gerente A&B', rutaCarreraEn: 'Jr. Waitress → Sr. Waitress → Captain → F&B Manager',
       tipoJornada: 'fijo', horarioEntrada: '07:00', horarioSalida: '15:00', diasTrabajo: '["lunes","martes","miercoles","jueves","viernes"]', cubreTurnos: false, turnoPreferido: 'matutino',
       salario: 18000, tipoContrato: 'indefinido', fechaFinContrato: null,
@@ -157,7 +157,7 @@ export function getMockEmpleados() {
       createdAt: '2022-03-15T00:00:00.000Z', updatedAt: '2024-06-10T14:30:00.000Z',
     },
     {
-      id: 'emp2', empleadoId: 'GER-001', nombre: 'Carmen Delgado', posicion: 'Gerente A&B', posicionEn: 'F&B Manager', departamento: 'Gerencia', departamentoEn: 'Management', foto: null,
+      id: 'emp2', empleadoId: 'GER-001', nombre: 'Carmen Delgado', posicion: 'Gerente A&B', posicionEn: 'F&B Manager', departamento: 'Gerencia', departamentoEn: 'Management', password: '1234', foto: null,
       fechaIngreso: '2020-01-10T00:00:00.000Z', estado: 'activo', nivelCarrera: 5, rutaCarrera: 'Mesera → Capitana → Subgerente → Gerente A&B', rutaCarreraEn: 'Waitress → Captain → Asst. Manager → F&B Manager',
       tipoJornada: 'mixto', horarioEntrada: '08:00', horarioSalida: '18:00', diasTrabajo: '["lunes","martes","miercoles","jueves","viernes","sabado"]', cubreTurnos: true, turnoPreferido: 'mixto',
       salario: 35000, tipoContrato: 'indefinido', fechaFinContrato: null,
@@ -172,7 +172,7 @@ export function getMockEmpleados() {
       createdAt: '2020-01-10T00:00:00.000Z', updatedAt: '2024-06-11T09:00:00.000Z',
     },
     {
-      id: 'emp3', empleadoId: 'MES-401', nombre: 'Juan Pérez', posicion: 'Mesero Sr.', posicionEn: 'Sr. Waiter', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
+      id: 'emp3', empleadoId: 'MES-401', nombre: 'Juan Pérez', posicion: 'Mesero Sr.', posicionEn: 'Sr. Waiter', departamento: 'A&B', departamentoEn: 'F&B', password: '1234', foto: null,
       fechaIngreso: '2023-02-20T00:00:00.000Z', estado: 'activo', nivelCarrera: 3, rutaCarrera: 'Mesero Jr. → Mesero Sr. → Capitán', rutaCarreraEn: 'Jr. Waiter → Sr. Waiter → Captain',
       tipoJornada: 'fijo', horarioEntrada: '06:00', horarioSalida: '14:00', diasTrabajo: '["martes","miercoles","jueves","viernes","sabado","domingo"]', cubreTurnos: true, turnoPreferido: 'matutino',
       salario: 14000, tipoContrato: 'indefinido', fechaFinContrato: null,
@@ -187,7 +187,7 @@ export function getMockEmpleados() {
       createdAt: '2023-02-20T00:00:00.000Z', updatedAt: '2024-06-10T16:45:00.000Z',
     },
     {
-      id: 'emp4', empleadoId: 'MES-301', nombre: 'Roberto Sánchez', posicion: 'Mesero', posicionEn: 'Waiter', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
+      id: 'emp4', empleadoId: 'MES-301', nombre: 'Roberto Sánchez', posicion: 'Mesero', posicionEn: 'Waiter', departamento: 'A&B', departamentoEn: 'F&B', password: '1234', foto: null,
       fechaIngreso: '2023-06-01T00:00:00.000Z', estado: 'activo', nivelCarrera: 2, rutaCarrera: 'Mesero Jr. → Mesero → Mesero Sr.', rutaCarreraEn: 'Jr. Waiter → Waiter → Sr. Waiter',
       tipoJornada: 'fijo', horarioEntrada: '14:00', horarioSalida: '22:00', diasTrabajo: '["lunes","martes","miercoles","jueves","viernes"]', cubreTurnos: false, turnoPreferido: 'vespertino',
       salario: 12000, tipoContrato: 'indefinido', fechaFinContrato: null,
@@ -202,7 +202,7 @@ export function getMockEmpleados() {
       createdAt: '2023-06-01T00:00:00.000Z', updatedAt: '2024-06-09T11:20:00.000Z',
     },
     {
-      id: 'emp5', empleadoId: 'BAR-201', nombre: 'Miguel Torres', posicion: 'Bartender', posicionEn: 'Bartender', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
+      id: 'emp5', empleadoId: 'BAR-201', nombre: 'Miguel Torres', posicion: 'Bartender', posicionEn: 'Bartender', departamento: 'A&B', departamentoEn: 'F&B', password: '1234', foto: null,
       fechaIngreso: '2023-08-15T00:00:00.000Z', estado: 'activo', nivelCarrera: 2, rutaCarrera: 'Barback → Bartender → Bartender Sr.', rutaCarreraEn: 'Barback → Bartender → Sr. Bartender',
       tipoJornada: 'variable', horarioEntrada: '18:00', horarioSalida: '02:00', diasTrabajo: '["miercoles","jueves","viernes","sabado"]', cubreTurnos: true, turnoPreferido: 'nocturno',
       salario: 13000, tipoContrato: 'indefinido', fechaFinContrato: null,
@@ -217,7 +217,7 @@ export function getMockEmpleados() {
       createdAt: '2023-08-15T00:00:00.000Z', updatedAt: '2024-06-10T20:15:00.000Z',
     },
     {
-      id: 'emp6', empleadoId: 'ONB-101', nombre: 'Ana Martínez', posicion: 'Mesera Jr.', posicionEn: 'Jr. Waitress', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
+      id: 'emp6', empleadoId: 'ONB-101', nombre: 'Ana Martínez', posicion: 'Mesera Jr.', posicionEn: 'Jr. Waitress', departamento: 'A&B', departamentoEn: 'F&B', password: '1234', foto: null,
       fechaIngreso: '2024-05-01T00:00:00.000Z', estado: 'onboarding', nivelCarrera: 1, rutaCarrera: 'Mesera Jr. → Mesera → Mesera Sr.', rutaCarreraEn: 'Jr. Waitress → Waitress → Sr. Waitress',
       tipoJornada: 'fijo', horarioEntrada: '07:00', horarioSalida: '15:00', diasTrabajo: '["lunes","martes","miercoles","jueves","viernes"]', cubreTurnos: false, turnoPreferido: 'matutino',
       salario: 9000, tipoContrato: 'temporal', fechaFinContrato: '2024-11-01T00:00:00.000Z',
@@ -232,7 +232,7 @@ export function getMockEmpleados() {
       createdAt: '2024-05-01T00:00:00.000Z', updatedAt: '2024-06-11T08:00:00.000Z',
     },
     {
-      id: 'emp7', empleadoId: 'ONB-102', nombre: 'Carlos López', posicion: 'Recepcionista', posicionEn: 'Receptionist', departamento: 'Recepción', departamentoEn: 'Reception', foto: null,
+      id: 'emp7', empleadoId: 'ONB-102', nombre: 'Carlos López', posicion: 'Recepcionista', posicionEn: 'Receptionist', departamento: 'Recepción', departamentoEn: 'Reception', password: '1234', foto: null,
       fechaIngreso: '2024-04-15T00:00:00.000Z', estado: 'onboarding', nivelCarrera: 1, rutaCarrera: 'Recepcionista Jr. → Recepcionista → Concierge', rutaCarreraEn: 'Jr. Receptionist → Receptionist → Concierge',
       tipoJornada: 'fijo', horarioEntrada: '07:00', horarioSalida: '15:00', diasTrabajo: '["lunes","martes","miercoles","jueves","viernes"]', cubreTurnos: false, turnoPreferido: 'matutino',
       salario: 10000, tipoContrato: 'practica', fechaFinContrato: '2024-10-15T00:00:00.000Z',
@@ -247,7 +247,7 @@ export function getMockEmpleados() {
       createdAt: '2024-04-15T00:00:00.000Z', updatedAt: '2024-06-10T17:00:00.000Z',
     },
     {
-      id: 'emp8', empleadoId: 'MES-402', nombre: 'María García', posicion: 'Mesera Jr.', posicionEn: 'Jr. Waitress', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
+      id: 'emp8', empleadoId: 'MES-402', nombre: 'María García', posicion: 'Mesera Jr.', posicionEn: 'Jr. Waitress', departamento: 'A&B', departamentoEn: 'F&B', password: '1234', foto: null,
       fechaIngreso: '2023-11-01T00:00:00.000Z', estado: 'activo', nivelCarrera: 1, rutaCarrera: 'Mesera Jr. → Mesera', rutaCarreraEn: 'Jr. Waitress → Waitress',
       tipoJornada: 'fijo', horarioEntrada: '14:00', horarioSalida: '22:00', diasTrabajo: '["lunes","martes","miercoles","jueves","viernes"]', cubreTurnos: false, turnoPreferido: 'vespertino',
       salario: 9500, tipoContrato: 'eventual', fechaFinContrato: '2024-12-01T00:00:00.000Z',
@@ -262,7 +262,7 @@ export function getMockEmpleados() {
       createdAt: '2023-11-01T00:00:00.000Z', updatedAt: '2024-06-05T10:00:00.000Z',
     },
     {
-      id: 'emp9', empleadoId: 'REC-801', nombre: 'Diego Flores', posicion: 'Recepcionista Jr.', posicionEn: 'Jr. Receptionist', departamento: 'Recepción', departamentoEn: 'Reception', foto: null,
+      id: 'emp9', empleadoId: 'REC-801', nombre: 'Diego Flores', posicion: 'Recepcionista Jr.', posicionEn: 'Jr. Receptionist', departamento: 'Recepción', departamentoEn: 'Reception', password: '1234', foto: null,
       fechaIngreso: '2023-09-10T00:00:00.000Z', estado: 'activo', nivelCarrera: 1, rutaCarrera: 'Recepcionista Jr. → Recepcionista', rutaCarreraEn: 'Jr. Receptionist → Receptionist',
       tipoJornada: 'mixto', horarioEntrada: '06:00', horarioSalida: '14:00', diasTrabajo: '["lunes","miercoles","viernes","sabado","domingo"]', cubreTurnos: false, turnoPreferido: 'matutino',
       salario: 11000, tipoContrato: 'indefinido', fechaFinContrato: null,
@@ -277,7 +277,7 @@ export function getMockEmpleados() {
       createdAt: '2023-09-10T00:00:00.000Z', updatedAt: '2024-06-07T14:30:00.000Z',
     },
     {
-      id: 'emp10', empleadoId: 'MES-701', nombre: 'Patricia Ruiz', posicion: 'Mesera', posicionEn: 'Waitress', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
+      id: 'emp10', empleadoId: 'MES-701', nombre: 'Patricia Ruiz', posicion: 'Mesera', posicionEn: 'Waitress', departamento: 'A&B', departamentoEn: 'F&B', password: '1234', foto: null,
       fechaIngreso: '2022-07-01T00:00:00.000Z', estado: 'activo', nivelCarrera: 2, rutaCarrera: 'Mesera Jr. → Mesera', rutaCarreraEn: 'Jr. Waitress → Waitress',
       tipoJornada: 'variable', horarioEntrada: null, horarioSalida: null, diasTrabajo: '["lunes","martes","miercoles","jueves","viernes","sabado","domingo"]', cubreTurnos: true, turnoPreferido: 'mixto',
       salario: 10500, tipoContrato: 'eventual', fechaFinContrato: '2024-09-30T00:00:00.000Z',
@@ -292,7 +292,7 @@ export function getMockEmpleados() {
       createdAt: '2022-07-01T00:00:00.000Z', updatedAt: '2024-05-28T09:00:00.000Z',
     },
     {
-      id: 'emp11', empleadoId: 'ONB-103', nombre: 'Sofía Ramírez', posicion: 'Mesera Jr.', posicionEn: 'Jr. Waitress', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
+      id: 'emp11', empleadoId: 'ONB-103', nombre: 'Sofía Ramírez', posicion: 'Mesera Jr.', posicionEn: 'Jr. Waitress', departamento: 'A&B', departamentoEn: 'F&B', password: '1234', foto: null,
       fechaIngreso: '2024-06-01T00:00:00.000Z', estado: 'onboarding', nivelCarrera: 1, rutaCarrera: 'Mesera Jr. → Mesera', rutaCarreraEn: 'Jr. Waitress → Waitress',
       tipoJornada: 'fijo', horarioEntrada: '07:00', horarioSalida: '15:00', diasTrabajo: '["lunes","martes","miercoles","jueves","viernes"]', cubreTurnos: false, turnoPreferido: 'matutino',
       salario: 9000, tipoContrato: 'temporal', fechaFinContrato: '2024-12-01T00:00:00.000Z',
@@ -307,7 +307,7 @@ export function getMockEmpleados() {
       createdAt: '2024-06-01T00:00:00.000Z', updatedAt: '2024-06-11T10:00:00.000Z',
     },
     {
-      id: 'emp12', empleadoId: 'OFF-001', nombre: 'Fernando Morales', posicion: 'Bartender Sr.', posicionEn: 'Sr. Bartender', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
+      id: 'emp12', empleadoId: 'OFF-001', nombre: 'Fernando Morales', posicion: 'Bartender Sr.', posicionEn: 'Sr. Bartender', departamento: 'A&B', departamentoEn: 'F&B', password: '1234', foto: null,
       fechaIngreso: '2021-05-15T00:00:00.000Z', estado: 'offboarding', nivelCarrera: 3, rutaCarrera: 'Bartender → Bartender Sr. → Bar Manager', rutaCarreraEn: 'Bartender → Sr. Bartender → Bar Manager',
       tipoJornada: 'fijo', horarioEntrada: '18:00', horarioSalida: '02:00', diasTrabajo: '["jueves","viernes","sabado"]', cubreTurnos: false, turnoPreferido: 'nocturno',
       salario: 16000, tipoContrato: 'indefinido', fechaFinContrato: null,

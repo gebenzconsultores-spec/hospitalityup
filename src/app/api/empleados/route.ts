@@ -5,7 +5,9 @@ import { getMockEmpleados, getDemoModeResponse } from '@/lib/api-helpers'
 export async function GET(request: Request) {
   try {
     if (!isDatabaseAvailable()) {
-      return NextResponse.json(getMockEmpleados())
+      // Augment mock empleados with password field
+      const mocks = getMockEmpleados().map((e) => ({ ...e, password: '1234' }))
+      return NextResponse.json(mocks)
     }
 
     const { searchParams } = new URL(request.url)
@@ -46,7 +48,8 @@ export async function GET(request: Request) {
     return NextResponse.json(empleados)
   } catch (error) {
     console.error('Empleados GET error:', error)
-    return NextResponse.json(getMockEmpleados())
+    const mocks = getMockEmpleados().map((e) => ({ ...e, password: '1234' }))
+    return NextResponse.json(mocks)
   }
 }
 
@@ -61,6 +64,7 @@ export async function POST(request: Request) {
     const empleado = await db.empleado.create({
       data: {
         empleadoId: body.empleadoId,
+        password: body.password || '1234',
         nombre: body.nombre,
         posicion: body.posicion,
         posicionEn: body.posicionEn,

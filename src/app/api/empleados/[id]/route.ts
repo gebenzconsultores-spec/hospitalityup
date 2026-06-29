@@ -95,6 +95,8 @@ export async function PATCH(
     const empleado = await db.empleado.update({
       where: { id },
       data: {
+        ...(body.empleadoId !== undefined && { empleadoId: body.empleadoId }),
+        ...(body.password !== undefined && { password: body.password }),
         ...(body.nombre !== undefined && { nombre: body.nombre }),
         ...(body.posicion !== undefined && { posicion: body.posicion }),
         ...(body.posicionEn !== undefined && { posicionEn: body.posicionEn }),

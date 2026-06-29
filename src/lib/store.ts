@@ -1,7 +1,32 @@
 import { create } from 'zustand'
 import type { Locale } from './i18n'
 
-export type ViewMode = 'dashboard' | 'empleados' | 'ventas' | 'capacitacion' | 'bolsa' | 'configuracion' | 'trabajador' | 'servicios' | 'propiedades'
+export type ViewMode =
+  | 'dashboard'
+  | 'empleados'
+  | 'ventas'
+  | 'capacitacion'
+  | 'bolsa'
+  | 'configuracion'
+  | 'trabajador'
+  | 'servicios'
+  | 'propiedades'
+  | 'empresas-accesos'
+
+export type UserRole = 'admin' | 'empresa' | 'empleado'
+
+export interface SessionUser {
+  role: UserRole
+  nombre: string
+  email?: string
+  /** For 'empresa' role: the propiedadId they manage */
+  propiedadId?: string
+  /** For 'empleado' role: the empleadoId (e.g. MES-401) */
+  empleadoCodigo?: string
+  /** For 'empleado' role: the underlying database row id */
+  empleadoId?: string
+  propiedadNombre?: string
+}
 
 interface AppState {
   // Navigation
@@ -40,6 +65,12 @@ interface AppState {
   setReemplazoPosicion: (pos: string | null) => void
   reemplazoRegion: string | null
   setReemplazoRegion: (region: string | null) => void
+
+  // Auth / session
+  user: SessionUser | null
+  isAuthenticated: boolean
+  login: (user: SessionUser) => void
+  logout: () => void
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -72,4 +103,23 @@ export const useAppStore = create<AppState>((set) => ({
   setReemplazoPosicion: (pos) => set({ reemplazoPosicion: pos }),
   reemplazoRegion: null,
   setReemplazoRegion: (region) => set({ reemplazoRegion: region }),
+
+  // Auth
+  user: null,
+  isAuthenticated: false,
+  login: (user) =>
+    set({
+      user,
+      isAuthenticated: true,
+      currentView: user.role === 'empleado' ? 'trabajador' : 'dashboard',
+      selectedProperty:
+        user.role === 'empresa' && user.propiedadId ? user.propiedadId : 'all',
+    }),
+  logout: () =>
+    set({
+      user: null,
+      isAuthenticated: false,
+      currentView: 'dashboard',
+      selectedProperty: 'all',
+    }),
 }))
