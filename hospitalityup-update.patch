@@ -1,0 +1,2393 @@
+diff --git a/prisma/schema.prisma b/prisma/schema.prisma
+old mode 100644
+new mode 100755
+index 1ea58e8..41dc2a6
+--- a/prisma/schema.prisma
++++ b/prisma/schema.prisma
+@@ -3,7 +3,7 @@ generator client {
+ }
+ 
+ datasource db {
+-  provider = "postgresql"
++  provider = "sqlite"
+   url      = env("DATABASE_URL")
+ }
+ 
+@@ -50,6 +50,16 @@ model Empleado {
+   nivelCarrera        Int      @default(1)
+   rutaCarrera         String?  // "Mesero Jr. → Mesero Sr. → Capitán → Gerente A&B"
+   rutaCarreraEn       String?
++  // Horario y jornada laboral
++  tipoJornada         String   @default("fijo") // fijo, mixto, variable
++  horarioEntrada      String?  // Ej: "08:00"
++  horarioSalida       String?  // Ej: "16:00"
++  diasTrabajo         String?  // JSON: ["lunes","martes","miercoles","jueves","viernes"]
++  cubreTurnos         Boolean  @default(false) // ¿Cubre turnos de otros?
++  turnoPreferido      String?  // matutino, vespertino, nocturno, mixto
++  salario             Float?
++  tipoContrato        String?  // indefinido, temporal, eventual, practica
++  fechaFinContrato    DateTime?
+   // Scores del "Score Integral" del Empleado
+   puntuacionConocimiento Float @default(0)  // 0-100, desde cursos
+   puntuacionVentas       Float @default(0)  // 0-100, desde upselling
+diff --git a/src/app/api/agents/performance/route.ts b/src/app/api/agents/performance/route.ts
+old mode 100644
+new mode 100755
+diff --git a/src/app/api/alertas/route.ts b/src/app/api/alertas/route.ts
+old mode 100644
+new mode 100755
+diff --git a/src/app/api/bookings/route.ts b/src/app/api/bookings/route.ts
+old mode 100644
+new mode 100755
+diff --git a/src/app/api/candidatos/route.ts b/src/app/api/candidatos/route.ts
+old mode 100644
+new mode 100755
+diff --git a/src/app/api/capacitaciones/route.ts b/src/app/api/capacitaciones/route.ts
+old mode 100644
+new mode 100755
+diff --git a/src/app/api/courses/route.ts b/src/app/api/courses/route.ts
+old mode 100644
+new mode 100755
+diff --git a/src/app/api/dashboard/route.ts b/src/app/api/dashboard/route.ts
+old mode 100644
+new mode 100755
+diff --git a/src/app/api/empleados/[id]/route.ts b/src/app/api/empleados/[id]/route.ts
+old mode 100644
+new mode 100755
+index c82989e..e52bec7
+--- a/src/app/api/empleados/[id]/route.ts
++++ b/src/app/api/empleados/[id]/route.ts
+@@ -104,6 +104,17 @@ export async function PATCH(
+         ...(body.nivelCarrera !== undefined && { nivelCarrera: body.nivelCarrera }),
+         ...(body.rutaCarrera !== undefined && { rutaCarrera: body.rutaCarrera }),
+         ...(body.rutaCarreraEn !== undefined && { rutaCarreraEn: body.rutaCarreraEn }),
++        // Horario y jornada laboral
++        ...(body.tipoJornada !== undefined && { tipoJornada: body.tipoJornada }),
++        ...(body.horarioEntrada !== undefined && { horarioEntrada: body.horarioEntrada }),
++        ...(body.horarioSalida !== undefined && { horarioSalida: body.horarioSalida }),
++        ...(body.diasTrabajo !== undefined && { diasTrabajo: body.diasTrabajo }),
++        ...(body.cubreTurnos !== undefined && { cubreTurnos: body.cubreTurnos }),
++        ...(body.turnoPreferido !== undefined && { turnoPreferido: body.turnoPreferido }),
++        ...(body.salario !== undefined && { salario: body.salario }),
++        ...(body.tipoContrato !== undefined && { tipoContrato: body.tipoContrato }),
++        ...(body.fechaFinContrato !== undefined && { fechaFinContrato: body.fechaFinContrato ? new Date(body.fechaFinContrato) : null }),
++        // Scores
+         ...(body.puntuacionConocimiento !== undefined && { puntuacionConocimiento: body.puntuacionConocimiento }),
+         ...(body.puntuacionVentas !== undefined && { puntuacionVentas: body.puntuacionVentas }),
+         ...(body.puntuacionHospitalidad !== undefined && { puntuacionHospitalidad: body.puntuacionHospitalidad }),
+diff --git a/src/app/api/empleados/route.ts b/src/app/api/empleados/route.ts
+old mode 100644
+new mode 100755
+index 86dc50b..71cd3e6
+--- a/src/app/api/empleados/route.ts
++++ b/src/app/api/empleados/route.ts
+@@ -72,6 +72,17 @@ export async function POST(request: Request) {
+         nivelCarrera: body.nivelCarrera || 1,
+         rutaCarrera: body.rutaCarrera,
+         rutaCarreraEn: body.rutaCarreraEn,
++        // Horario y jornada laboral
++        tipoJornada: body.tipoJornada || 'fijo',
++        horarioEntrada: body.horarioEntrada || null,
++        horarioSalida: body.horarioSalida || null,
++        diasTrabajo: body.diasTrabajo || null,
++        cubreTurnos: body.cubreTurnos || false,
++        turnoPreferido: body.turnoPreferido || null,
++        salario: body.salario || null,
++        tipoContrato: body.tipoContrato || null,
++        fechaFinContrato: body.fechaFinContrato ? new Date(body.fechaFinContrato) : null,
++        // Scores
+         puntuacionConocimiento: body.puntuacionConocimiento || 0,
+         puntuacionVentas: body.puntuacionVentas || 0,
+         puntuacionHospitalidad: body.puntuacionHospitalidad || 0,
+diff --git a/src/app/api/employees/[id]/route.ts b/src/app/api/employees/[id]/route.ts
+old mode 100644
+new mode 100755
+diff --git a/src/app/api/employees/route.ts b/src/app/api/employees/route.ts
+old mode 100644
+new mode 100755
+diff --git a/src/app/api/instructors/route.ts b/src/app/api/instructors/route.ts
+old mode 100644
+new mode 100755
+diff --git a/src/app/api/orders/route.ts b/src/app/api/orders/route.ts
+old mode 100644
+new mode 100755
+diff --git a/src/app/api/propiedades/[id]/route.ts b/src/app/api/propiedades/[id]/route.ts
+new file mode 100755
+index 0000000..3ba59a3
+--- /dev/null
++++ b/src/app/api/propiedades/[id]/route.ts
+@@ -0,0 +1,66 @@
++import { NextResponse } from 'next/server'
++import { db, isDatabaseAvailable } from '@/lib/db'
++import { getDemoModeResponse } from '@/lib/api-helpers'
++
++export async function PUT(
++  request: Request,
++  { params }: { params: Promise<{ id: string }> }
++) {
++  try {
++    const { id } = await params
++
++    if (!isDatabaseAvailable()) {
++      return NextResponse.json(getDemoModeResponse('update', 'propiedad'))
++    }
++
++    const body = await request.json()
++
++    const propiedad = await db.propiedad.update({
++      where: { id },
++      data: {
++        nombre: body.nombre,
++        nombreEn: body.nombreEn,
++        tipo: body.tipo,
++        ubicacion: body.ubicacion,
++        region: body.region,
++        logo: body.logo,
++        plan: body.plan,
++        moneda: body.moneda,
++        activo: body.activo,
++      },
++    })
++
++    return NextResponse.json(propiedad)
++  } catch (error) {
++    console.error('Propiedades PUT error:', error)
++    return NextResponse.json(
++      { error: 'Error al actualizar propiedad' },
++      { status: 500 }
++    )
++  }
++}
++
++export async function DELETE(
++  request: Request,
++  { params }: { params: Promise<{ id: string }> }
++) {
++  try {
++    const { id } = await params
++
++    if (!isDatabaseAvailable()) {
++      return NextResponse.json(getDemoModeResponse('delete', 'propiedad'))
++    }
++
++    await db.propiedad.delete({
++      where: { id },
++    })
++
++    return NextResponse.json({ success: true })
++  } catch (error) {
++    console.error('Propiedades DELETE error:', error)
++    return NextResponse.json(
++      { error: 'Error al eliminar propiedad' },
++      { status: 500 }
++    )
++  }
++}
+diff --git a/src/app/api/propiedades/route.ts b/src/app/api/propiedades/route.ts
+old mode 100644
+new mode 100755
+diff --git a/src/app/api/route.ts b/src/app/api/route.ts
+old mode 100644
+new mode 100755
+diff --git a/src/app/api/seed/route.ts b/src/app/api/seed/route.ts
+old mode 100644
+new mode 100755
+diff --git a/src/app/api/services/route.ts b/src/app/api/services/route.ts
+old mode 100644
+new mode 100755
+diff --git a/src/app/api/servicios/[id]/route.ts b/src/app/api/servicios/[id]/route.ts
+old mode 100644
+new mode 100755
+diff --git a/src/app/api/servicios/route.ts b/src/app/api/servicios/route.ts
+old mode 100644
+new mode 100755
+diff --git a/src/app/api/solicitudes/route.ts b/src/app/api/solicitudes/route.ts
+old mode 100644
+new mode 100755
+diff --git a/src/app/api/training/route.ts b/src/app/api/training/route.ts
+old mode 100644
+new mode 100755
+diff --git a/src/app/api/turnover/route.ts b/src/app/api/turnover/route.ts
+old mode 100644
+new mode 100755
+diff --git a/src/app/api/ventas/route.ts b/src/app/api/ventas/route.ts
+old mode 100644
+new mode 100755
+diff --git a/src/app/globals.css b/src/app/globals.css
+old mode 100644
+new mode 100755
+diff --git a/src/app/layout.tsx b/src/app/layout.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/app/page.tsx b/src/app/page.tsx
+old mode 100644
+new mode 100755
+index 3b3cdc1..c92a50b
+--- a/src/app/page.tsx
++++ b/src/app/page.tsx
+@@ -29,6 +29,7 @@ const VentasModule = dynamic(() => import('@/components/ventas/ventas-module').t
+ const CapacitacionModule = dynamic(() => import('@/components/capacitacion/capacitacion-module').then(m => ({ default: m.CapacitacionModule })), { loading: () => <Loading /> })
+ const BolsaTrabajo = dynamic(() => import('@/components/bolsa-trabajo/bolsa-trabajo').then(m => ({ default: m.BolsaTrabajo })), { loading: () => <Loading /> })
+ const ConfiguracionModule = dynamic(() => import('@/components/configuracion/configuracion').then(m => ({ default: m.ConfiguracionModule })), { loading: () => <Loading /> })
++const PropiedadesModule = dynamic(() => import('@/components/propiedades/propiedades-module').then(m => ({ default: m.PropiedadesModule })), { loading: () => <Loading /> })
+ 
+ function Loading() {
+   return (
+@@ -43,6 +44,7 @@ const viewLabels: Record<Locale, Record<ViewMode, string>> = {
+     dashboard: 'Dashboard',
+     trabajador: 'Vista Trabajador',
+     servicios: 'Menú & Servicios',
++    propiedades: 'Propiedades',
+     empleados: 'Empleados',
+     ventas: 'Ventas & NPS',
+     capacitacion: 'Capacitación',
+@@ -53,6 +55,7 @@ const viewLabels: Record<Locale, Record<ViewMode, string>> = {
+     dashboard: 'Dashboard',
+     trabajador: 'Worker View',
+     servicios: 'Menu & Services',
++    propiedades: 'Properties',
+     empleados: 'Employees',
+     ventas: 'Sales & NPS',
+     capacitacion: 'Training',
+@@ -114,6 +117,7 @@ function ContentArea({ currentView }: { currentView: ViewMode }) {
+     case 'dashboard': return <DashboardGerencial />
+     case 'trabajador': return <VistaTrabajador />
+     case 'servicios': return <ServiciosAdmin />
++    case 'propiedades': return <PropiedadesModule />
+     case 'empleados': return <EmpleadosModule />
+     case 'ventas': return <VentasModule />
+     case 'capacitacion': return <CapacitacionModule />
+diff --git a/src/components/app-sidebar.tsx b/src/components/app-sidebar.tsx
+old mode 100644
+new mode 100755
+index 2565670..1c8361d
+--- a/src/components/app-sidebar.tsx
++++ b/src/components/app-sidebar.tsx
+@@ -13,6 +13,7 @@ import {
+   Globe,
+   ShoppingCart,
+   Package,
++  Building2,
+ } from 'lucide-react'
+ 
+ import {
+@@ -45,6 +46,7 @@ const navItems: { key: ViewMode; icon: React.ElementType }[] = [
+   { key: 'dashboard', icon: LayoutDashboard },
+   { key: 'trabajador', icon: ShoppingCart },
+   { key: 'servicios', icon: Package },
++  { key: 'propiedades', icon: Building2 },
+   { key: 'empleados', icon: Users },
+   { key: 'ventas', icon: DollarSign },
+   { key: 'capacitacion', icon: GraduationCap },
+diff --git a/src/components/bolsa-trabajo/bolsa-trabajo.tsx b/src/components/bolsa-trabajo/bolsa-trabajo.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/capacitacion/capacitacion-module.tsx b/src/components/capacitacion/capacitacion-module.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/configuracion/configuracion.tsx b/src/components/configuracion/configuracion.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/dashboard/dashboard-gerencial.tsx b/src/components/dashboard/dashboard-gerencial.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/empleados/empleados-module.tsx b/src/components/empleados/empleados-module.tsx
+old mode 100644
+new mode 100755
+index 23b0334..fc1dcdb
+--- a/src/components/empleados/empleados-module.tsx
++++ b/src/components/empleados/empleados-module.tsx
+@@ -14,6 +14,15 @@ import {
+   Brain,
+   TrendingUp,
+   MapPin,
++  Clock,
++  Calendar,
++  Briefcase,
++  Plus,
++  UserPlus,
++  Sun,
++  Moon,
++  Sunset,
++  Shuffle,
+ } from 'lucide-react'
+ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+ import { Badge } from '@/components/ui/badge'
+@@ -34,8 +43,13 @@ import {
+   DialogHeader,
+   DialogTitle,
+   DialogDescription,
++  DialogFooter,
+ } from '@/components/ui/dialog'
++import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+ import { Separator } from '@/components/ui/separator'
++import { Switch } from '@/components/ui/switch'
++import { Checkbox } from '@/components/ui/checkbox'
++import { Label } from '@/components/ui/label'
+ import { useAppStore } from '@/lib/store'
+ import { translations } from '@/lib/i18n'
+ import { toast } from 'sonner'
+@@ -54,6 +68,17 @@ interface Empleado {
+   estado: string
+   nivelCarrera: number
+   rutaCarrera: string | null
++  // Horario y jornada laboral
++  tipoJornada: string
++  horarioEntrada: string | null
++  horarioSalida: string | null
++  diasTrabajo: string | null
++  cubreTurnos: boolean
++  turnoPreferido: string | null
++  salario: number | null
++  tipoContrato: string | null
++  fechaFinContrato: string | null
++  // Scores
+   puntuacionConocimiento: number
+   puntuacionVentas: number
+   puntuacionHospitalidad: number
+@@ -71,6 +96,12 @@ interface Empleado {
+   _count: { cursos: number; alertas: number; ventas: number }
+ }
+ 
++interface Propiedad {
++  id: string
++  nombre: string
++  nombreEn: string | null
++}
++
+ interface AIAnalysis {
+   success: boolean
+   analisis: {
+@@ -83,6 +114,20 @@ interface AIAnalysis {
+   }
+ }
+ 
++// ─── Departamento mapping ────────────────────────────────────
++const DEPARTAMENTOS = [
++  { es: 'Alimentos y Bebidas', en: 'Food & Beverage', code: 'AYB' },
++  { es: 'Conserjería', en: 'Concierge', code: 'CON' },
++  { es: 'Recepción', en: 'Reception', code: 'REC' },
++  { es: 'Cocina', en: 'Kitchen', code: 'COC' },
++  { es: 'Spa y Bienestar', en: 'Spa & Wellness', code: 'SPA' },
++  { es: 'Mantenimiento', en: 'Maintenance', code: 'MAN' },
++  { es: 'Seguridad', en: 'Security', code: 'SEG' },
++  { es: 'Administración', en: 'Administration', code: 'ADM' },
++]
++
++const DIAS_SEMANA = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo']
++
+ // ─── Helpers ─────────────────────────────────────────────────
+ function getInitials(name: string): string {
+   return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+@@ -113,6 +158,45 @@ function getScoreColor(score: number): string {
+   return '[&>[data-slot=progress-indicator]]:bg-red-500'
+ }
+ 
++function getJornadaBadge(tipo: string, t: typeof translations.es.employees): { color: string; label: string } {
++  switch (tipo) {
++    case 'fijo': return { color: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400', label: t.fijo }
++    case 'mixto': return { color: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400', label: t.mixto }
++    case 'variable': return { color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400', label: t.variable }
++    default: return { color: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400', label: tipo }
++  }
++}
++
++function getTurnoIcon(turno: string | null) {
++  switch (turno) {
++    case 'matutino': return Sun
++    case 'vespertino': return Sunset
++    case 'nocturno': return Moon
++    default: return Shuffle
++  }
++}
++
++function parseDiasTrabajo(diasJson: string | null): string[] {
++  if (!diasJson) return []
++  try {
++    return JSON.parse(diasJson)
++  } catch {
++    return []
++  }
++}
++
++function formatDiaName(dia: string, locale: string): string {
++  const diasEs: Record<string, string> = {
++    lunes: 'Lun', martes: 'Mar', miercoles: 'Mié', jueves: 'Jue',
++    viernes: 'Vie', sabado: 'Sáb', domingo: 'Dom',
++  }
++  const diasEn: Record<string, string> = {
++    lunes: 'Mon', martes: 'Tue', miercoles: 'Wed', jueves: 'Thu',
++    viernes: 'Fri', sabado: 'Sat', domingo: 'Sun',
++  }
++  return locale === 'es' ? (diasEs[dia] || dia) : (diasEn[dia] || dia)
++}
++
+ // ─── Main Component ──────────────────────────────────────────
+ export function EmpleadosModule() {
+   const { locale, selectedProperty, selectedEmployee, setSelectedEmployee } = useAppStore()
+@@ -128,6 +212,31 @@ export function EmpleadosModule() {
+   const [aiResult, setAiResult] = useState<AIAnalysis | null>(null)
+   const [showAIDialog, setShowAIDialog] = useState(false)
+ 
++  // Add Employee dialog state
++  const [showCreateDialog, setShowCreateDialog] = useState(false)
++  const [saving, setSaving] = useState(false)
++  const [propiedades, setPropiedades] = useState<Propiedad[]>([])
++
++  // Form state
++  const [formNombre, setFormNombre] = useState('')
++  const [formEmpleadoId, setFormEmpleadoId] = useState('')
++  const [formPosicion, setFormPosicion] = useState('')
++  const [formPosicionEn, setFormPosicionEn] = useState('')
++  const [formDepartamento, setFormDepartamento] = useState('')
++  const [formPropiedadId, setFormPropiedadId] = useState('')
++  const [formFechaIngreso, setFormFechaIngreso] = useState('')
++  const [formFoto, setFormFoto] = useState('')
++  const [formTipoJornada, setFormTipoJornada] = useState('fijo')
++  const [formHorarioEntrada, setFormHorarioEntrada] = useState('08:00')
++  const [formHorarioSalida, setFormHorarioSalida] = useState('16:00')
++  const [formDiasTrabajo, setFormDiasTrabajo] = useState<string[]>(['lunes', 'martes', 'miercoles', 'jueves', 'viernes'])
++  const [formCubreTurnos, setFormCubreTurnos] = useState(false)
++  const [formTurnoPreferido, setFormTurnoPreferido] = useState('matutino')
++  const [formSalario, setFormSalario] = useState('')
++  const [formTipoContrato, setFormTipoContrato] = useState('indefinido')
++  const [formFechaFinContrato, setFormFechaFinContrato] = useState('')
++  const [formEstado, setFormEstado] = useState('onboarding')
++
+   const fetchEmpleados = useCallback(async () => {
+     setLoading(true)
+     try {
+@@ -146,10 +255,24 @@ export function EmpleadosModule() {
+     }
+   }, [selectedProperty, search, filterDepto, filterRiesgo])
+ 
++  const fetchPropiedades = useCallback(async () => {
++    try {
++      const res = await fetch('/api/propiedades')
++      const data = await res.json()
++      setPropiedades(Array.isArray(data) ? data.map((p: { id: string; nombre: string; nombreEn: string | null }) => ({ id: p.id, nombre: p.nombre, nombreEn: p.nombreEn })) : [])
++    } catch {
++      // ignore
++    }
++  }, [])
++
+   useEffect(() => {
+     fetchEmpleados()
+   }, [fetchEmpleados])
+ 
++  useEffect(() => {
++    fetchPropiedades()
++  }, [fetchPropiedades])
++
+   const handleAnalizarIA = async (empleadoId: string) => {
+     setAnalyzing(empleadoId)
+     try {
+@@ -174,6 +297,101 @@ export function EmpleadosModule() {
+     }
+   }
+ 
++  const resetForm = () => {
++    setFormNombre('')
++    setFormEmpleadoId('')
++    setFormPosicion('')
++    setFormPosicionEn('')
++    setFormDepartamento('')
++    setFormPropiedadId(selectedProperty !== 'all' ? selectedProperty : '')
++    setFormFechaIngreso(new Date().toISOString().split('T')[0])
++    setFormFoto('')
++    setFormTipoJornada('fijo')
++    setFormHorarioEntrada('08:00')
++    setFormHorarioSalida('16:00')
++    setFormDiasTrabajo(['lunes', 'martes', 'miercoles', 'jueves', 'viernes'])
++    setFormCubreTurnos(false)
++    setFormTurnoPreferido('matutino')
++    setFormSalario('')
++    setFormTipoContrato('indefinido')
++    setFormFechaFinContrato('')
++    setFormEstado('onboarding')
++  }
++
++  const handleDepartamentoChange = (depto: string) => {
++    setFormDepartamento(depto)
++    const deptoMap = DEPARTAMENTOS.find(d => d.es === depto)
++    if (deptoMap) {
++      const num = Math.floor(Math.random() * 900) + 100
++      setFormEmpleadoId(`${deptoMap.code}-${num}`)
++    }
++  }
++
++  const handleDiaToggle = (dia: string) => {
++    setFormDiasTrabajo(prev =>
++      prev.includes(dia) ? prev.filter(d => d !== dia) : [...prev, dia]
++    )
++  }
++
++  const handleCreateEmpleado = async () => {
++    if (!formNombre.trim()) {
++      toast.error(t.nombreRequerido)
++      return
++    }
++    if (!formEmpleadoId.trim()) {
++      toast.error(t.idEmpleadoRequerido)
++      return
++    }
++    if (!formPosicion.trim()) {
++      toast.error(t.puestoRequerido)
++      return
++    }
++
++    setSaving(true)
++    try {
++      const payload = {
++        nombre: formNombre.trim(),
++        empleadoId: formEmpleadoId.trim(),
++        posicion: formPosicion.trim(),
++        posicionEn: formPosicionEn.trim() || null,
++        departamento: formDepartamento,
++        departamentoEn: DEPARTAMENTOS.find(d => d.es === formDepartamento)?.en || null,
++        foto: formFoto.trim() || null,
++        fechaIngreso: formFechaIngreso || new Date().toISOString(),
++        estado: formEstado,
++        tipoJornada: formTipoJornada,
++        horarioEntrada: formHorarioEntrada || null,
++        horarioSalida: formHorarioSalida || null,
++        diasTrabajo: formDiasTrabajo.length > 0 ? JSON.stringify(formDiasTrabajo) : null,
++        cubreTurnos: formCubreTurnos,
++        turnoPreferido: formTurnoPreferido,
++        salario: formSalario ? parseFloat(formSalario) : null,
++        tipoContrato: formTipoContrato,
++        fechaFinContrato: formTipoContrato !== 'indefinido' && formFechaFinContrato ? formFechaFinContrato : null,
++        propiedadId: formPropiedadId || selectedProperty !== 'all' ? (formPropiedadId || selectedProperty) : propiedades[0]?.id,
++      }
++
++      const res = await fetch('/api/empleados', {
++        method: 'POST',
++        headers: { 'Content-Type': 'application/json' },
++        body: JSON.stringify(payload),
++      })
++
++      if (res.ok) {
++        toast.success(t.empleadoCreado)
++        setShowCreateDialog(false)
++        resetForm()
++        fetchEmpleados()
++      } else {
++        toast.error(t.errorCrear)
++      }
++    } catch {
++      toast.error(t.errorCrear)
++    } finally {
++      setSaving(false)
++    }
++  }
++
+   // Unique departments for filter
+   const departamentos = [...new Set(empleados.map(e => e.departamento))]
+ 
+@@ -182,6 +400,9 @@ export function EmpleadosModule() {
+ 
+   // ─── Detail View ─────────────────────────────────────────
+   if (empleadoDetalle) {
++    const diasParsed = parseDiasTrabajo(empleadoDetalle.diasTrabajo)
++    const TurnoIcon = getTurnoIcon(empleadoDetalle.turnoPreferido)
++
+     return (
+       <div className="space-y-6">
+         <Button variant="ghost" className="gap-1.5" onClick={() => setSelectedEmployee(null)}>
+@@ -254,7 +475,7 @@ export function EmpleadosModule() {
+             </CardContent>
+           </Card>
+ 
+-          {/* Scores + Career Path */}
++          {/* Scores + Career Path + Schedule + Contract */}
+           <div className="lg:col-span-2 space-y-4">
+             {/* Score Integral */}
+             <Card>
+@@ -296,6 +517,123 @@ export function EmpleadosModule() {
+               </CardContent>
+             </Card>
+ 
++            {/* Schedule (Horario) */}
++            <Card>
++              <CardHeader className="pb-3">
++                <CardTitle className="text-base flex items-center gap-2">
++                  <Clock className="size-4 text-teal-600" />
++                  {t.horario}
++                </CardTitle>
++              </CardHeader>
++              <CardContent>
++                <div className="grid grid-cols-2 gap-4">
++                  <div>
++                    <span className="text-xs text-muted-foreground">{t.jornada}</span>
++                    <div className="mt-1">
++                      <Badge className={getJornadaBadge(empleadoDetalle.tipoJornada, t).color}>
++                        {getJornadaBadge(empleadoDetalle.tipoJornada, t).label}
++                      </Badge>
++                    </div>
++                  </div>
++                  <div>
++                    <span className="text-xs text-muted-foreground">{t.turnoPreferido}</span>
++                    <div className="mt-1 flex items-center gap-1.5">
++                      <TurnoIcon className="size-4 text-teal-600" />
++                      <span className="text-sm font-medium">
++                        {empleadoDetalle.turnoPreferido === 'matutino' ? t.matutino
++                          : empleadoDetalle.turnoPreferido === 'vespertino' ? t.vespertino
++                          : empleadoDetalle.turnoPreferido === 'nocturno' ? t.nocturno
++                          : t.mixto}
++                      </span>
++                    </div>
++                  </div>
++                  <div>
++                    <span className="text-xs text-muted-foreground">{t.entrada}</span>
++                    <p className="text-sm font-semibold mt-0.5">{empleadoDetalle.horarioEntrada || '—'}</p>
++                  </div>
++                  <div>
++                    <span className="text-xs text-muted-foreground">{t.salida}</span>
++                    <p className="text-sm font-semibold mt-0.5">{empleadoDetalle.horarioSalida || '—'}</p>
++                  </div>
++                </div>
++
++                <Separator className="my-3" />
++
++                <div>
++                  <span className="text-xs text-muted-foreground">{t.dias}</span>
++                  <div className="flex flex-wrap gap-1.5 mt-1.5">
++                    {DIAS_SEMANA.map(dia => {
++                      const isActive = diasParsed.includes(dia)
++                      return (
++                        <span
++                          key={dia}
++                          className={`text-xs px-2 py-0.5 rounded-full font-medium ${
++                            isActive
++                              ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400'
++                              : 'bg-muted text-muted-foreground'
++                          }`}
++                        >
++                          {formatDiaName(dia, locale)}
++                        </span>
++                      )
++                    })}
++                  </div>
++                </div>
++
++                <Separator className="my-3" />
++
++                <div className="flex items-center gap-2">
++                  <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${
++                    empleadoDetalle.cubreTurnos
++                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
++                      : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
++                  }`}>
++                    {empleadoDetalle.cubreTurnos ? t.siCubre : t.noCubre}
++                  </span>
++                </div>
++              </CardContent>
++            </Card>
++
++            {/* Contract (Contrato) */}
++            <Card>
++              <CardHeader className="pb-3">
++                <CardTitle className="text-base flex items-center gap-2">
++                  <Briefcase className="size-4 text-teal-600" />
++                  {t.contrato}
++                </CardTitle>
++              </CardHeader>
++              <CardContent>
++                <div className="grid grid-cols-2 gap-4">
++                  <div>
++                    <span className="text-xs text-muted-foreground">{t.tipoContrato}</span>
++                    <p className="text-sm font-semibold mt-0.5">
++                      {empleadoDetalle.tipoContrato === 'indefinido' ? t.indefinido
++                        : empleadoDetalle.tipoContrato === 'temporal' ? t.temporal
++                        : empleadoDetalle.tipoContrato === 'eventual' ? t.eventual
++                        : empleadoDetalle.tipoContrato === 'practica' ? t.practica
++                        : empleadoDetalle.tipoContrato || '—'}
++                    </p>
++                  </div>
++                  <div>
++                    <span className="text-xs text-muted-foreground">{t.salario}</span>
++                    <p className="text-sm font-semibold mt-0.5">
++                      {empleadoDetalle.salario ? `$${empleadoDetalle.salario.toLocaleString()}` : '—'}
++                    </p>
++                  </div>
++                  {empleadoDetalle.tipoContrato && empleadoDetalle.tipoContrato !== 'indefinido' && (
++                    <div>
++                      <span className="text-xs text-muted-foreground">{t.fechaFinContrato}</span>
++                      <p className="text-sm font-semibold mt-0.5">
++                        {empleadoDetalle.fechaFinContrato
++                          ? new Date(empleadoDetalle.fechaFinContrato).toLocaleDateString(locale === 'es' ? 'es-MX' : 'en-US')
++                          : '—'}
++                      </p>
++                    </div>
++                  )}
++                </div>
++              </CardContent>
++            </Card>
++
+             {/* Career Path */}
+             {empleadoDetalle.rutaCarrera && (
+               <Card>
+@@ -435,11 +773,23 @@ export function EmpleadosModule() {
+   return (
+     <div className="space-y-6">
+       {/* Header */}
+-      <div>
+-        <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
+-        <p className="text-sm text-muted-foreground">
+-          {locale === 'es' ? 'Gestión de personal, scores y rutas de carrera' : 'Staff management, scores and career paths'}
+-        </p>
++      <div className="flex items-center justify-between">
++        <div>
++          <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
++          <p className="text-sm text-muted-foreground">
++            {locale === 'es' ? 'Gestión de personal, scores y rutas de carrera' : 'Staff management, scores and career paths'}
++          </p>
++        </div>
++        <Button
++          className="bg-teal-600 hover:bg-teal-700 text-white gap-1.5"
++          onClick={() => {
++            resetForm()
++            setShowCreateDialog(true)
++          }}
++        >
++          <UserPlus className="size-4" />
++          {t.agregarEmpleado}
++        </Button>
+       </div>
+ 
+       {/* Filters */}
+@@ -568,6 +918,307 @@ export function EmpleadosModule() {
+           ))}
+         </div>
+       )}
++
++      {/* ─── Create Employee Dialog ─────────────────────────────── */}
++      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
++        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
++          <DialogHeader>
++            <DialogTitle className="flex items-center gap-2">
++              <UserPlus className="size-5 text-teal-600" />
++              {t.agregarEmpleado}
++            </DialogTitle>
++            <DialogDescription>
++              {locale === 'es'
++                ? 'Complete la información del nuevo empleado'
++                : 'Fill in the new employee information'}
++            </DialogDescription>
++          </DialogHeader>
++
++          <Tabs defaultValue="personal" className="w-full">
++            <TabsList className="grid w-full grid-cols-2">
++              <TabsTrigger value="personal" className="gap-1.5">
++                <Users className="size-3.5" />
++                {t.infoPersonal}
++              </TabsTrigger>
++              <TabsTrigger value="horario" className="gap-1.5">
++                <Clock className="size-3.5" />
++                {t.horarioContrato}
++              </TabsTrigger>
++            </TabsList>
++
++            {/* Tab 1: Información Personal */}
++            <TabsContent value="personal" className="space-y-4 mt-4">
++              <div className="grid gap-4 sm:grid-cols-2">
++                <div className="space-y-2">
++                  <Label htmlFor="nombre">{t.nombre} *</Label>
++                  <Input
++                    id="nombre"
++                    placeholder={locale === 'es' ? 'Nombre completo' : 'Full name'}
++                    value={formNombre}
++                    onChange={e => setFormNombre(e.target.value)}
++                  />
++                </div>
++                <div className="space-y-2">
++                  <Label htmlFor="empleadoId">{t.idEmpleado} *</Label>
++                  <Input
++                    id="empleadoId"
++                    placeholder="MES-401"
++                    value={formEmpleadoId}
++                    onChange={e => setFormEmpleadoId(e.target.value)}
++                  />
++                </div>
++                <div className="space-y-2">
++                  <Label htmlFor="posicion">{t.puesto} *</Label>
++                  <Input
++                    id="posicion"
++                    placeholder={locale === 'es' ? 'Ej: Mesero Jr.' : 'e.g. Jr. Waiter'}
++                    value={formPosicion}
++                    onChange={e => setFormPosicion(e.target.value)}
++                  />
++                </div>
++                <div className="space-y-2">
++                  <Label htmlFor="posicionEn">{t.puestoEn}</Label>
++                  <Input
++                    id="posicionEn"
++                    placeholder="e.g. Jr. Waiter"
++                    value={formPosicionEn}
++                    onChange={e => setFormPosicionEn(e.target.value)}
++                  />
++                </div>
++                <div className="space-y-2">
++                  <Label>{t.departamento}</Label>
++                  <Select value={formDepartamento} onValueChange={handleDepartamentoChange}>
++                    <SelectTrigger>
++                      <SelectValue placeholder={t.seleccionar} />
++                    </SelectTrigger>
++                    <SelectContent>
++                      {DEPARTAMENTOS.map(d => (
++                        <SelectItem key={d.es} value={d.es}>
++                          {locale === 'es' ? d.es : d.en}
++                        </SelectItem>
++                      ))}
++                    </SelectContent>
++                  </Select>
++                </div>
++                <div className="space-y-2">
++                  <Label>{t.propiedad}</Label>
++                  <Select
++                    value={formPropiedadId || (selectedProperty !== 'all' ? selectedProperty : '')}
++                    onValueChange={setFormPropiedadId}
++                  >
++                    <SelectTrigger>
++                      <SelectValue placeholder={t.seleccionar} />
++                    </SelectTrigger>
++                    <SelectContent>
++                      {propiedades.map(p => (
++                        <SelectItem key={p.id} value={p.id}>
++                          {locale === 'es' ? p.nombre : (p.nombreEn || p.nombre)}
++                        </SelectItem>
++                      ))}
++                    </SelectContent>
++                  </Select>
++                </div>
++                <div className="space-y-2">
++                  <Label htmlFor="fechaIngreso" className="flex items-center gap-1.5">
++                    <Calendar className="size-3.5" />
++                    {t.fechaIngreso}
++                  </Label>
++                  <Input
++                    id="fechaIngreso"
++                    type="date"
++                    value={formFechaIngreso}
++                    onChange={e => setFormFechaIngreso(e.target.value)}
++                  />
++                </div>
++                <div className="space-y-2">
++                  <Label htmlFor="foto" className="flex items-center gap-1.5">
++                    {t.foto}
++                  </Label>
++                  <Input
++                    id="foto"
++                    placeholder="https://..."
++                    value={formFoto}
++                    onChange={e => setFormFoto(e.target.value)}
++                  />
++                </div>
++              </div>
++            </TabsContent>
++
++            {/* Tab 2: Horario y Contrato */}
++            <TabsContent value="horario" className="space-y-4 mt-4">
++              <div className="grid gap-4 sm:grid-cols-2">
++                <div className="space-y-2">
++                  <Label className="flex items-center gap-1.5">
++                    <Clock className="size-3.5" />
++                    {t.tipoJornada}
++                  </Label>
++                  <Select value={formTipoJornada} onValueChange={setFormTipoJornada}>
++                    <SelectTrigger>
++                      <SelectValue />
++                    </SelectTrigger>
++                    <SelectContent>
++                      <SelectItem value="fijo">{t.fijo}</SelectItem>
++                      <SelectItem value="mixto">{t.mixto}</SelectItem>
++                      <SelectItem value="variable">{t.variable}</SelectItem>
++                    </SelectContent>
++                  </Select>
++                </div>
++                <div className="space-y-2">
++                  <Label className="flex items-center gap-1.5">
++                    <Sun className="size-3.5" />
++                    {t.turnoPreferido}
++                  </Label>
++                  <Select value={formTurnoPreferido} onValueChange={setFormTurnoPreferido}>
++                    <SelectTrigger>
++                      <SelectValue />
++                    </SelectTrigger>
++                    <SelectContent>
++                      <SelectItem value="matutino">{t.matutino}</SelectItem>
++                      <SelectItem value="vespertino">{t.vespertino}</SelectItem>
++                      <SelectItem value="nocturno">{t.nocturno}</SelectItem>
++                      <SelectItem value="mixto">{t.mixto}</SelectItem>
++                    </SelectContent>
++                  </Select>
++                </div>
++                <div className="space-y-2">
++                  <Label htmlFor="horarioEntrada">{t.horarioEntrada}</Label>
++                  <Input
++                    id="horarioEntrada"
++                    type="time"
++                    value={formHorarioEntrada}
++                    onChange={e => setFormHorarioEntrada(e.target.value)}
++                  />
++                </div>
++                <div className="space-y-2">
++                  <Label htmlFor="horarioSalida">{t.horarioSalida}</Label>
++                  <Input
++                    id="horarioSalida"
++                    type="time"
++                    value={formHorarioSalida}
++                    onChange={e => setFormHorarioSalida(e.target.value)}
++                  />
++                </div>
++              </div>
++
++              {/* Días de trabajo */}
++              <div className="space-y-2">
++                <Label>{t.diasTrabajo}</Label>
++                <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
++                  {DIAS_SEMANA.map(dia => (
++                    <div key={dia} className="flex items-center gap-1.5">
++                      <Checkbox
++                        id={`dia-${dia}`}
++                        checked={formDiasTrabajo.includes(dia)}
++                        onCheckedChange={() => handleDiaToggle(dia)}
++                      />
++                      <Label htmlFor={`dia-${dia}`} className="text-xs cursor-pointer">
++                        {formatDiaName(dia, locale)}
++                      </Label>
++                    </div>
++                  ))}
++                </div>
++              </div>
++
++              {/* Cubre turnos */}
++              <div className="flex items-center gap-3">
++                <Switch
++                  id="cubreTurnos"
++                  checked={formCubreTurnos}
++                  onCheckedChange={setFormCubreTurnos}
++                />
++                <Label htmlFor="cubreTurnos" className="cursor-pointer">{t.cubreTurnos}</Label>
++              </div>
++
++              <Separator />
++
++              {/* Contrato */}
++              <div className="grid gap-4 sm:grid-cols-2">
++                <div className="space-y-2">
++                  <Label className="flex items-center gap-1.5">
++                    <Briefcase className="size-3.5" />
++                    {t.tipoContrato}
++                  </Label>
++                  <Select value={formTipoContrato} onValueChange={setFormTipoContrato}>
++                    <SelectTrigger>
++                      <SelectValue />
++                    </SelectTrigger>
++                    <SelectContent>
++                      <SelectItem value="indefinido">{t.indefinido}</SelectItem>
++                      <SelectItem value="temporal">{t.temporal}</SelectItem>
++                      <SelectItem value="eventual">{t.eventual}</SelectItem>
++                      <SelectItem value="practica">{t.practica}</SelectItem>
++                    </SelectContent>
++                  </Select>
++                </div>
++                <div className="space-y-2">
++                  <Label htmlFor="salario" className="flex items-center gap-1.5">
++                    <DollarSign className="size-3.5" />
++                    {t.salario}
++                  </Label>
++                  <Input
++                    id="salario"
++                    type="number"
++                    placeholder="0.00"
++                    value={formSalario}
++                    onChange={e => setFormSalario(e.target.value)}
++                  />
++                </div>
++                {formTipoContrato !== 'indefinido' && (
++                  <div className="space-y-2">
++                    <Label htmlFor="fechaFinContrato" className="flex items-center gap-1.5">
++                      <Calendar className="size-3.5" />
++                      {t.fechaFinContrato}
++                    </Label>
++                    <Input
++                      id="fechaFinContrato"
++                      type="date"
++                      value={formFechaFinContrato}
++                      onChange={e => setFormFechaFinContrato(e.target.value)}
++                    />
++                  </div>
++                )}
++                <div className="space-y-2">
++                  <Label>{t.estado}</Label>
++                  <Select value={formEstado} onValueChange={setFormEstado}>
++                    <SelectTrigger>
++                      <SelectValue />
++                    </SelectTrigger>
++                    <SelectContent>
++                      <SelectItem value="onboarding">{t.onboarding}</SelectItem>
++                      <SelectItem value="activo">{t.activo}</SelectItem>
++                      <SelectItem value="offboarding">{t.offboarding}</SelectItem>
++                      <SelectItem value="inactivo">{t.inactivo}</SelectItem>
++                    </SelectContent>
++                  </Select>
++                </div>
++              </div>
++            </TabsContent>
++          </Tabs>
++
++          <DialogFooter className="gap-2 sm:gap-0">
++            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
++              {tc.cancel}
++            </Button>
++            <Button
++              className="bg-teal-600 hover:bg-teal-700 text-white"
++              onClick={handleCreateEmpleado}
++              disabled={saving}
++            >
++              {saving ? (
++                <>
++                  <div className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
++                  {t.guardando}
++                </>
++              ) : (
++                <>
++                  <Plus className="size-4" />
++                  {t.guardar}
++                </>
++              )}
++            </Button>
++          </DialogFooter>
++        </DialogContent>
++      </Dialog>
+     </div>
+   )
+ }
+diff --git a/src/components/propiedades/propiedades-module.tsx b/src/components/propiedades/propiedades-module.tsx
+new file mode 100755
+index 0000000..0785f30
+--- /dev/null
++++ b/src/components/propiedades/propiedades-module.tsx
+@@ -0,0 +1,720 @@
++'use client'
++
++import { useState, useEffect, useCallback } from 'react'
++import {
++  Building2,
++  Plus,
++  Pencil,
++  Trash2,
++  MapPin,
++  Users,
++  CreditCard,
++  Star,
++  Search,
++  Hotel,
++  UtensilsCrossed,
++  Wine,
++  Sparkles,
++  Palmtree,
++  Coffee,
++  Music,
++  Waves,
++  CheckCircle2,
++  XCircle,
++} from 'lucide-react'
++import { Card, CardContent } from '@/components/ui/card'
++import { Badge } from '@/components/ui/badge'
++import { Button } from '@/components/ui/button'
++import { Input } from '@/components/ui/input'
++import { Label } from '@/components/ui/label'
++import { Checkbox } from '@/components/ui/checkbox'
++import {
++  Select,
++  SelectContent,
++  SelectItem,
++  SelectTrigger,
++  SelectValue,
++} from '@/components/ui/select'
++import {
++  Dialog,
++  DialogContent,
++  DialogHeader,
++  DialogTitle,
++  DialogFooter,
++  DialogDescription,
++} from '@/components/ui/dialog'
++import {
++  AlertDialog,
++  AlertDialogAction,
++  AlertDialogCancel,
++  AlertDialogContent,
++  AlertDialogDescription,
++  AlertDialogFooter,
++  AlertDialogHeader,
++  AlertDialogTitle,
++} from '@/components/ui/alert-dialog'
++import { useAppStore } from '@/lib/store'
++import { translations } from '@/lib/i18n'
++import { toast } from 'sonner'
++
++// ─── Types ───────────────────────────────────────────────────
++interface Propiedad {
++  id: string
++  nombre: string
++  nombreEn: string | null
++  tipo: string
++  ubicacion: string
++  region: string
++  plan: string
++  moneda: string
++  activo: boolean
++  createdAt: string
++  updatedAt: string
++  empleadosActivos: number
++  capacitacionesActivas: number
++  totalVentas: number
++}
++
++interface FormData {
++  nombre: string
++  nombreEn: string
++  tipo: string
++  ubicacion: string
++  region: string
++  plan: string
++  moneda: string
++  activo: boolean
++}
++
++const emptyForm: FormData = {
++  nombre: '',
++  nombreEn: '',
++  tipo: 'hotel',
++  ubicacion: '',
++  region: 'cancun',
++  plan: 'boutique',
++  moneda: 'MXN',
++  activo: true,
++}
++
++const tiposPropiedad = [
++  { value: 'hotel', labelEs: 'Hotel', labelEn: 'Hotel', icon: Hotel },
++  { value: 'restaurante', labelEs: 'Restaurante', labelEn: 'Restaurant', icon: UtensilsCrossed },
++  { value: 'bar', labelEs: 'Bar', labelEn: 'Bar', icon: Wine },
++  { value: 'spa', labelEs: 'Spa', labelEn: 'Spa', icon: Sparkles },
++  { value: 'resort', labelEs: 'Resort', labelEn: 'Resort', icon: Palmtree },
++  { value: 'cafe', labelEs: 'Café', labelEn: 'Café', icon: Coffee },
++  { value: 'discoteca', labelEs: 'Discoteca', labelEn: 'Nightclub', icon: Music },
++  { value: 'club_playa', labelEs: 'Club de Playa', labelEn: 'Beach Club', icon: Waves },
++]
++
++const regiones = [
++  { value: 'cancun', labelEs: 'Cancún', labelEn: 'Cancún' },
++  { value: 'cdmx', labelEs: 'Ciudad de México', labelEn: 'Mexico City' },
++  { value: 'puebla', labelEs: 'Puebla', labelEn: 'Puebla' },
++  { value: 'playa_carmen', labelEs: 'Playa del Carmen', labelEn: 'Playa del Carmen' },
++  { value: 'los_cabos', labelEs: 'Los Cabos', labelEn: 'Los Cabos' },
++  { value: 'veracruz', labelEs: 'Veracruz', labelEn: 'Veracruz' },
++  { value: 'otros', labelEs: 'Otros', labelEn: 'Other' },
++]
++
++const planes = [
++  { value: 'boutique', labelEs: 'Boutique', labelEn: 'Boutique' },
++  { value: 'growth', labelEs: 'Growth', labelEn: 'Growth' },
++  { value: 'enterprise', labelEs: 'Enterprise', labelEn: 'Enterprise' },
++]
++
++const monedas = [
++  { value: 'MXN', label: 'MXN' },
++  { value: 'USD', label: 'USD' },
++  { value: 'EUR', label: 'EUR' },
++]
++
++// ─── Helpers ─────────────────────────────────────────────────
++function getTipoIcon(tipo: string) {
++  const found = tiposPropiedad.find(t => t.value === tipo)
++  return found ? found.icon : Building2
++}
++
++function getTipoLabel(tipo: string, locale: string) {
++  const found = tiposPropiedad.find(t => t.value === tipo)
++  if (!found) return tipo
++  return locale === 'es' ? found.labelEs : found.labelEn
++}
++
++function getRegionLabel(region: string, locale: string) {
++  const found = regiones.find(r => r.value === region)
++  if (!found) return region
++  return locale === 'es' ? found.labelEs : found.labelEn
++}
++
++function getPlanBadge(plan: string) {
++  switch (plan) {
++    case 'enterprise':
++      return 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400'
++    case 'growth':
++      return 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400'
++    default:
++      return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
++  }
++}
++
++// ─── Main Component ──────────────────────────────────────────
++export function PropiedadesModule() {
++  const { locale } = useAppStore()
++  const t = translations[locale].propiedades
++  const tc = translations[locale].common
++
++  const [propiedades, setPropiedades] = useState<Propiedad[]>([])
++  const [loading, setLoading] = useState(true)
++  const [search, setSearch] = useState('')
++  const [filterRegion, setFilterRegion] = useState('all')
++  const [filterTipo, setFilterTipo] = useState('all')
++
++  // Dialog state
++  const [showDialog, setShowDialog] = useState(false)
++  const [editingId, setEditingId] = useState<string | null>(null)
++  const [formData, setFormData] = useState<FormData>(emptyForm)
++  const [saving, setSaving] = useState(false)
++
++  // Delete confirmation state
++  const [deleteTarget, setDeleteTarget] = useState<Propiedad | null>(null)
++
++  const fetchPropiedades = useCallback(async () => {
++    setLoading(true)
++    try {
++      const params = new URLSearchParams()
++      if (filterRegion !== 'all') params.set('region', filterRegion)
++      if (filterTipo !== 'all') params.set('tipo', filterTipo)
++      const res = await fetch(`/api/propiedades?${params}`)
++      const data = await res.json()
++      setPropiedades(Array.isArray(data) ? data : [])
++    } catch (err) {
++      console.error('Error fetching propiedades:', err)
++    } finally {
++      setLoading(false)
++    }
++  }, [filterRegion, filterTipo])
++
++  useEffect(() => {
++    fetchPropiedades()
++  }, [fetchPropiedades])
++
++  // Filter by search on client side
++  const filtered = propiedades.filter(p => {
++    if (!search) return true
++    const q = search.toLowerCase()
++    return (
++      p.nombre.toLowerCase().includes(q) ||
++      (p.nombreEn && p.nombreEn.toLowerCase().includes(q)) ||
++      p.ubicacion.toLowerCase().includes(q)
++    )
++  })
++
++  // Stats
++  const totalPropiedades = propiedades.length
++  const propiedadesActivas = propiedades.filter(p => p.activo).length
++  const totalEmpleados = propiedades.reduce((sum, p) => sum + (p.empleadosActivos || 0), 0)
++
++  // ─── Dialog handlers ─────────────────────────────────────
++  const openCreate = () => {
++    setEditingId(null)
++    setFormData(emptyForm)
++    setShowDialog(true)
++  }
++
++  const openEdit = (prop: Propiedad) => {
++    setEditingId(prop.id)
++    setFormData({
++      nombre: prop.nombre,
++      nombreEn: prop.nombreEn || '',
++      tipo: prop.tipo,
++      ubicacion: prop.ubicacion,
++      region: prop.region,
++      plan: prop.plan,
++      moneda: prop.moneda,
++      activo: prop.activo,
++    })
++    setShowDialog(true)
++  }
++
++  const handleSave = async () => {
++    if (!formData.nombre.trim()) {
++      toast.error(locale === 'es' ? 'El nombre es obligatorio' : 'Name is required')
++      return
++    }
++    if (!formData.ubicacion.trim()) {
++      toast.error(locale === 'es' ? 'La ubicación es obligatoria' : 'Location is required')
++      return
++    }
++
++    setSaving(true)
++    try {
++      const payload = {
++        nombre: formData.nombre.trim(),
++        nombreEn: formData.nombreEn.trim() || null,
++        tipo: formData.tipo,
++        ubicacion: formData.ubicacion.trim(),
++        region: formData.region,
++        plan: formData.plan,
++        moneda: formData.moneda,
++        activo: formData.activo,
++      }
++
++      if (editingId) {
++        const res = await fetch(`/api/propiedades/${editingId}`, {
++          method: 'PUT',
++          headers: { 'Content-Type': 'application/json' },
++          body: JSON.stringify(payload),
++        })
++        const data = await res.json()
++        if (data.error) {
++          toast.error(data.error)
++        } else {
++          toast.success(t.actualizada)
++          setShowDialog(false)
++          fetchPropiedades()
++        }
++      } else {
++        const res = await fetch('/api/propiedades', {
++          method: 'POST',
++          headers: { 'Content-Type': 'application/json' },
++          body: JSON.stringify(payload),
++        })
++        const data = await res.json()
++        if (data.error) {
++          toast.error(data.error)
++        } else {
++          toast.success(t.creada)
++          setShowDialog(false)
++          fetchPropiedades()
++        }
++      }
++    } catch {
++      toast.error(tc.error)
++    } finally {
++      setSaving(false)
++    }
++  }
++
++  const handleDelete = async () => {
++    if (!deleteTarget) return
++    try {
++      const res = await fetch(`/api/propiedades/${deleteTarget.id}`, { method: 'DELETE' })
++      const data = await res.json()
++      if (data.error) {
++        toast.error(data.error)
++      } else {
++        toast.success(t.eliminada)
++        setDeleteTarget(null)
++        fetchPropiedades()
++      }
++    } catch {
++      toast.error(tc.error)
++    }
++  }
++
++  // ─── Render ───────────────────────────────────────────────
++  return (
++    <div className="space-y-6">
++      {/* Header */}
++      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
++        <div>
++          <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
++          <p className="text-sm text-muted-foreground">{t.subtitle}</p>
++        </div>
++        <Button
++          className="bg-teal-600 hover:bg-teal-700 text-white gap-1.5 shrink-0"
++          onClick={openCreate}
++        >
++          <Plus className="size-4" />
++          {t.agregar}
++        </Button>
++      </div>
++
++      {/* Stats Row */}
++      <div className="grid grid-cols-3 gap-3">
++        <Card>
++          <CardContent className="pt-4 pb-4 text-center">
++            <Building2 className="size-5 text-teal-600 mx-auto mb-1" />
++            <div className="text-xl font-bold">{totalPropiedades}</div>
++            <div className="text-xs text-muted-foreground">{t.totalPropiedades}</div>
++          </CardContent>
++        </Card>
++        <Card>
++          <CardContent className="pt-4 pb-4 text-center">
++            <CheckCircle2 className="size-5 text-emerald-600 mx-auto mb-1" />
++            <div className="text-xl font-bold">{propiedadesActivas}</div>
++            <div className="text-xs text-muted-foreground">{t.activas}</div>
++          </CardContent>
++        </Card>
++        <Card>
++          <CardContent className="pt-4 pb-4 text-center">
++            <Users className="size-5 text-violet-600 mx-auto mb-1" />
++            <div className="text-xl font-bold">{totalEmpleados}</div>
++            <div className="text-xs text-muted-foreground">{t.totalEmpleados}</div>
++          </CardContent>
++        </Card>
++      </div>
++
++      {/* Filters */}
++      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
++        <div className="relative flex-1 max-w-sm">
++          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
++          <Input
++            placeholder={t.buscar}
++            value={search}
++            onChange={e => setSearch(e.target.value)}
++            className="pl-9"
++          />
++        </div>
++        <Select value={filterRegion} onValueChange={setFilterRegion}>
++          <SelectTrigger className="w-[180px]">
++            <SelectValue placeholder={t.region} />
++          </SelectTrigger>
++          <SelectContent>
++            <SelectItem value="all">{t.todas}</SelectItem>
++            {regiones.map(r => (
++              <SelectItem key={r.value} value={r.value}>
++                {locale === 'es' ? r.labelEs : r.labelEn}
++              </SelectItem>
++            ))}
++          </SelectContent>
++        </Select>
++        <Select value={filterTipo} onValueChange={setFilterTipo}>
++          <SelectTrigger className="w-[160px]">
++            <SelectValue placeholder={t.tipo} />
++          </SelectTrigger>
++          <SelectContent>
++            <SelectItem value="all">{t.todos}</SelectItem>
++            {tiposPropiedad.map(tp => (
++              <SelectItem key={tp.value} value={tp.value}>
++                {locale === 'es' ? tp.labelEs : tp.labelEn}
++              </SelectItem>
++            ))}
++          </SelectContent>
++        </Select>
++      </div>
++
++      {/* Property Cards */}
++      {loading ? (
++        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
++          {Array.from({ length: 6 }).map((_, i) => (
++            <Card key={i}>
++              <CardContent className="p-4">
++                <div className="h-44 animate-pulse rounded bg-muted" />
++              </CardContent>
++            </Card>
++          ))}
++        </div>
++      ) : filtered.length === 0 ? (
++        <div className="text-center py-12">
++          <Building2 className="size-12 text-muted-foreground mx-auto mb-3" />
++          <p className="text-muted-foreground">{t.noPropiedades}</p>
++        </div>
++      ) : (
++        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
++          {filtered.map(prop => {
++            const TipoIcon = getTipoIcon(prop.tipo)
++            return (
++              <Card
++                key={prop.id}
++                className="hover:shadow-md transition-shadow overflow-hidden"
++              >
++                {/* Color accent bar at top */}
++                <div className={`h-1.5 ${
++                  prop.activo
++                    ? 'bg-teal-500'
++                    : 'bg-gray-400'
++                }`} />
++                <CardContent className="p-4">
++                  {/* Header row */}
++                  <div className="flex items-start justify-between gap-2">
++                    <div className="flex items-start gap-3 min-w-0 flex-1">
++                      <div className="size-10 shrink-0 rounded-lg bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center">
++                        <TipoIcon className="size-5 text-teal-600 dark:text-teal-400" />
++                      </div>
++                      <div className="min-w-0">
++                        <h3 className="font-semibold text-sm truncate">
++                          {locale === 'es' ? prop.nombre : (prop.nombreEn || prop.nombre)}
++                        </h3>
++                        {prop.nombreEn && locale === 'es' && (
++                          <p className="text-[11px] text-muted-foreground truncate">{prop.nombreEn}</p>
++                        )}
++                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
++                          <MapPin className="size-3" />
++                          {prop.ubicacion}
++                        </p>
++                      </div>
++                    </div>
++                    {/* Status badge */}
++                    <Badge
++                      variant="outline"
++                      className={`shrink-0 text-[10px] px-1.5 ${
++                        prop.activo
++                          ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
++                          : 'bg-gray-50 text-gray-500 dark:bg-gray-900/30 dark:text-gray-400'
++                      }`}
++                    >
++                      {prop.activo ? (
++                        <CheckCircle2 className="size-3 mr-0.5" />
++                      ) : (
++                        <XCircle className="size-3 mr-0.5" />
++                      )}
++                      {prop.activo ? t.activa : t.inactiva}
++                    </Badge>
++                  </div>
++
++                  {/* Info badges */}
++                  <div className="flex flex-wrap gap-1.5 mt-3">
++                    <Badge variant="outline" className="text-[10px] px-1.5">
++                      {getTipoLabel(prop.tipo, locale)}
++                    </Badge>
++                    <Badge variant="outline" className="text-[10px] px-1.5">
++                      {getRegionLabel(prop.region, locale)}
++                    </Badge>
++                    <Badge className={`text-[10px] px-1.5 ${getPlanBadge(prop.plan)}`}>
++                      {prop.plan.charAt(0).toUpperCase() + prop.plan.slice(1)}
++                    </Badge>
++                    <Badge variant="outline" className="text-[10px] px-1.5">
++                      <CreditCard className="size-3 mr-0.5" />
++                      {prop.moneda}
++                    </Badge>
++                  </div>
++
++                  {/* Stats row */}
++                  <div className="flex items-center justify-between mt-3 pt-3 border-t text-xs text-muted-foreground">
++                    <span className="flex items-center gap-1">
++                      <Users className="size-3" />
++                      {prop.empleadosActivos} {t.empleados}
++                    </span>
++                    <span className="flex items-center gap-1">
++                      <Star className="size-3" />
++                      {prop.totalVentas} {t.ventas}
++                    </span>
++                  </div>
++
++                  {/* Action buttons */}
++                  <div className="flex items-center gap-2 mt-3 pt-3 border-t">
++                    <Button
++                      variant="outline"
++                      size="sm"
++                      className="flex-1 gap-1.5 text-xs h-8"
++                      onClick={(e) => {
++                        e.stopPropagation()
++                        openEdit(prop)
++                      }}
++                    >
++                      <Pencil className="size-3" />
++                      {tc.editar}
++                    </Button>
++                    <Button
++                      variant="outline"
++                      size="sm"
++                      className="flex-1 gap-1.5 text-xs h-8 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
++                      onClick={(e) => {
++                        e.stopPropagation()
++                        setDeleteTarget(prop)
++                      }}
++                    >
++                      <Trash2 className="size-3" />
++                      {tc.eliminar}
++                    </Button>
++                  </div>
++                </CardContent>
++              </Card>
++            )
++          })}
++        </div>
++      )}
++
++      {/* Create / Edit Dialog */}
++      <Dialog open={showDialog} onOpenChange={setShowDialog}>
++        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
++          <DialogHeader>
++            <DialogTitle className="flex items-center gap-2">
++              <Building2 className="size-5 text-teal-600" />
++              {editingId ? t.editar : t.agregar}
++            </DialogTitle>
++            <DialogDescription>
++              {editingId ? t.editarDescripcion : t.agregarDescripcion}
++            </DialogDescription>
++          </DialogHeader>
++
++          <div className="space-y-4 py-2">
++            {/* Nombre */}
++            <div className="space-y-2">
++              <Label htmlFor="nombre">{t.nombre} *</Label>
++              <Input
++                id="nombre"
++                value={formData.nombre}
++                onChange={e => setFormData(prev => ({ ...prev, nombre: e.target.value }))}
++                placeholder={t.nombrePlaceholder}
++              />
++            </div>
++
++            {/* Nombre En */}
++            <div className="space-y-2">
++              <Label htmlFor="nombreEn">{t.nombreEn}</Label>
++              <Input
++                id="nombreEn"
++                value={formData.nombreEn}
++                onChange={e => setFormData(prev => ({ ...prev, nombreEn: e.target.value }))}
++                placeholder={t.nombreEnPlaceholder}
++              />
++            </div>
++
++            {/* Tipo + Region */}
++            <div className="grid grid-cols-2 gap-4">
++              <div className="space-y-2">
++                <Label>{t.tipo}</Label>
++                <Select
++                  value={formData.tipo}
++                  onValueChange={value => setFormData(prev => ({ ...prev, tipo: value }))}
++                >
++                  <SelectTrigger>
++                    <SelectValue />
++                  </SelectTrigger>
++                  <SelectContent>
++                    {tiposPropiedad.map(tp => (
++                      <SelectItem key={tp.value} value={tp.value}>
++                        {locale === 'es' ? tp.labelEs : tp.labelEn}
++                      </SelectItem>
++                    ))}
++                  </SelectContent>
++                </Select>
++              </div>
++              <div className="space-y-2">
++                <Label>{t.region}</Label>
++                <Select
++                  value={formData.region}
++                  onValueChange={value => setFormData(prev => ({ ...prev, region: value }))}
++                >
++                  <SelectTrigger>
++                    <SelectValue />
++                  </SelectTrigger>
++                  <SelectContent>
++                    {regiones.map(r => (
++                      <SelectItem key={r.value} value={r.value}>
++                        {locale === 'es' ? r.labelEs : r.labelEn}
++                      </SelectItem>
++                    ))}
++                  </SelectContent>
++                </Select>
++              </div>
++            </div>
++
++            {/* Ubicacion */}
++            <div className="space-y-2">
++              <Label htmlFor="ubicacion">{t.ubicacion} *</Label>
++              <Input
++                id="ubicacion"
++                value={formData.ubicacion}
++                onChange={e => setFormData(prev => ({ ...prev, ubicacion: e.target.value }))}
++                placeholder={t.ubicacionPlaceholder}
++              />
++            </div>
++
++            {/* Plan + Moneda */}
++            <div className="grid grid-cols-2 gap-4">
++              <div className="space-y-2">
++                <Label>{t.plan}</Label>
++                <Select
++                  value={formData.plan}
++                  onValueChange={value => setFormData(prev => ({ ...prev, plan: value }))}
++                >
++                  <SelectTrigger>
++                    <SelectValue />
++                  </SelectTrigger>
++                  <SelectContent>
++                    {planes.map(p => (
++                      <SelectItem key={p.value} value={p.value}>
++                        {locale === 'es' ? p.labelEs : p.labelEn}
++                      </SelectItem>
++                    ))}
++                  </SelectContent>
++                </Select>
++              </div>
++              <div className="space-y-2">
++                <Label>{t.moneda}</Label>
++                <Select
++                  value={formData.moneda}
++                  onValueChange={value => setFormData(prev => ({ ...prev, moneda: value }))}
++                >
++                  <SelectTrigger>
++                    <SelectValue />
++                  </SelectTrigger>
++                  <SelectContent>
++                    {monedas.map(m => (
++                      <SelectItem key={m.value} value={m.value}>
++                        {m.label}
++                      </SelectItem>
++                    ))}
++                  </SelectContent>
++                </Select>
++              </div>
++            </div>
++
++            {/* Activo checkbox */}
++            <div className="flex items-center gap-2">
++              <Checkbox
++                id="activo"
++                checked={formData.activo}
++                onCheckedChange={(checked) =>
++                  setFormData(prev => ({ ...prev, activo: checked === true }))
++                }
++              />
++              <Label htmlFor="activo" className="cursor-pointer">
++                {t.activo}
++              </Label>
++            </div>
++          </div>
++
++          <DialogFooter className="gap-2">
++            <Button
++              variant="outline"
++              onClick={() => setShowDialog(false)}
++              disabled={saving}
++            >
++              {tc.cancelar}
++            </Button>
++            <Button
++              className="bg-teal-600 hover:bg-teal-700 text-white"
++              onClick={handleSave}
++              disabled={saving}
++            >
++              {saving ? (
++                <div className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
++              ) : editingId ? (
++                tc.actualizar
++              ) : (
++                tc.crear
++              )}
++            </Button>
++          </DialogFooter>
++        </DialogContent>
++      </Dialog>
++
++      {/* Delete Confirmation */}
++      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}>
++        <AlertDialogContent>
++          <AlertDialogHeader>
++            <AlertDialogTitle>{t.confirmarEliminar}</AlertDialogTitle>
++            <AlertDialogDescription>
++              {t.confirmarEliminarMensaje?.replace('{nombre}', deleteTarget?.nombre || '')}
++            </AlertDialogDescription>
++          </AlertDialogHeader>
++          <AlertDialogFooter>
++            <AlertDialogCancel>{tc.cancelar}</AlertDialogCancel>
++            <AlertDialogAction
++              onClick={handleDelete}
++              className="bg-destructive text-white hover:bg-destructive/90"
++            >
++              {tc.eliminar}
++            </AlertDialogAction>
++          </AlertDialogFooter>
++        </AlertDialogContent>
++      </AlertDialog>
++    </div>
++  )
++}
+diff --git a/src/components/servicios/servicios-admin.tsx b/src/components/servicios/servicios-admin.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/trabajador/vista-trabajador.tsx b/src/components/trabajador/vista-trabajador.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/accordion.tsx b/src/components/ui/accordion.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/alert-dialog.tsx b/src/components/ui/alert-dialog.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/alert.tsx b/src/components/ui/alert.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/aspect-ratio.tsx b/src/components/ui/aspect-ratio.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/avatar.tsx b/src/components/ui/avatar.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/badge.tsx b/src/components/ui/badge.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/breadcrumb.tsx b/src/components/ui/breadcrumb.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/button.tsx b/src/components/ui/button.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/calendar.tsx b/src/components/ui/calendar.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/card.tsx b/src/components/ui/card.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/carousel.tsx b/src/components/ui/carousel.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/chart.tsx b/src/components/ui/chart.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/checkbox.tsx b/src/components/ui/checkbox.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/collapsible.tsx b/src/components/ui/collapsible.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/command.tsx b/src/components/ui/command.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/context-menu.tsx b/src/components/ui/context-menu.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/dialog.tsx b/src/components/ui/dialog.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/drawer.tsx b/src/components/ui/drawer.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/dropdown-menu.tsx b/src/components/ui/dropdown-menu.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/form.tsx b/src/components/ui/form.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/hover-card.tsx b/src/components/ui/hover-card.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/input-otp.tsx b/src/components/ui/input-otp.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/input.tsx b/src/components/ui/input.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/label.tsx b/src/components/ui/label.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/menubar.tsx b/src/components/ui/menubar.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/navigation-menu.tsx b/src/components/ui/navigation-menu.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/pagination.tsx b/src/components/ui/pagination.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/popover.tsx b/src/components/ui/popover.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/progress.tsx b/src/components/ui/progress.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/radio-group.tsx b/src/components/ui/radio-group.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/resizable.tsx b/src/components/ui/resizable.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/scroll-area.tsx b/src/components/ui/scroll-area.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/select.tsx b/src/components/ui/select.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/separator.tsx b/src/components/ui/separator.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/sheet.tsx b/src/components/ui/sheet.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/sidebar.tsx b/src/components/ui/sidebar.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/skeleton.tsx b/src/components/ui/skeleton.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/slider.tsx b/src/components/ui/slider.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/sonner.tsx b/src/components/ui/sonner.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/switch.tsx b/src/components/ui/switch.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/table.tsx b/src/components/ui/table.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/tabs.tsx b/src/components/ui/tabs.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/textarea.tsx b/src/components/ui/textarea.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/toast.tsx b/src/components/ui/toast.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/toaster.tsx b/src/components/ui/toaster.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/toggle-group.tsx b/src/components/ui/toggle-group.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/toggle.tsx b/src/components/ui/toggle.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ui/tooltip.tsx b/src/components/ui/tooltip.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/components/ventas/ventas-module.tsx b/src/components/ventas/ventas-module.tsx
+old mode 100644
+new mode 100755
+diff --git a/src/hooks/use-mobile.ts b/src/hooks/use-mobile.ts
+old mode 100644
+new mode 100755
+diff --git a/src/hooks/use-toast.ts b/src/hooks/use-toast.ts
+old mode 100644
+new mode 100755
+diff --git a/src/lib/api-helpers.ts b/src/lib/api-helpers.ts
+old mode 100644
+new mode 100755
+index 671f63a..766b66f
+--- a/src/lib/api-helpers.ts
++++ b/src/lib/api-helpers.ts
+@@ -144,6 +144,8 @@ export function getMockEmpleados() {
+     {
+       id: 'emp1', empleadoId: 'CAP-501', nombre: 'Laura Hernández', posicion: 'Capitana', posicionEn: 'Captain', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
+       fechaIngreso: '2022-03-15T00:00:00.000Z', estado: 'activo', nivelCarrera: 4, rutaCarrera: 'Mesera Jr. → Mesera Sr. → Capitana → Gerente A&B', rutaCarreraEn: 'Jr. Waitress → Sr. Waitress → Captain → F&B Manager',
++      tipoJornada: 'fijo', horarioEntrada: '07:00', horarioSalida: '15:00', diasTrabajo: '["lunes","martes","miercoles","jueves","viernes"]', cubreTurnos: false, turnoPreferido: 'matutino',
++      salario: 18000, tipoContrato: 'indefinido', fechaFinContrato: null,
+       puntuacionConocimiento: 95, puntuacionVentas: 98, puntuacionHospitalidad: 96, puntuacionTotal: 96.3,
+       totalUpselling: 8920, npsPromedio: 9.8, cursosCompletados: 8, cursosEnProgreso: 1,
+       indiceFelicidad: 95, riesgoBaja: 5, nivelRiesgoBaja: 'bajo',
+@@ -157,6 +159,8 @@ export function getMockEmpleados() {
+     {
+       id: 'emp2', empleadoId: 'GER-001', nombre: 'Carmen Delgado', posicion: 'Gerente A&B', posicionEn: 'F&B Manager', departamento: 'Gerencia', departamentoEn: 'Management', foto: null,
+       fechaIngreso: '2020-01-10T00:00:00.000Z', estado: 'activo', nivelCarrera: 5, rutaCarrera: 'Mesera → Capitana → Subgerente → Gerente A&B', rutaCarreraEn: 'Waitress → Captain → Asst. Manager → F&B Manager',
++      tipoJornada: 'mixto', horarioEntrada: '08:00', horarioSalida: '18:00', diasTrabajo: '["lunes","martes","miercoles","jueves","viernes","sabado"]', cubreTurnos: true, turnoPreferido: 'mixto',
++      salario: 35000, tipoContrato: 'indefinido', fechaFinContrato: null,
+       puntuacionConocimiento: 92, puntuacionVentas: 99, puntuacionHospitalidad: 97, puntuacionTotal: 96,
+       totalUpselling: 12500, npsPromedio: 9.5, cursosCompletados: 10, cursosEnProgreso: 0,
+       indiceFelicidad: 92, riesgoBaja: 3, nivelRiesgoBaja: 'bajo',
+@@ -170,6 +174,8 @@ export function getMockEmpleados() {
+     {
+       id: 'emp3', empleadoId: 'MES-401', nombre: 'Juan Pérez', posicion: 'Mesero Sr.', posicionEn: 'Sr. Waiter', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
+       fechaIngreso: '2023-02-20T00:00:00.000Z', estado: 'activo', nivelCarrera: 3, rutaCarrera: 'Mesero Jr. → Mesero Sr. → Capitán', rutaCarreraEn: 'Jr. Waiter → Sr. Waiter → Captain',
++      tipoJornada: 'fijo', horarioEntrada: '06:00', horarioSalida: '14:00', diasTrabajo: '["martes","miercoles","jueves","viernes","sabado","domingo"]', cubreTurnos: true, turnoPreferido: 'matutino',
++      salario: 14000, tipoContrato: 'indefinido', fechaFinContrato: null,
+       puntuacionConocimiento: 82, puntuacionVentas: 90, puntuacionHospitalidad: 92, puntuacionTotal: 88.3,
+       totalUpselling: 4580, npsPromedio: 9.2, cursosCompletados: 5, cursosEnProgreso: 2,
+       indiceFelicidad: 88, riesgoBaja: 12, nivelRiesgoBaja: 'bajo',
+@@ -183,6 +189,8 @@ export function getMockEmpleados() {
+     {
+       id: 'emp4', empleadoId: 'MES-301', nombre: 'Roberto Sánchez', posicion: 'Mesero', posicionEn: 'Waiter', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
+       fechaIngreso: '2023-06-01T00:00:00.000Z', estado: 'activo', nivelCarrera: 2, rutaCarrera: 'Mesero Jr. → Mesero → Mesero Sr.', rutaCarreraEn: 'Jr. Waiter → Waiter → Sr. Waiter',
++      tipoJornada: 'fijo', horarioEntrada: '14:00', horarioSalida: '22:00', diasTrabajo: '["lunes","martes","miercoles","jueves","viernes"]', cubreTurnos: false, turnoPreferido: 'vespertino',
++      salario: 12000, tipoContrato: 'indefinido', fechaFinContrato: null,
+       puntuacionConocimiento: 70, puntuacionVentas: 75, puntuacionHospitalidad: 80, puntuacionTotal: 75.2,
+       totalUpselling: 2350, npsPromedio: 8.5, cursosCompletados: 3, cursosEnProgreso: 1,
+       indiceFelicidad: 78, riesgoBaja: 25, nivelRiesgoBaja: 'medio',
+@@ -196,6 +204,8 @@ export function getMockEmpleados() {
+     {
+       id: 'emp5', empleadoId: 'BAR-201', nombre: 'Miguel Torres', posicion: 'Bartender', posicionEn: 'Bartender', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
+       fechaIngreso: '2023-08-15T00:00:00.000Z', estado: 'activo', nivelCarrera: 2, rutaCarrera: 'Barback → Bartender → Bartender Sr.', rutaCarreraEn: 'Barback → Bartender → Sr. Bartender',
++      tipoJornada: 'variable', horarioEntrada: '18:00', horarioSalida: '02:00', diasTrabajo: '["miercoles","jueves","viernes","sabado"]', cubreTurnos: true, turnoPreferido: 'nocturno',
++      salario: 13000, tipoContrato: 'indefinido', fechaFinContrato: null,
+       puntuacionConocimiento: 78, puntuacionVentas: 85, puntuacionHospitalidad: 82, puntuacionTotal: 82,
+       totalUpselling: 3200, npsPromedio: 8.8, cursosCompletados: 4, cursosEnProgreso: 1,
+       indiceFelicidad: 82, riesgoBaja: 18, nivelRiesgoBaja: 'bajo',
+@@ -209,6 +219,8 @@ export function getMockEmpleados() {
+     {
+       id: 'emp6', empleadoId: 'ONB-101', nombre: 'Ana Martínez', posicion: 'Mesera Jr.', posicionEn: 'Jr. Waitress', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
+       fechaIngreso: '2024-05-01T00:00:00.000Z', estado: 'onboarding', nivelCarrera: 1, rutaCarrera: 'Mesera Jr. → Mesera → Mesera Sr.', rutaCarreraEn: 'Jr. Waitress → Waitress → Sr. Waitress',
++      tipoJornada: 'fijo', horarioEntrada: '07:00', horarioSalida: '15:00', diasTrabajo: '["lunes","martes","miercoles","jueves","viernes"]', cubreTurnos: false, turnoPreferido: 'matutino',
++      salario: 9000, tipoContrato: 'temporal', fechaFinContrato: '2024-11-01T00:00:00.000Z',
+       puntuacionConocimiento: 45, puntuacionVentas: 30, puntuacionHospitalidad: 60, puntuacionTotal: 44.3,
+       totalUpselling: 0, npsPromedio: 0, cursosCompletados: 0, cursosEnProgreso: 2,
+       indiceFelicidad: 75, riesgoBaja: 15, nivelRiesgoBaja: 'bajo',
+@@ -222,6 +234,8 @@ export function getMockEmpleados() {
+     {
+       id: 'emp7', empleadoId: 'ONB-102', nombre: 'Carlos López', posicion: 'Recepcionista', posicionEn: 'Receptionist', departamento: 'Recepción', departamentoEn: 'Reception', foto: null,
+       fechaIngreso: '2024-04-15T00:00:00.000Z', estado: 'onboarding', nivelCarrera: 1, rutaCarrera: 'Recepcionista Jr. → Recepcionista → Concierge', rutaCarreraEn: 'Jr. Receptionist → Receptionist → Concierge',
++      tipoJornada: 'fijo', horarioEntrada: '07:00', horarioSalida: '15:00', diasTrabajo: '["lunes","martes","miercoles","jueves","viernes"]', cubreTurnos: false, turnoPreferido: 'matutino',
++      salario: 10000, tipoContrato: 'practica', fechaFinContrato: '2024-10-15T00:00:00.000Z',
+       puntuacionConocimiento: 55, puntuacionVentas: 40, puntuacionHospitalidad: 70, puntuacionTotal: 54.8,
+       totalUpselling: 200, npsPromedio: 7.5, cursosCompletados: 1, cursosEnProgreso: 1,
+       indiceFelicidad: 72, riesgoBaja: 20, nivelRiesgoBaja: 'medio',
+@@ -235,6 +249,8 @@ export function getMockEmpleados() {
+     {
+       id: 'emp8', empleadoId: 'MES-402', nombre: 'María García', posicion: 'Mesera Jr.', posicionEn: 'Jr. Waitress', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
+       fechaIngreso: '2023-11-01T00:00:00.000Z', estado: 'activo', nivelCarrera: 1, rutaCarrera: 'Mesera Jr. → Mesera', rutaCarreraEn: 'Jr. Waitress → Waitress',
++      tipoJornada: 'fijo', horarioEntrada: '14:00', horarioSalida: '22:00', diasTrabajo: '["lunes","martes","miercoles","jueves","viernes"]', cubreTurnos: false, turnoPreferido: 'vespertino',
++      salario: 9500, tipoContrato: 'eventual', fechaFinContrato: '2024-12-01T00:00:00.000Z',
+       puntuacionConocimiento: 50, puntuacionVentas: 40, puntuacionHospitalidad: 55, puntuacionTotal: 48.3,
+       totalUpselling: 450, npsPromedio: 6.1, cursosCompletados: 1, cursosEnProgreso: 0,
+       indiceFelicidad: 42, riesgoBaja: 78, nivelRiesgoBaja: 'alto',
+@@ -248,6 +264,8 @@ export function getMockEmpleados() {
+     {
+       id: 'emp9', empleadoId: 'REC-801', nombre: 'Diego Flores', posicion: 'Recepcionista Jr.', posicionEn: 'Jr. Receptionist', departamento: 'Recepción', departamentoEn: 'Reception', foto: null,
+       fechaIngreso: '2023-09-10T00:00:00.000Z', estado: 'activo', nivelCarrera: 1, rutaCarrera: 'Recepcionista Jr. → Recepcionista', rutaCarreraEn: 'Jr. Receptionist → Receptionist',
++      tipoJornada: 'mixto', horarioEntrada: '06:00', horarioSalida: '14:00', diasTrabajo: '["lunes","miercoles","viernes","sabado","domingo"]', cubreTurnos: false, turnoPreferido: 'matutino',
++      salario: 11000, tipoContrato: 'indefinido', fechaFinContrato: null,
+       puntuacionConocimiento: 55, puntuacionVentas: 45, puntuacionHospitalidad: 60, puntuacionTotal: 53.3,
+       totalUpselling: 600, npsPromedio: 6.8, cursosCompletados: 2, cursosEnProgreso: 0,
+       indiceFelicidad: 48, riesgoBaja: 65, nivelRiesgoBaja: 'alto',
+@@ -261,6 +279,8 @@ export function getMockEmpleados() {
+     {
+       id: 'emp10', empleadoId: 'MES-701', nombre: 'Patricia Ruiz', posicion: 'Mesera', posicionEn: 'Waitress', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
+       fechaIngreso: '2022-07-01T00:00:00.000Z', estado: 'activo', nivelCarrera: 2, rutaCarrera: 'Mesera Jr. → Mesera', rutaCarreraEn: 'Jr. Waitress → Waitress',
++      tipoJornada: 'variable', horarioEntrada: null, horarioSalida: null, diasTrabajo: '["lunes","martes","miercoles","jueves","viernes","sabado","domingo"]', cubreTurnos: true, turnoPreferido: 'mixto',
++      salario: 10500, tipoContrato: 'eventual', fechaFinContrato: '2024-09-30T00:00:00.000Z',
+       puntuacionConocimiento: 40, puntuacionVentas: 30, puntuacionHospitalidad: 35, puntuacionTotal: 34.8,
+       totalUpselling: 120, npsPromedio: 5.2, cursosCompletados: 0, cursosEnProgreso: 0,
+       indiceFelicidad: 35, riesgoBaja: 92, nivelRiesgoBaja: 'critico',
+@@ -274,6 +294,8 @@ export function getMockEmpleados() {
+     {
+       id: 'emp11', empleadoId: 'ONB-103', nombre: 'Sofía Ramírez', posicion: 'Mesera Jr.', posicionEn: 'Jr. Waitress', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
+       fechaIngreso: '2024-06-01T00:00:00.000Z', estado: 'onboarding', nivelCarrera: 1, rutaCarrera: 'Mesera Jr. → Mesera', rutaCarreraEn: 'Jr. Waitress → Waitress',
++      tipoJornada: 'fijo', horarioEntrada: '07:00', horarioSalida: '15:00', diasTrabajo: '["lunes","martes","miercoles","jueves","viernes"]', cubreTurnos: false, turnoPreferido: 'matutino',
++      salario: 9000, tipoContrato: 'temporal', fechaFinContrato: '2024-12-01T00:00:00.000Z',
+       puntuacionConocimiento: 30, puntuacionVentas: 20, puntuacionHospitalidad: 50, puntuacionTotal: 33.5,
+       totalUpselling: 0, npsPromedio: 0, cursosCompletados: 0, cursosEnProgreso: 3,
+       indiceFelicidad: 80, riesgoBaja: 10, nivelRiesgoBaja: 'bajo',
+@@ -287,6 +309,8 @@ export function getMockEmpleados() {
+     {
+       id: 'emp12', empleadoId: 'OFF-001', nombre: 'Fernando Morales', posicion: 'Bartender Sr.', posicionEn: 'Sr. Bartender', departamento: 'A&B', departamentoEn: 'F&B', foto: null,
+       fechaIngreso: '2021-05-15T00:00:00.000Z', estado: 'offboarding', nivelCarrera: 3, rutaCarrera: 'Bartender → Bartender Sr. → Bar Manager', rutaCarreraEn: 'Bartender → Sr. Bartender → Bar Manager',
++      tipoJornada: 'fijo', horarioEntrada: '18:00', horarioSalida: '02:00', diasTrabajo: '["jueves","viernes","sabado"]', cubreTurnos: false, turnoPreferido: 'nocturno',
++      salario: 16000, tipoContrato: 'indefinido', fechaFinContrato: null,
+       puntuacionConocimiento: 75, puntuacionVentas: 70, puntuacionHospitalidad: 72, puntuacionTotal: 72.3,
+       totalUpselling: 1800, npsPromedio: 7.8, cursosCompletados: 4, cursosEnProgreso: 0,
+       indiceFelicidad: 55, riesgoBaja: 85, nivelRiesgoBaja: 'alto',
+diff --git a/src/lib/db.ts b/src/lib/db.ts
+old mode 100644
+new mode 100755
+index b074006..6a9efa0
+--- a/src/lib/db.ts
++++ b/src/lib/db.ts
+@@ -2,41 +2,42 @@ import { PrismaClient } from '@prisma/client'
+ 
+ const globalForPrisma = globalThis as unknown as {
+   prisma: PrismaClient | undefined
++  prismaClientVersion?: string
+ }
+ 
++// Check if we have a valid database URL (not SQLite file that won't work on Vercel)
+ const dbUrl = process.env.DATABASE_URL || ''
+-const isVercel = !!process.env.VERCEL
+-const isPostgres = dbUrl.startsWith('postgresql://') || dbUrl.startsWith('postgres://')
+ const isSQLite = dbUrl.startsWith('file:')
++const isVercel = !!process.env.VERCEL
+ 
++// Only create PrismaClient if we have a real database connection
++// On Vercel with SQLite, we skip it and use mock data instead
+ let _db: PrismaClient | null = null
+-let _dbAvailable = false
+ 
+-if (isPostgres) {
+-  try {
+-    _db = globalForPrisma.prisma ?? new PrismaClient({
+-      log: process.env.NODE_ENV === 'production' ? ['error'] : ['error', 'warn'],
+-    })
+-    if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = _db
+-    _dbAvailable = true
+-    if (isVercel) {
+-      console.log('✅ PostgreSQL database configured for Vercel')
++try {
++  if (isVercel && isSQLite) {
++    console.log('⚠️ SQLite not supported on Vercel - using mock data mode')
++  } else if (dbUrl) {
++    // Check if the cached client has the same schema version by testing for new fields
++    const currentVersion = 'v2-schedule-fields'
++    const needsRecreate = globalForPrisma.prismaClientVersion !== currentVersion
++    
++    if (needsRecreate) {
++      _db = new PrismaClient({
++        log: process.env.NODE_ENV === 'production' ? ['error'] : ['error', 'warn'],
++      })
++      globalForPrisma.prisma = _db
++      globalForPrisma.prismaClientVersion = currentVersion
+     } else {
+-      console.log('✅ PostgreSQL database configured')
++      _db = globalForPrisma.prisma ?? new PrismaClient({
++        log: process.env.NODE_ENV === 'production' ? ['error'] : ['error', 'warn'],
++      })
++      if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = _db
+     }
+-  } catch (e) {
+-    console.log('⚠️ Database init failed:', e)
+-    _dbAvailable = false
+   }
+-} else if (isSQLite) {
+-  console.log('💡 SQLite detected - using mock data mode (SQLite not for production)')
+-  console.log('💡 Set DATABASE_URL to PostgreSQL for production use')
+-} else {
+-  console.log('⚠️ No DATABASE_URL found - using mock data mode')
++} catch (e) {
++  console.log('⚠️ Database connection failed - using mock data mode:', e)
+ }
+ 
+-const db = _db
+-
+-const isDatabaseAvailable = (): boolean => _dbAvailable
+-
+-export { db, isDatabaseAvailable }
++export const db = _db
++export const isDatabaseAvailable = () => _db !== null
+diff --git a/src/lib/i18n.ts b/src/lib/i18n.ts
+old mode 100644
+new mode 100755
+index 0a48f76..30b680a
+--- a/src/lib/i18n.ts
++++ b/src/lib/i18n.ts
+@@ -16,6 +16,7 @@ export const translations = {
+       configuracion: 'Configuración',
+       trabajador: 'Vista Trabajador',
+       servicios: 'Menú & Servicios',
++      propiedades: 'Propiedades',
+     },
+ 
+     // Dashboard
+@@ -101,6 +102,60 @@ export const translations = {
+       noResultados: 'No se encontraron empleados',
+       verDetalle: 'Ver Detalle',
+       volver: 'Volver',
++      // Add Employee form
++      agregarEmpleado: 'Agregar Empleado',
++      infoPersonal: 'Información Personal',
++      horarioContrato: 'Horario y Contrato',
++      nombre: 'Nombre',
++      nombreRequerido: 'El nombre es requerido',
++      idEmpleado: 'ID de Empleado',
++      idEmpleadoRequerido: 'El ID es requerido',
++      puesto: 'Puesto',
++      puestoRequerido: 'El puesto es requerido',
++      puestoEn: 'Puesto (Inglés)',
++      propiedad: 'Propiedad',
++      seleccionar: 'Seleccionar...',
++      foto: 'Foto (URL)',
++      tipoJornada: 'Tipo de Jornada',
++      fijo: 'Fijo',
++      mixto: 'Mixto',
++      variable: 'Variable',
++      horarioEntrada: 'Hora de Entrada',
++      horarioSalida: 'Hora de Salida',
++      diasTrabajo: 'Días de Trabajo',
++      lunes: 'Lunes',
++      martes: 'Martes',
++      miercoles: 'Miércoles',
++      jueves: 'Jueves',
++      viernes: 'Viernes',
++      sabado: 'Sábado',
++      domingo: 'Domingo',
++      cubreTurnos: 'Cubre turnos de otros',
++      turnoPreferido: 'Turno Preferido',
++      matutino: 'Matutino',
++      vespertino: 'Vespertino',
++      nocturno: 'Nocturno',
++      salario: 'Salario',
++      tipoContrato: 'Tipo de Contrato',
++      indefinido: 'Indefinido',
++      temporal: 'Temporal',
++      eventual: 'Eventual',
++      practica: 'Práctica',
++      fechaFinContrato: 'Fecha Fin de Contrato',
++      guardar: 'Guardar',
++      guardando: 'Guardando...',
++      empleadoCreado: 'Empleado creado exitosamente',
++      errorCrear: 'Error al crear empleado',
++      // Detail view
++      horario: 'Horario',
++      contrato: 'Contrato',
++      jornada: 'Jornada',
++      entrada: 'Entrada',
++      salida: 'Salida',
++      dias: 'Días',
++      siCubre: 'Sí cubre turnos',
++      noCubre: 'No cubre turnos',
++      turno: 'Turno',
+     },
+ 
+     // Ventas & NPS
+@@ -330,6 +385,43 @@ export const translations = {
+       eliminar: 'Eliminar',
+     },
+ 
++    // Propiedades
++    propiedades: {
++      title: 'Propiedades',
++      subtitle: 'Gestiona tus hoteles, restaurantes y establecimientos',
++      agregar: 'Agregar Propiedad',
++      editar: 'Editar Propiedad',
++      agregarDescripcion: 'Agrega una nueva propiedad al sistema',
++      editarDescripcion: 'Modifica los datos de la propiedad',
++      nombre: 'Nombre',
++      nombrePlaceholder: 'Ej: Hotel Playa Cancún',
++      nombreEn: 'Nombre (EN)',
++      nombreEnPlaceholder: 'Ej: Cancún Beach Hotel',
++      tipo: 'Tipo',
++      ubicacion: 'Ubicación',
++      ubicacionPlaceholder: 'Ej: Blvd. Kukulcán KM 12.5, Cancún',
++      region: 'Región',
++      plan: 'Plan',
++      moneda: 'Moneda',
++      activo: 'Activa',
++      activa: 'Activa',
++      inactiva: 'Inactiva',
++      empleados: 'empleados',
++      ventas: 'ventas',
++      buscar: 'Buscar propiedad...',
++      todas: 'Todas',
++      todos: 'Todos',
++      totalPropiedades: 'Total',
++      activas: 'Activas',
++      totalEmpleados: 'Empleados',
++      noPropiedades: 'No se encontraron propiedades',
++      creada: 'Propiedad creada exitosamente',
++      actualizada: 'Propiedad actualizada exitosamente',
++      eliminada: 'Propiedad eliminada exitosamente',
++      confirmarEliminar: '¿Eliminar propiedad?',
++      confirmarEliminarMensaje: 'Se eliminará la propiedad "{nombre}" y todos sus datos asociados. Esta acción no se puede deshacer.',
++    },
++
+     // Common
+     common: {
+       mxn: 'MXN',
+@@ -365,6 +457,7 @@ export const translations = {
+       configuracion: 'Settings',
+       trabajador: 'Worker View',
+       servicios: 'Menu & Services',
++      propiedades: 'Properties',
+     },
+ 
+     // Dashboard
+@@ -450,6 +543,60 @@ export const translations = {
+       noResultados: 'No employees found',
+       verDetalle: 'View Detail',
+       volver: 'Back',
++      // Add Employee form
++      agregarEmpleado: 'Add Employee',
++      infoPersonal: 'Personal Information',
++      horarioContrato: 'Schedule & Contract',
++      nombre: 'Name',
++      nombreRequerido: 'Name is required',
++      idEmpleado: 'Employee ID',
++      idEmpleadoRequerido: 'ID is required',
++      puesto: 'Position',
++      puestoRequerido: 'Position is required',
++      puestoEn: 'Position (English)',
++      propiedad: 'Property',
++      seleccionar: 'Select...',
++      foto: 'Photo (URL)',
++      tipoJornada: 'Work Schedule Type',
++      fijo: 'Fixed',
++      mixto: 'Mixed',
++      variable: 'Variable',
++      horarioEntrada: 'Start Time',
++      horarioSalida: 'End Time',
++      diasTrabajo: 'Working Days',
++      lunes: 'Monday',
++      martes: 'Tuesday',
++      miercoles: 'Wednesday',
++      jueves: 'Thursday',
++      viernes: 'Friday',
++      sabado: 'Saturday',
++      domingo: 'Sunday',
++      cubreTurnos: 'Covers shifts for others',
++      turnoPreferido: 'Preferred Shift',
++      matutino: 'Morning',
++      vespertino: 'Afternoon',
++      nocturno: 'Night',
++      salario: 'Salary',
++      tipoContrato: 'Contract Type',
++      indefinido: 'Permanent',
++      temporal: 'Temporary',
++      eventual: 'Casual',
++      practica: 'Internship',
++      fechaFinContrato: 'Contract End Date',
++      guardar: 'Save',
++      guardando: 'Saving...',
++      empleadoCreado: 'Employee created successfully',
++      errorCrear: 'Error creating employee',
++      // Detail view
++      horario: 'Schedule',
++      contrato: 'Contract',
++      jornada: 'Work Schedule',
++      entrada: 'Start',
++      salida: 'End',
++      dias: 'Days',
++      siCubre: 'Covers shifts',
++      noCubre: 'Does not cover shifts',
++      turno: 'Shift',
+     },
+ 
+     // Ventas & NPS
+@@ -679,6 +826,43 @@ export const translations = {
+       eliminar: 'Delete',
+     },
+ 
++    // Propiedades
++    propiedades: {
++      title: 'Properties',
++      subtitle: 'Manage your hotels, restaurants and establishments',
++      agregar: 'Add Property',
++      editar: 'Edit Property',
++      agregarDescripcion: 'Add a new property to the system',
++      editarDescripcion: 'Modify the property details',
++      nombre: 'Name',
++      nombrePlaceholder: 'E.g.: Cancún Beach Hotel',
++      nombreEn: 'Name (EN)',
++      nombreEnPlaceholder: 'E.g.: Cancún Beach Hotel',
++      tipo: 'Type',
++      ubicacion: 'Location',
++      ubicacionPlaceholder: 'E.g.: Blvd. Kukulcán KM 12.5, Cancún',
++      region: 'Region',
++      plan: 'Plan',
++      moneda: 'Currency',
++      activo: 'Active',
++      activa: 'Active',
++      inactiva: 'Inactive',
++      empleados: 'employees',
++      ventas: 'sales',
++      buscar: 'Search property...',
++      todas: 'All',
++      todos: 'All',
++      totalPropiedades: 'Total',
++      activas: 'Active',
++      totalEmpleados: 'Employees',
++      noPropiedades: 'No properties found',
++      creada: 'Property created successfully',
++      actualizada: 'Property updated successfully',
++      eliminada: 'Property deleted successfully',
++      confirmarEliminar: 'Delete property?',
++      confirmarEliminarMensaje: 'Property "{nombre}" and all its associated data will be deleted. This action cannot be undone.',
++    },
++
+     // Common
+     common: {
+       mxn: 'MXN',
+diff --git a/src/lib/mock-data.ts b/src/lib/mock-data.ts
+old mode 100644
+new mode 100755
+diff --git a/src/lib/store.ts b/src/lib/store.ts
+old mode 100644
+new mode 100755
+index c50c86b..37fbec7
+--- a/src/lib/store.ts
++++ b/src/lib/store.ts
+@@ -1,7 +1,7 @@
+ import { create } from 'zustand'
+ import type { Locale } from './i18n'
+ 
+-export type ViewMode = 'dashboard' | 'empleados' | 'ventas' | 'capacitacion' | 'bolsa' | 'configuracion' | 'trabajador' | 'servicios'
++export type ViewMode = 'dashboard' | 'empleados' | 'ventas' | 'capacitacion' | 'bolsa' | 'configuracion' | 'trabajador' | 'servicios' | 'propiedades'
+ 
+ interface AppState {
+   // Navigation
+diff --git a/src/lib/utils.ts b/src/lib/utils.ts
+old mode 100644
+new mode 100755

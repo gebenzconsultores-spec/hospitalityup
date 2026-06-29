@@ -14,7 +14,12 @@ import {
   ShoppingCart,
   Package,
   Building2,
+<<<<<<< HEAD
   KeyRound,
+=======
+  Star,
+  Heart,
+>>>>>>> origin/main
   LogOut,
 } from 'lucide-react'
 
@@ -44,6 +49,7 @@ import { useAppStore } from '@/lib/store'
 import { translations } from '@/lib/i18n'
 import type { ViewMode, UserRole } from '@/lib/store'
 
+<<<<<<< HEAD
 // All nav items (admin sees everything)
 const allNavItems: { key: ViewMode; icon: React.ElementType; roles: UserRole[] }[] = [
   { key: 'dashboard', icon: LayoutDashboard, roles: ['admin', 'empresa'] },
@@ -51,11 +57,23 @@ const allNavItems: { key: ViewMode; icon: React.ElementType; roles: UserRole[] }
   { key: 'servicios', icon: Package, roles: ['admin', 'empresa'] },
   { key: 'propiedades', icon: Building2, roles: ['admin'] },
   { key: 'empresas-accesos', icon: KeyRound, roles: ['admin'] },
+=======
+const allNavItems: { key: ViewMode; icon: React.ElementType; roles: UserRole[] }[] = [
+  { key: 'dashboard', icon: LayoutDashboard, roles: ['admin', 'empresa'] },
+  { key: 'trabajador', icon: ShoppingCart, roles: ['admin'] },
+  { key: 'servicios', icon: Package, roles: ['admin', 'empresa', 'empleado'] },
+  { key: 'propiedades', icon: Building2, roles: ['admin'] },
+>>>>>>> origin/main
   { key: 'empleados', icon: Users, roles: ['admin', 'empresa'] },
   { key: 'ventas', icon: DollarSign, roles: ['admin', 'empresa'] },
   { key: 'capacitacion', icon: GraduationCap, roles: ['admin', 'empresa'] },
   { key: 'bolsa', icon: Briefcase, roles: ['admin', 'empresa'] },
   { key: 'configuracion', icon: Settings, roles: ['admin'] },
+<<<<<<< HEAD
+=======
+  { key: 'nps-survey', icon: Star, roles: ['empleado'] },
+  { key: 'clima', icon: Heart, roles: ['empleado'] },
+>>>>>>> origin/main
 ]
 
 interface Propiedad {
@@ -68,6 +86,7 @@ interface Propiedad {
 
 export function AppSidebar() {
   const {
+<<<<<<< HEAD
     currentView,
     setCurrentView,
     locale,
@@ -79,6 +98,12 @@ export function AppSidebar() {
     user,
     isAuthenticated,
     logout,
+=======
+    currentView, setCurrentView, locale, setLocale,
+    selectedProperty, setSelectedProperty,
+    unreadNotifications, setShowNotifications,
+    userRole, userName, logout,
+>>>>>>> origin/main
   } = useAppStore()
   const t = translations[locale]
   const [propiedades, setPropiedades] = useState<Propiedad[]>([])
@@ -91,6 +116,7 @@ export function AppSidebar() {
   }, [])
 
   // Filter nav items by role
+<<<<<<< HEAD
   const role: UserRole = user?.role || 'admin'
   const visibleNavItems = isAuthenticated
     ? allNavItems.filter(item => item.roles.includes(role))
@@ -114,6 +140,26 @@ export function AppSidebar() {
     : user?.role === 'empresa'
       ? (locale === 'es' ? 'Empresa' : 'Company')
       : (locale === 'es' ? 'Empleado' : 'Employee')
+=======
+  const navItems = allNavItems.filter(item => userRole && item.roles.includes(userRole))
+
+  // Get initials for avatar
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+  }
+
+  // Role display name
+  const getRoleName = (role: UserRole) => {
+    if (!role) return ''
+    const tl = t.login
+    switch (role) {
+      case 'admin': return tl.admin
+      case 'empresa': return tl.empresa
+      case 'empleado': return tl.empleado
+      default: return role
+    }
+  }
+>>>>>>> origin/main
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
@@ -165,6 +211,7 @@ export function AppSidebar() {
             </div>
           </div>
 
+<<<<<<< HEAD
           {/* Property Selector - hidden for empleado role */}
           {role !== 'empleado' && (
             <Select
@@ -172,11 +219,20 @@ export function AppSidebar() {
               onValueChange={handleSetSelectedProperty}
               disabled={isEmpresa}
             >
+=======
+          {/* Property Selector - only for admin and empresa */}
+          {(userRole === 'admin' || userRole === 'empresa') && (
+            <Select value={selectedProperty} onValueChange={setSelectedProperty} disabled={userRole === 'empresa'}>
+>>>>>>> origin/main
               <SelectTrigger className="h-8 w-full border-sidebar-border bg-sidebar-accent/50 text-sidebar-foreground text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+<<<<<<< HEAD
                 {!isEmpresa && (
+=======
+                {userRole === 'admin' && (
+>>>>>>> origin/main
                   <SelectItem value="all">
                     {locale === 'es' ? 'Todas las Propiedades' : 'All Properties'}
                   </SelectItem>
@@ -200,7 +256,7 @@ export function AppSidebar() {
               {visibleNavItems.map((item) => {
                 const Icon = item.icon
                 const isActive = currentView === item.key
-                const label = t.nav[item.key]
+                const label = t.nav[item.key as keyof typeof t.nav] || item.key
                 return (
                   <SidebarMenuItem key={item.key}>
                     <SidebarMenuButton
@@ -234,7 +290,11 @@ export function AppSidebar() {
         <SidebarSeparator className="mx-0" />
 
         {/* Notification Bell - only for admin/empresa */}
+<<<<<<< HEAD
         {role !== 'empleado' && (
+=======
+        {(userRole === 'admin' || userRole === 'empresa') && (
+>>>>>>> origin/main
           <>
             <div className="group-data-[collapsible=icon]:hidden">
               <Button
@@ -281,12 +341,17 @@ export function AppSidebar() {
           </>
         )}
 
+<<<<<<< HEAD
         {/* User Avatar + Logout */}
+=======
+        {/* User Avatar & Logout */}
+>>>>>>> origin/main
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               size="lg"
               className="hover:bg-sidebar-accent"
+<<<<<<< HEAD
               tooltip={user?.nombre || 'Admin'}
             >
               <Avatar className="size-8 border border-sidebar-border">
@@ -297,6 +362,20 @@ export function AppSidebar() {
               <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden min-w-0">
                 <span className="truncate font-medium">{user?.nombre || 'Admin'}</span>
                 <span className="truncate text-xs opacity-60">{userRoleLabel}</span>
+=======
+              tooltip={userName || 'User'}
+            >
+              <Avatar className="size-8 border border-sidebar-border">
+                <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs font-bold">
+                  {userName ? getInitials(userName) : '??'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+                <span className="truncate font-medium">{userName || 'User'}</span>
+                <span className="truncate text-xs opacity-60">
+                  {getRoleName(userRole)}
+                </span>
+>>>>>>> origin/main
               </div>
               {isAuthenticated && (
                 <Button
@@ -316,6 +395,31 @@ export function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
+
+        {/* Logout button */}
+        <div className="group-data-[collapsible=icon]:hidden">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start gap-2 text-sidebar-foreground/60 hover:bg-red-500/10 hover:text-red-500"
+            onClick={logout}
+          >
+            <LogOut className="size-4" />
+            <span className="text-xs">{t.login.cerrarSesion}</span>
+          </Button>
+        </div>
+
+        {/* Collapsed logout */}
+        <div className="hidden group-data-[collapsible=icon]:flex justify-center">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-sidebar-foreground/60 hover:bg-red-500/10 hover:text-red-500"
+            onClick={logout}
+          >
+            <LogOut className="size-4" />
+          </Button>
+        </div>
       </SidebarFooter>
 
       <SidebarRail />

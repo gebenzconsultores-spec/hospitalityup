@@ -1,32 +1,9 @@
 import { create } from 'zustand'
 import type { Locale } from './i18n'
 
-export type ViewMode =
-  | 'dashboard'
-  | 'empleados'
-  | 'ventas'
-  | 'capacitacion'
-  | 'bolsa'
-  | 'configuracion'
-  | 'trabajador'
-  | 'servicios'
-  | 'propiedades'
-  | 'empresas-accesos'
+export type ViewMode = 'dashboard' | 'empleados' | 'ventas' | 'capacitacion' | 'bolsa' | 'configuracion' | 'trabajador' | 'servicios' | 'propiedades' | 'nps-survey' | 'clima'
 
-export type UserRole = 'admin' | 'empresa' | 'empleado'
-
-export interface SessionUser {
-  role: UserRole
-  nombre: string
-  email?: string
-  /** For 'empresa' role: the propiedadId they manage */
-  propiedadId?: string
-  /** For 'empleado' role: the empleadoId (e.g. MES-401) */
-  empleadoCodigo?: string
-  /** For 'empleado' role: the underlying database row id */
-  empleadoId?: string
-  propiedadNombre?: string
-}
+export type UserRole = 'admin' | 'empresa' | 'empleado' | null
 
 interface AppState {
   // Navigation
@@ -66,10 +43,17 @@ interface AppState {
   reemplazoRegion: string | null
   setReemplazoRegion: (region: string | null) => void
 
-  // Auth / session
-  user: SessionUser | null
-  isAuthenticated: boolean
-  login: (user: SessionUser) => void
+  // Auth / Role system
+  userRole: UserRole
+  setUserRole: (role: UserRole) => void
+  userName: string
+  setUserName: (name: string) => void
+  userPropiedadId: string | null
+  setUserPropiedadId: (id: string | null) => void
+  userEmpleadoId: string | null
+  setUserEmpleadoId: (id: string | null) => void
+  isLoggedIn: boolean
+  setIsLoggedIn: (val: boolean) => void
   logout: () => void
 }
 
@@ -104,22 +88,26 @@ export const useAppStore = create<AppState>((set) => ({
   reemplazoRegion: null,
   setReemplazoRegion: (region) => set({ reemplazoRegion: region }),
 
-  // Auth
-  user: null,
-  isAuthenticated: false,
-  login: (user) =>
-    set({
-      user,
-      isAuthenticated: true,
-      currentView: user.role === 'empleado' ? 'trabajador' : 'dashboard',
-      selectedProperty:
-        user.role === 'empresa' && user.propiedadId ? user.propiedadId : 'all',
-    }),
-  logout: () =>
-    set({
-      user: null,
-      isAuthenticated: false,
-      currentView: 'dashboard',
-      selectedProperty: 'all',
-    }),
+  // Auth / Role system
+  userRole: null,
+  setUserRole: (role) => set({ userRole: role }),
+  userName: '',
+  setUserName: (name) => set({ userName: name }),
+  userPropiedadId: null,
+  setUserPropiedadId: (id) => set({ userPropiedadId: id }),
+  userEmpleadoId: null,
+  setUserEmpleadoId: (id) => set({ userEmpleadoId: id }),
+  isLoggedIn: false,
+  setIsLoggedIn: (val) => set({ isLoggedIn: val }),
+  logout: () => set({
+    userRole: null,
+    userName: '',
+    userPropiedadId: null,
+    userEmpleadoId: null,
+    isLoggedIn: false,
+    currentView: 'dashboard',
+    selectedProperty: 'all',
+    selectedEmployee: null,
+    selectedCourse: null,
+  }),
 }))

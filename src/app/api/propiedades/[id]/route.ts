@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { db, isDatabaseAvailable } from '@/lib/db'
 import { getDemoModeResponse } from '@/lib/api-helpers'
 
+<<<<<<< HEAD
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -47,6 +48,8 @@ export async function GET(
   }
 }
 
+=======
+>>>>>>> origin/main
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -60,6 +63,7 @@ export async function PUT(
 
     const body = await request.json()
 
+<<<<<<< HEAD
     // Build only the fields that were provided so we don't wipe optional ones.
     const data: Record<string, unknown> = {}
     if (body.nombre !== undefined) data.nombre = body.nombre
@@ -79,6 +83,21 @@ export async function PUT(
     const propiedad = await db.propiedad.update({
       where: { id },
       data,
+=======
+    const propiedad = await db.propiedad.update({
+      where: { id },
+      data: {
+        nombre: body.nombre,
+        nombreEn: body.nombreEn,
+        tipo: body.tipo,
+        ubicacion: body.ubicacion,
+        region: body.region,
+        logo: body.logo,
+        plan: body.plan,
+        moneda: body.moneda,
+        activo: body.activo,
+      },
+>>>>>>> origin/main
     })
 
     return NextResponse.json(propiedad)
@@ -91,6 +110,7 @@ export async function PUT(
   }
 }
 
+<<<<<<< HEAD
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -134,6 +154,8 @@ export async function PATCH(
   }
 }
 
+=======
+>>>>>>> origin/main
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
