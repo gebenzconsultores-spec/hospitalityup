@@ -154,16 +154,38 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
+    const { searchParams } = new URL(request.url)
+    const hard = searchParams.get('hard') === 'true'
 
     if (!isDatabaseAvailable()) {
       return NextResponse.json(getDemoModeResponse('deactivate', 'empleado'))
     }
 
-    // Soft delete: marca como offboarding en lugar de eliminar
+    // Verificar que existe
+    const existing = await db.empleado.findUnique({ where: { id } })
+    if (!existing) {
+      return NextResponse.json(
+        { error: 'Empleado no encontrado' },
+        { status: 404 }
+      )
+    }
+
+    if (hard) {
+      // Hard delete: elimina todos los registros relacionados y luego el empleado
+      await db.logAgenteIA.deleteMany({ where: { empleadoId: id } })
+      await db.respuestaNPS.deleteMany({ where: { empleadoId: id } })
+      await db.empleadoCapacitacion.deleteMany({ where: { empleadoId: id } })
+      await db.alertaRiesgo.deleteMany({ where: { empleadoId: id } })
+      await db.ventaNPS.deleteMany({ where: { empleadoId: id } })
+      await db.empleado.delete({ where: { id } })
+      return NextResponse.json({ success: true, message: 'Empleado eliminado permanentemente' })
+    }
+
+    // Soft delete: marca como inactivo en lugar de eliminar
     const empleado = await db.empleado.update({
       where: { id },
       data: {
-        estado: 'offboarding',
+        estado: 'inactivo',
         fechaBaja: new Date(),
       },
     })
@@ -171,6 +193,9 @@ export async function DELETE(
     return NextResponse.json(empleado)
   } catch (error) {
     console.error('Empleado DELETE error:', error)
-    return NextResponse.json(getDemoModeResponse('deactivate', 'empleado'))
+    return NextResponse.json(
+      { error: 'Error al eliminar empleado' },
+      { status: 500 }
+    )
   }
 }

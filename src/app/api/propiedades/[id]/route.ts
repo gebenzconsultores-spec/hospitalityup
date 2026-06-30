@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { db, isDatabaseAvailable } from '@/lib/db'
 import { getDemoModeResponse } from '@/lib/api-helpers'
 
-<<<<<<< HEAD
+// GET /api/propiedades/[id] - Detalle de una propiedad
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -48,8 +48,7 @@ export async function GET(
   }
 }
 
-=======
->>>>>>> origin/main
+// PUT /api/propiedades/[id] - Actualizar propiedad (full update)
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -63,8 +62,6 @@ export async function PUT(
 
     const body = await request.json()
 
-<<<<<<< HEAD
-    // Build only the fields that were provided so we don't wipe optional ones.
     const data: Record<string, unknown> = {}
     if (body.nombre !== undefined) data.nombre = body.nombre
     if (body.nombreEn !== undefined) data.nombreEn = body.nombreEn
@@ -83,21 +80,6 @@ export async function PUT(
     const propiedad = await db.propiedad.update({
       where: { id },
       data,
-=======
-    const propiedad = await db.propiedad.update({
-      where: { id },
-      data: {
-        nombre: body.nombre,
-        nombreEn: body.nombreEn,
-        tipo: body.tipo,
-        ubicacion: body.ubicacion,
-        region: body.region,
-        logo: body.logo,
-        plan: body.plan,
-        moneda: body.moneda,
-        activo: body.activo,
-      },
->>>>>>> origin/main
     })
 
     return NextResponse.json(propiedad)
@@ -110,12 +92,11 @@ export async function PUT(
   }
 }
 
-<<<<<<< HEAD
+// PATCH /api/propiedades/[id] - Actualización parcial (toggle activo, password, etc.)
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // PATCH is an alias of PUT for partial updates (toggle activo, password, etc.)
   try {
     const { id } = await params
 
@@ -154,8 +135,8 @@ export async function PATCH(
   }
 }
 
-=======
->>>>>>> origin/main
+// DELETE /api/propiedades/[id] - Eliminar propiedad
+// Primero elimina/borra en cascade los registros relacionados, luego la propiedad
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -167,15 +148,79 @@ export async function DELETE(
       return NextResponse.json(getDemoModeResponse('delete', 'propiedad'))
     }
 
-    await db.propiedad.delete({
-      where: { id },
-    })
+    // Verificar que existe
+    const propiedad = await db.propiedad.findUnique({ where: { id } })
+    if (!propiedad) {
+      return NextResponse.json(
+        { error: 'Propiedad no encontrada' },
+        { status: 404 }
+      )
+    }
 
-    return NextResponse.json({ success: true })
+    // Eliminar en orden de dependencias (cascade manual)
+    // 1. Logs de IA relacionados con empleados de esta propiedad
+    const empleadosIds = await db.empleado.findMany({
+      where: { propiedadId: id },
+      select: { id: true },
+    })
+    const empIds = empleadosIds.map(e => e.id)
+
+    if (empIds.length > 0) {
+      await db.logAgenteIA.deleteMany({ where: { empleadoId: { in: empIds } } })
+      await db.respuestaNPS.deleteMany({ where: { empleadoId: { in: empIds } } })
+      await db.empleadoCapacitacion.deleteMany({ where: { empleadoId: { in: empIds } } })
+      await db.alertaRiesgo.deleteMany({ where: { empleadoId: { in: empIds } } })
+      await db.ventaNPS.deleteMany({ where: { empleadoId: { in: empIds } } })
+    }
+
+    // 2. VentaNPS de la propiedad
+    await db.ventaNPS.deleteMany({ where: { propiedadId: id } })
+
+    // 3. Alertas de la propiedad
+    await db.alertaRiesgo.deleteMany({ where: { propiedadId: id } })
+
+    // 4. Candidatos vinculados
+    await db.candidatoPool.deleteMany({ where: { propiedadId: id } })
+
+    // 5. Solicitudes de capacitación
+    await db.solicitudCapacitacion.deleteMany({ where: { propiedadId: id } })
+
+    // 6. Capacitaciones de la propiedad
+    // Primero las inscripciones a esas capacitaciones
+    const capIds = await db.capacitacion.findMany({
+      where: { propiedadId: id },
+      select: { id: true },
+    })
+    if (capIds.length > 0) {
+      const capacitacionIds = capIds.map(c => c.id)
+      await db.empleadoCapacitacion.deleteMany({
+        where: { capacitacionId: { in: capacitacionIds } },
+      })
+      await db.solicitudCapacitacion.deleteMany({
+        where: { capacitacionId: { in: capacitacionIds } },
+      })
+      await db.capacitacion.deleteMany({
+        where: { propiedadId: id },
+      })
+    }
+
+    // 7. Servicios de la propiedad
+    await db.servicio.deleteMany({ where: { propiedadId: id } })
+
+    // 8. Notificaciones de la propiedad
+    await db.notificacion.deleteMany({ where: { propiedadId: id } })
+
+    // 9. Empleados de la propiedad
+    await db.empleado.deleteMany({ where: { propiedadId: id } })
+
+    // 10. Finalmente, eliminar la propiedad
+    await db.propiedad.delete({ where: { id } })
+
+    return NextResponse.json({ success: true, message: 'Propiedad eliminada correctamente' })
   } catch (error) {
     console.error('Propiedades DELETE error:', error)
     return NextResponse.json(
-      { error: 'Error al eliminar propiedad' },
+      { error: 'Error al eliminar propiedad. Verifica que no tenga registros dependientes.' },
       { status: 500 }
     )
   }
