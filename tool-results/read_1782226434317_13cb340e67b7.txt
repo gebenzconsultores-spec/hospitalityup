@@ -1,0 +1,702 @@
+     1→     1→'use client'
+     2→     2→
+     3→     3→import { useState, useEffect, useCallback } from 'react'
+     4→     4→import { useAppStore } from '@/lib/store'
+     5→     5→import { translations } from '@/lib/i18n'
+     6→     6→import { formatCurrency, getCurrencyLabel } from '@/lib/currency'
+     7→     7→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+     8→     8→import { Button } from '@/components/ui/button'
+     9→     9→import { Input } from '@/components/ui/input'
+    10→    10→import { Label } from '@/components/ui/label'
+    11→    11→import { Badge } from '@/components/ui/badge'
+    12→    12→import { Switch } from '@/components/ui/switch'
+    13→    13→import { Textarea } from '@/components/ui/textarea'
+    14→    14→import { Progress } from '@/components/ui/progress'
+    15→    15→import { Separator } from '@/components/ui/separator'
+    16→    16→import { Slider } from '@/components/ui/slider'
+    17→    17→import { ScrollArea } from '@/components/ui/scroll-area'
+    18→    18→import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+    19→    19→import { toast } from 'sonner'
+    20→    20→import {
+    21→    21→  ShoppingCart,
+    22→    22→  DollarSign,
+    23→    23→  Target,
+    24→    24→  GraduationCap,
+    25→    25→  Award,
+    26→    26→  LogOut,
+    27→    27→  Globe,
+    28→    28→  Hotel,
+    29→    29→  TrendingUp,
+    30→    30→  Star,
+    31→    31→  ArrowUpRight,
+    32→    32→  User,
+    33→    33→} from 'lucide-react'
+    34→    34→
+    35→    35→// ─── Types ────────────────────────────────────────────────────
+    36→    36→interface Servicio {
+    37→    37→  id: string
+    38→    38→  nombre: string
+    39→    39→  nombreEn?: string | null
+    40→    40→  descripcion?: string | null
+    41→    41→  categoria: string
+    42→    42→  esUpselling: boolean
+    43→    43→  precioNormal: number
+    44→    44→  precioUpselling?: number | null
+    45→    45→  objetivoUpselling?: string | null
+    46→    46→  disponible: boolean
+    47→    47→  propiedadId: string
+    48→    48→  propiedad: { id: string; nombre: string; nombreEn?: string | null; moneda: string }
+    49→    49→}
+    50→    50→
+    51→    51→interface Venta {
+    52→    52→  id: string
+    53→    53→  empleadoId: string
+    54→    54→  propiedadId: string
+    55→    55→  nombreServicio?: string | null
+    56→    56→  cantidad: number
+    57→    57→  precioUnitario: number
+    58→    58→  montoTotal: number
+    59→    59→  montoUpselling: number
+    60→    60→  esUpselling: boolean
+    61→    61→  calificacionNPS?: number | null
+    62→    62→  comentario?: string | null
+    63→    63→  categoriaServicio?: string | null
+    64→    64→  fechaVenta: string
+    65→    65→}
+    66→    66→
+    67→    67→interface EmpleadoData {
+    68→    68→  id: string
+    69→    69→  empleadoId: string
+    70→    70→  nombre: string
+    71→    71→  posicion: string
+    72→    72→  departamento: string
+    73→    73→  estado: string
+    74→    74→  puntuacionConocimiento: number
+    75→    75→  puntuacionVentas: number
+    76→    76→  puntuacionHospitalidad: number
+    77→    77→  puntuacionTotal: number
+    78→    78→  totalUpselling: number
+    79→    79→  npsPromedio: number
+    80→    80→  indiceFelicidad: number
+    81→    81→  riesgoBaja: number
+    82→    82→  nivelRiesgoBaja: string
+    83→    83→  cursosCompletados: number
+    84→    84→  cursosEnProgreso: number
+    85→    85→  propiedadId: string
+    86→    86→  propiedad: { id: string; nombre: string; tipo: string; region: string; moneda: string }
+    87→    87→  cursos: {
+    88→    88→    id: string
+    89→    89→    estado: string
+    90→    90→    progreso: number
+    91→    91→    capacitacion: {
+    92→    92→      id: string
+    93→    93→      titulo: string
+    94→    94→      categoria: string
+    95→    95→      modalidad: string
+    96→    96→      duracion: number
+    97→    97→      dificultad: string
+    98→    98→    }
+    99→    99→  }[]
+   100→   100→  ventas: Venta[]
+   101→   101→}
+   102→   102→
+   103→   103→const categoryFilters = [
+   104→   104→  { key: 'todos', labelEs: 'Todos', labelEn: 'All' },
+   105→   105→  { key: 'platillo', labelEs: 'Platillos', labelEn: 'Dishes' },
+   106→   106→  { key: 'bebida', labelEs: 'Bebidas', labelEn: 'Drinks' },
+   107→   107→  { key: 'tour', labelEs: 'Tours', labelEn: 'Tours' },
+   108→   108→  { key: 'masaje', labelEs: 'Masajes', labelEn: 'Massages' },
+   109→   109→  { key: 'habitacion', labelEs: 'Habitaciones', labelEn: 'Rooms' },
+   110→   110→  { key: 'experiencia', labelEs: 'Experiencias', labelEn: 'Experiences' },
+   111→   111→  { key: 'paquete', labelEs: 'Paquetes', labelEn: 'Packages' },
+   112→   112→]
+   113→   113→
+   114→   114→export function EmpleadoPOS() {
+   115→   115→  const { userId, userPropertyId, userName, userEmployeeId, locale, setLocale, logout, setEmpleadoView } = useAppStore()
+   116→   116→  const activeView = useAppStore((s) => s.empleadoView)
+   117→   117→  const t = translations[locale]
+   118→   118→
+   119→   119→  const [loading, setLoading] = useState(true)
+   120→   120→  const [empleado, setEmpleado] = useState<EmpleadoData | null>(null)
+   121→   121→  const [servicios, setServicios] = useState<Servicio[]>([])
+   122→   122→  const [ventas, setVentas] = useState<Venta[]>([])
+   123→   123→  const [categoryFilter, setCategoryFilter] = useState('todos')
+   124→   124→
+   125→   125→  // Sale dialog
+   126→   126→  const [saleDialog, setSaleDialog] = useState(false)
+   127→   127→  const [selectedService, setSelectedService] = useState<Servicio | null>(null)
+   128→   128→  const [saleForm, setSaleForm] = useState({
+   129→   129→    cantidad: 1,
+   130→   130→    esUpselling: false,
+   131→   131→    calificacionNPS: 8,
+   132→   132→    comentario: '',
+   133→   133→  })
+   134→   134→
+   135→   135→  // Fetch employee data
+   136→   136→  const fetchEmpleado = useCallback(async () => {
+   137→   137→    if (!userId) return
+   138→   138→    try {
+   139→   139→      const res = await fetch(`/api/empleados/${userId}`)
+   140→   140→      if (res.ok) {
+   141→   141→        const data = await res.json()
+   142→   142→        setEmpleado(data)
+   143→   143→      }
+   144→   144→    } catch (err) {
+   145→   145→      console.error('Empleado fetch error:', err)
+   146→   146→    }
+   147→   147→  }, [userId])
+   148→   148→
+   149→   149→  // Fetch services
+   150→   150→  const fetchServicios = useCallback(async () => {
+   151→   151→    if (!userPropertyId) return
+   152→   152→    try {
+   153→   153→      const res = await fetch(`/api/servicios?propiedadId=${userPropertyId}&disponible=true`)
+   154→   154→      if (res.ok) {
+   155→   155→        const data = await res.json()
+   156→   156→        setServicios(Array.isArray(data) ? data : [])
+   157→   157→      }
+   158→   158→    } catch (err) {
+   159→   159→      console.error('Servicios fetch error:', err)
+   160→   160→    }
+   161→   161→  }, [userPropertyId])
+   162→   162→
+   163→   163→  // Fetch ventas
+   164→   164→  const fetchVentas = useCallback(async () => {
+   165→   165→    if (!userId) return
+   166→   166→    try {
+   167→   167→      const res = await fetch(`/api/ventas?empleadoId=${userId}`)
+   168→   168→      if (res.ok) {
+   169→   169→        const data = await res.json()
+   170→   170→        setVentas(data?.ventas || (Array.isArray(data) ? data : []))
+   171→   171→      }
+   172→   172→    } catch (err) {
+   173→   173→      console.error('Ventas fetch error:', err)
+   174→   174→    }
+   175→   175→  }, [userId])
+   176→   176→
+   177→   177→  // Initial load
+   178→   178→  useEffect(() => {
+   179→   179→    const load = async () => {
+   180→   180→      setLoading(true)
+   181→   181→      await Promise.all([fetchEmpleado(), fetchServicios(), fetchVentas()])
+   182→   182→      setLoading(false)
+   183→   183→    }
+   184→   184→    load()
+   185→   185→  }, [fetchEmpleado, fetchServicios, fetchVentas])
+   186→   186→
+   187→   187→  const moneda = empleado?.propiedad?.moneda || 'USD'
+   188→   188→
+   189→   189→  // Open sale dialog
+   190→   190→  const openSale = (serv: Servicio) => {
+   191→   191→    setSelectedService(serv)
+   192→   192→    setSaleForm({
+   193→   193→      cantidad: 1,
+   194→   194→      esUpselling: serv.esUpselling,
+   195→   195→      calificacionNPS: 8,
+   196→   196→      comentario: '',
+   197→   197→    })
+   198→   198→    setSaleDialog(true)
+   199→   199→  }
+   200→   200→
+   201→   201→  // Calculate precioFinal from current form state + selected service
+   202→   202→  const precioFinal = selectedService
+   203→   203→    ? (saleForm.esUpselling && selectedService.precioUpselling
+   204→   204→        ? selectedService.precioUpselling
+   205→   205→        : selectedService.precioNormal) * saleForm.cantidad
+   206→   206→    : 0
+   207→   207→
+   208→   208→  // Submit sale
+   209→   209→  const handleSubmitSale = async () => {
+   210→   210→    if (!selectedService || !userId || !userPropertyId) return
+   211→   211→
+   212→   212→    try {
+   213→   213→      const body = {
+   214→   214→        empleadoId: userId,
+   215→   215→        propiedadId: userPropertyId,
+   216→   216→        nombreServicio: selectedService.nombre,
+   217→   217→        cantidad: saleForm.cantidad,
+   218→   218→        precioUnitario: saleForm.esUpselling && selectedService.precioUpselling
+   219→   219→          ? selectedService.precioUpselling
+   220→   220→          : selectedService.precioNormal,
+   221→   221→        montoTotal: precioFinal,
+   222→   222→        montoUpselling: saleForm.esUpselling
+   223→   223→          ? precioFinal - (selectedService.precioNormal * saleForm.cantidad)
+   224→   224→          : 0,
+   225→   225→        esUpselling: saleForm.esUpselling,
+   226→   226→        calificacionNPS: saleForm.calificacionNPS,
+   227→   227→        comentario: saleForm.comentario || null,
+   228→   228→        fuenteNPS: 'app',
+   229→   229→        categoriaServicio: selectedService.categoria,
+   230→   230→      }
+   231→   231→
+   232→   232→      const res = await fetch('/api/ventas', {
+   233→   233→        method: 'POST',
+   234→   234→        headers: { 'Content-Type': 'application/json' },
+   235→   235→        body: JSON.stringify(body),
+   236→   236→      })
+   237→   237→
+   238→   238→      if (res.ok) {
+   239→   239→        toast.success(
+   240→   240→          locale === 'es'
+   241→   241→            ? `Venta de ${formatCurrency(precioFinal, moneda)} registrada!`
+   242→   242→            : `Sale of ${formatCurrency(precioFinal, moneda)} registered!`
+   243→   243→        )
+   244→   244→        setSaleDialog(false)
+   245→   245→        setSelectedService(null)
+   246→   246→        // Refresh data
+   247→   247→        fetchEmpleado()
+   248→   248→        fetchVentas()
+   249→   249→      } else {
+   250→   250→        toast.error(t.common.error)
+   251→   251→      }
+   252→   252→    } catch {
+   253→   253→      toast.error(t.common.error)
+   254→   254→    }
+   255→   255→  }
+   256→   256→
+   257→   257→  // Filtered services
+   258→   258→  const filteredServicios = categoryFilter === 'todos'
+   259→   259→    ? servicios
+   260→   260→    : servicios.filter((s) => s.categoria === categoryFilter)
+   261→   261→
+   262→   262→  // Upselling services (for objectives view)
+   263→   263→  const upsellingServices = servicios.filter((s) => s.esUpselling)
+   264→   264→
+   265→   265→  // Computed venta metrics
+   266→   266→  const totalVentas = ventas.reduce((s, v) => s + v.montoTotal, 0)
+   267→   267→  const totalUpselling = ventas.filter((v) => v.esUpselling).reduce((s, v) => s + v.montoUpselling, 0)
+   268→   268→  const upsellingRate = ventas.length > 0 ? Math.round((ventas.filter((v) => v.esUpselling).length / ventas.length) * 100) : 0
+   269→   269→
+   270→   270→  if (loading) {
+   271→   271→    return (
+   272→   272→      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+   273→   273→        <div className="text-center">
+   274→   274→          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-teal-600 mx-auto mb-3"></div>
+   275→   275→          <p className="text-sm text-gray-500">{t.common.cargando}</p>
+   276→   276→        </div>
+   277→   277→      </div>
+   278→   278→    )
+   279→   279→  }
+   280→   280→
+   281→   281→  return (
+   282→   282→    <div className="min-h-screen flex flex-col bg-gray-50">
+   283→   283→      {/* ─── Sticky Header ────────────────────────────── */}
+   284→   284→      <header className="sticky top-0 z-50 bg-white border-b shadow-sm px-4 py-3">
+   285→   285→        <div className="flex items-center justify-between">
+   286→   286→          <div className="flex items-center gap-3">
+   287→   287→            <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center">
+   288→   288→              <User className="w-4 h-4 text-white" />
+   289→   289→            </div>
+   290→   290→            <div>
+   291→   291→              <h1 className="font-bold text-sm text-gray-900">{empleado?.nombre || userName}</h1>
+   292→   292→              <p className="text-[10px] text-gray-500">
+   293→   293→                {empleado?.empleadoId || userEmployeeId} · {empleado?.posicion || ''}
+   294→   294→              </p>
+   295→   295→            </div>
+   296→   296→          </div>
+   297→   297→          <div className="flex items-center gap-3">
+   298→   298→            <Badge variant="outline" className="text-[10px]">{getCurrencyLabel(moneda)}</Badge>
+   299→   299→            <div className="flex rounded-md overflow-hidden border">
+   300→   300→              <button onClick={() => setLocale('es')} className={`px-2 py-1 text-[10px] font-semibold ${locale === 'es' ? 'bg-amber-500 text-white' : 'bg-white text-gray-600'}`}>ES</button>
+   301→   301→              <button onClick={() => setLocale('en')} className={`px-2 py-1 text-[10px] font-semibold ${locale === 'en' ? 'bg-amber-500 text-white' : 'bg-white text-gray-600'}`}>EN</button>
+   302→   302→            </div>
+   303→   303→            <Button variant="ghost" size="sm" onClick={logout}>
+   304→   304→              <LogOut className="w-4 h-4" />
+   305→   305→            </Button>
+   306→   306→          </div>
+   307→   307→        </div>
+   308→   308→      </header>
+   309→   309→
+   310→   310→      {/* ─── Tab Navigation ───────────────────────────── */}
+   311→   311→      <div className="bg-white border-b px-4 overflow-x-auto">
+   312→   312→        <div className="flex gap-1 py-2">
+   313→   313→          {[
+   314→   314→            { key: 'menu', icon: ShoppingCart, label: locale === 'es' ? 'Menú' : 'Menu' },
+   315→   315→            { key: 'ventas', icon: DollarSign, label: t.nav.ventas },
+   316→   316→            { key: 'objetivos', icon: Target, label: locale === 'es' ? 'Objetivos' : 'Objectives' },
+   317→   317→            { key: 'capacitacion', icon: GraduationCap, label: t.nav.capacitacion },
+   318→   318→            { key: 'score', icon: Award, label: locale === 'es' ? 'Score' : 'Score' },
+   319→   319→          ].map((tab) => {
+   320→   320→            const Icon = tab.icon
+   321→   321→            const isActive = activeView === tab.key
+   322→   322→            return (
+   323→   323→              <button
+   324→   324→                key={tab.key}
+   325→   325→                onClick={() => setEmpleadoView(tab.key as 'menu' | 'ventas' | 'objetivos' | 'capacitacion' | 'score')}
+   326→   326→                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
+   327→   327→                  isActive ? 'bg-amber-500 text-white' : 'text-gray-600 hover:bg-gray-100'
+   328→   328→                }`}
+   329→   329→              >
+   330→   330→                <Icon className="w-3.5 h-3.5" />
+   331→   331→                {tab.label}
+   332→   332→              </button>
+   333→   333→            )
+   334→   334→          })}
+   335→   335→        </div>
+   336→   336→      </div>
+   337→   337→
+   338→   338→      {/* ─── Main Content ─────────────────────────────── */}
+   339→   339→      <main className="flex-1 p-4 max-w-4xl mx-auto w-full">
+   340→   340→        {/* ═══════════════ MENU VIEW ═══════════════ */}
+   341→   341→        {activeView === 'menu' && (
+   342→   342→          <div className="space-y-4">
+   343→   343→            {/* Category Filter */}
+   344→   344→            <div className="flex gap-2 overflow-x-auto pb-2">
+   345→   345→              {categoryFilters.map((cat) => (
+   346→   346→                <button
+   347→   347→                  key={cat.key}
+   348→   348→                  onClick={() => setCategoryFilter(cat.key)}
+   349→   349→                  className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+   350→   350→                    categoryFilter === cat.key
+   351→   351→                      ? 'bg-amber-500 text-white'
+   352→   352→                      : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+   353→   353→                  }`}
+   354→   354→                >
+   355→   355→                  {locale === 'es' ? cat.labelEs : cat.labelEn}
+   356→   356→                </button>
+   357→   357→              ))}
+   358→   358→            </div>
+   359→   359→
+   360→   360→            {/* Service Cards */}
+   361→   361→            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+   362→   362→              {filteredServicios.map((serv) => (
+   363→   363→                <Card
+   364→   364→                  key={serv.id}
+   365→   365→                  className="cursor-pointer hover:shadow-md transition-shadow"
+   366→   366→                  onClick={() => openSale(serv)}
+   367→   367→                >
+   368→   368→                  <CardContent className="p-4">
+   369→   369→                    <div className="flex items-start justify-between mb-1">
+   370→   370→                      <h3 className="font-semibold text-sm">{locale === 'es' ? serv.nombre : (serv.nombreEn || serv.nombre)}</h3>
+   371→   371→                      {serv.esUpselling && (
+   372→   372→                        <Badge className="bg-amber-100 text-amber-800 text-[10px] shrink-0">↑ Upselling</Badge>
+   373→   373→                      )}
+   374→   374→                    </div>
+   375→   375→                    {serv.descripcion && (
+   376→   376→                      <p className="text-xs text-gray-500 line-clamp-1 mb-2">{serv.descripcion}</p>
+   377→   377→                    )}
+   378→   378→                    <div className="flex items-end justify-between">
+   379→   379→                      <p className="text-lg font-bold text-teal-700">{formatCurrency(serv.precioNormal, moneda)}</p>
+   380→   380→                      {serv.esUpselling && serv.precioUpselling && (
+   381→   381→                        <p className="text-xs text-amber-600">↑ {formatCurrency(serv.precioUpselling, moneda)}</p>
+   382→   382→                      )}
+   383→   383→                    </div>
+   384→   384→                    <Button size="sm" className="w-full mt-3 bg-amber-500 hover:bg-amber-600 text-white text-xs h-8">
+   385→   385→                      <ShoppingCart className="w-3 h-3 mr-1" />
+   386→   386→                      {locale === 'es' ? 'Vender' : 'Sell'}
+   387→   387→                    </Button>
+   388→   388→                  </CardContent>
+   389→   389→                </Card>
+   390→   390→              ))}
+   391→   391→              {filteredServicios.length === 0 && (
+   392→   392→                <p className="text-center text-gray-400 py-8 col-span-3">
+   393→   393→                  {locale === 'es' ? 'No hay servicios disponibles' : 'No services available'}
+   394→   394→                </p>
+   395→   395→              )}
+   396→   396→            </div>
+   397→   397→
+   398→   398→            {/* Sale Dialog */}
+   399→   399→            <Dialog open={saleDialog} onOpenChange={setSaleDialog}>
+   400→   400→              <DialogContent className="max-w-sm">
+   401→   401→                <DialogHeader>
+   402→   402→                  <DialogTitle className="text-base">
+   403→   403→                    {selectedService?.nombre}
+   404→   404→                  </DialogTitle>
+   405→   405→                </DialogHeader>
+   406→   406→                <div className="space-y-3">
+   407→   407→                  <div>
+   408→   408→                    <Label className="text-xs">{t.trabajador.cantidad}</Label>
+   409→   409→                    <Input
+   410→   410→                      type="number"
+   411→   411→                      min={1}
+   412→   412→                      value={saleForm.cantidad}
+   413→   413→                      onChange={(e) => setSaleForm({ ...saleForm, cantidad: Math.max(1, parseInt(e.target.value) || 1) })}
+   414→   414→                    />
+   415→   415→                  </div>
+   416→   416→                  <div className="flex items-center gap-2">
+   417→   417→                    <Switch
+   418→   418→                      checked={saleForm.esUpselling}
+   419→   419→                      onCheckedChange={(v) => setSaleForm({ ...saleForm, esUpselling: v })}
+   420→   420→                    />
+   421→   421→                    <Label className="text-xs">{t.trabajador.esUpselling}</Label>
+   422→   422→                    {saleForm.esUpselling && (
+   423→   423→                      <Badge className="bg-amber-100 text-amber-800 text-[10px]">↑</Badge>
+   424→   424→                    )}
+   425→   425→                  </div>
+   426→   426→                  <div>
+   427→   427→                    <Label className="text-xs">{t.trabajador.precioFinal}</Label>
+   428→   428→                    <p className="text-2xl font-bold text-teal-700">{formatCurrency(precioFinal, moneda)}</p>
+   429→   429→                  </div>
+   430→   430→                  <Separator />
+   431→   431→                  <div>
+   432→   432→                    <Label className="text-xs">{t.trabajador.calificacionCliente}</Label>
+   433→   433→                    <div className="flex items-center gap-3 mt-1">
+   434→   434→                      <Slider
+   435→   435→                        value={[saleForm.calificacionNPS]}
+   436→   436→                        onValueChange={([v]) => setSaleForm({ ...saleForm, calificacionNPS: v })}
+   437→   437→                        min={1}
+   438→   438→                        max={10}
+   439→   439→                        step={1}
+   440→   440→                        className="flex-1"
+   441→   441→                      />
+   442→   442→                      <span className="text-lg font-bold w-8 text-center">{saleForm.calificacionNPS}</span>
+   443→   443→                    </div>
+   444→   444→                    <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+   445→   445→                      <span>1</span>
+   446→   446→                      <span>10</span>
+   447→   447→                    </div>
+   448→   448→                  </div>
+   449→   449→                  <div>
+   450→   450→                    <Label className="text-xs">{t.trabajador.comentarioCliente}</Label>
+   451→   451→                    <Textarea
+   452→   452→                      value={saleForm.comentario}
+   453→   453→                      onChange={(e) => setSaleForm({ ...saleForm, comentario: e.target.value })}
+   454→   454→                      rows={2}
+   455→   455→                      placeholder={locale === 'es' ? 'Comentario opcional...' : 'Optional comment...'}
+   456→   456→                    />
+   457→   457→                  </div>
+   458→   458→                </div>
+   459→   459→                <DialogFooter>
+   460→   460→                  <Button variant="outline" onClick={() => setSaleDialog(false)}>{t.common.cancelar}</Button>
+   461→   461→                  <Button className="bg-amber-500 hover:bg-amber-600 text-white" onClick={handleSubmitSale}>
+   462→   462→                    <ShoppingCart className="w-4 h-4 mr-1" />
+   463→   463→                    {t.trabajador.confirmarVenta}
+   464→   464→                  </Button>
+   465→   465→                </DialogFooter>
+   466→   466→              </DialogContent>
+   467→   467→            </Dialog>
+   468→   468→          </div>
+   469→   469→        )}
+   470→   470→
+   471→   471→        {/* ═══════════════ VENTAS VIEW ═══════════════ */}
+   472→   472→        {activeView === 'ventas' && (
+   473→   473→          <div className="space-y-4">
+   474→   474→            <h2 className="text-lg font-bold">{t.ventas.title}</h2>
+   475→   475→            {/* Summary */}
+   476→   476→            <div className="grid grid-cols-3 gap-3">
+   477→   477→              <Card>
+   478→   478→                <CardContent className="p-3 text-center">
+   479→   479→                  <p className="text-[10px] text-gray-500 uppercase">{t.ventas.montoTotal}</p>
+   480→   480→                  <p className="text-lg font-bold">{formatCurrency(totalVentas, moneda)}</p>
+   481→   481→                </CardContent>
+   482→   482→              </Card>
+   483→   483→              <Card>
+   484→   484→                <CardContent className="p-3 text-center">
+   485→   485→                  <p className="text-[10px] text-gray-500 uppercase">{t.ventas.tasaUpselling}</p>
+   486→   486→                  <p className="text-lg font-bold">{upsellingRate}%</p>
+   487→   487→                </CardContent>
+   488→   488→              </Card>
+   489→   489→              <Card>
+   490→   490→                <CardContent className="p-3 text-center">
+   491→   491→                  <p className="text-[10px] text-gray-500 uppercase">{t.ventas.ventasRecientes}</p>
+   492→   492→                  <p className="text-lg font-bold">{ventas.length}</p>
+   493→   493→                </CardContent>
+   494→   494→              </Card>
+   495→   495→            </div>
+   496→   496→            {/* Sales History */}
+   497→   497→            <Card>
+   498→   498→              <CardContent className="p-0">
+   499→   499→                <ScrollArea className="max-h-96">
+   500→   500→                  <table className="w-full text-sm">
+   501→   501→                    <thead>
+   502→   502→                      <tr className="border-b bg-gray-50">
+   503→   503→                        <th className="text-left p-3 text-xs font-medium text-gray-500">{t.ventas.servicio}</th>
+   504→   504→                        <th className="text-left p-3 text-xs font-medium text-gray-500">{t.ventas.cantidad}</th>
+   505→   505→                        <th className="text-left p-3 text-xs font-medium text-gray-500">{t.ventas.monto}</th>
+   506→   506→                        <th className="text-left p-3 text-xs font-medium text-gray-500">{t.ventas.upselling}</th>
+   507→   507→                        <th className="text-left p-3 text-xs font-medium text-gray-500">NPS</th>
+   508→   508→                        <th className="text-left p-3 text-xs font-medium text-gray-500">{t.ventas.fecha}</th>
+   509→   509→                      </tr>
+   510→   510→                    </thead>
+   511→   511→                    <tbody>
+   512→   512→                      {ventas.slice(0, 30).map((v) => (
+   513→   513→                        <tr key={v.id} className="border-b">
+   514→   514→                          <td className="p-3 font-medium">{v.nombreServicio || '—'}</td>
+   515→   515→                          <td className="p-3 text-gray-600">{v.cantidad}</td>
+   516→   516→                          <td className="p-3 font-semibold">{formatCurrency(v.montoTotal, moneda)}</td>
+   517→   517→                          <td className="p-3">{v.esUpselling ? <Badge className="bg-amber-100 text-amber-800 text-[10px]">↑</Badge> : '—'}</td>
+   518→   518→                          <td className="p-3">{v.calificacionNPS ?? '—'}</td>
+   519→   519→                          <td className="p-3 text-xs text-gray-500">{new Date(v.fechaVenta).toLocaleTimeString(locale === 'es' ? 'es-MX' : 'en-US', { hour: '2-digit', minute: '2-digit' })}</td>
+   520→   520→                        </tr>
+   521→   521→                      ))}
+   522→   522→                      {ventas.length === 0 && (
+   523→   523→                        <tr>
+   524→   524→                          <td colSpan={6} className="p-6 text-center text-gray-400">{t.ventas.noVentas}</td>
+   525→   525→                        </tr>
+   526→   526→                      )}
+   527→   527→                    </tbody>
+   528→   528→                  </table>
+   529→   529→                </ScrollArea>
+   530→   530→              </CardContent>
+   531→   531→            </Card>
+   532→   532→          </div>
+   533→   533→        )}
+   534→   534→
+   535→   535→        {/* ═══════════════ OBJETIVOS VIEW ═══════════════ */}
+   536→   536→        {activeView === 'objetivos' && (
+   537→   537→          <div className="space-y-4">
+   538→   538→            <h2 className="text-lg font-bold">{t.trabajador.misObjetivos}</h2>
+   539→   539→            {/* Personal Target */}
+   540→   540→            <Card className="border-amber-200 bg-amber-50">
+   541→   541→              <CardContent className="p-4">
+   542→   542→                <div className="flex items-center gap-2 mb-2">
+   543→   543→                  <Target className="w-5 h-5 text-amber-600" />
+   544→   544→                  <h3 className="font-bold text-amber-800">
+   545→   545→                    {locale === 'es' ? 'Meta de Upselling' : 'Upselling Target'}
+   546→   546→                  </h3>
+   547→   547→                </div>
+   548→   548→                <p className="text-2xl font-bold text-amber-700">{formatCurrency(totalUpselling, moneda)}</p>
+   549→   549→                <p className="text-xs text-amber-600 mt-1">
+   550→   550→                  {locale === 'es' ? 'Total acumulado' : 'Total accumulated'}
+   551→   551→                </p>
+   552→   552→              </CardContent>
+   553→   553→            </Card>
+   554→   554→            {/* Upselling Services */}
+   555→   555→            <div className="space-y-3">
+   556→   556→              {upsellingServices.map((serv) => (
+   557→   557→                <Card key={serv.id}>
+   558→   558→                  <CardContent className="p-4">
+   559→   559→                    <div className="flex items-start justify-between">
+   560→   560→                      <div>
+   561→   561→                        <h4 className="font-semibold text-sm">{serv.nombre}</h4>
+   562→   562→                        {serv.objetivoUpselling && (
+   563→   563→                          <p className="text-xs text-gray-500 mt-1">{serv.objetivoUpselling}</p>
+   564→   564→                        )}
+   565→   565→                      </div>
+   566→   566→                      <div className="text-right">
+   567→   567→                        <p className="text-sm font-bold text-amber-600">{formatCurrency(serv.precioUpselling || serv.precioNormal, moneda)}</p>
+   568→   568→                        <Badge className="bg-amber-100 text-amber-800 text-[10px]">↑ Upselling</Badge>
+   569→   569→                      </div>
+   570→   570→                    </div>
+   571→   571→                  </CardContent>
+   572→   572→                </Card>
+   573→   573→              ))}
+   574→   574→              {upsellingServices.length === 0 && (
+   575→   575→                <p className="text-center text-gray-400 py-8">{t.common.sinDatos}</p>
+   576→   576→              )}
+   577→   577→            </div>
+   578→   578→          </div>
+   579→   579→        )}
+   580→   580→
+   581→   581→        {/* ═══════════════ CAPACITACIÓN VIEW ═══════════════ */}
+   582→   582→        {activeView === 'capacitacion' && (
+   583→   583→          <div className="space-y-4">
+   584→   584→            <h2 className="text-lg font-bold">{t.capacitacion.title}</h2>
+   585→   585→            {empleado?.cursos && empleado.cursos.length > 0 ? (
+   586→   586→              <div className="space-y-3">
+   587→   587→                {empleado.cursos.map((c) => (
+   588→   588→                  <Card key={c.id}>
+   589→   589→                    <CardContent className="p-4">
+   590→   590→                      <div className="flex items-start justify-between mb-2">
+   591→   591→                        <div>
+   592→   592→                          <h4 className="font-semibold text-sm">{c.capacitacion.titulo}</h4>
+   593→   593→                          <p className="text-xs text-gray-500">{c.capacitacion.categoria} · {c.capacitacion.modalidad}</p>
+   594→   594→                        </div>
+   595→   595→                        <Badge
+   596→   596→                          variant={
+   597→   597→                            c.estado === 'completado' ? 'default' :
+   598→   598→                            c.estado === 'en_progreso' ? 'secondary' : 'outline'
+   599→   599→                          }
+   600→   600→                        >
+   601→   601→                          {c.estado === 'completado' ? t.capacitacion.completada :
+   602→   602→                           c.estado === 'en_progreso' ? (locale === 'es' ? 'En Progreso' : 'In Progress') :
+   603→   603→                           (locale === 'es' ? 'No Iniciado' : 'Not Started')}
+   604→   604→                        </Badge>
+   605→   605→                      </div>
+   606→   606→                      <Progress value={c.progreso} className="h-2" />
+   607→   607→                      <p className="text-xs text-gray-500 mt-1">{Math.round(c.progreso)}%</p>
+   608→   608→                    </CardContent>
+   609→   609→                  </Card>
+   610→   610→                ))}
+   611→   611→              </div>
+   612→   612→            ) : (
+   613→   613→              <p className="text-center text-gray-400 py-8">{t.capacitacion.noCursos}</p>
+   614→   614→            )}
+   615→   615→          </div>
+   616→   616→        )}
+   617→   617→
+   618→   618→        {/* ═══════════════ SCORE VIEW ═══════════════ */}
+   619→   619→        {activeView === 'score' && (
+   620→   620→          <div className="space-y-4">
+   621→   621→            <h2 className="text-lg font-bold">
+   622→   622→              {locale === 'es' ? 'Mi Score Integral' : 'My Integral Score'}
+   623→   623→            </h2>
+   624→   624→            {/* Total Score */}
+   625→   625→            <Card className="border-teal-200 bg-gradient-to-r from-teal-50 to-emerald-50">
+   626→   626→              <CardContent className="p-6 text-center">
+   627→   627→                <Award className="w-12 h-12 text-teal-600 mx-auto mb-2" />
+   628→   628→                <p className="text-4xl font-bold text-teal-700">
+   629→   629→                  {empleado ? Math.round(empleado.puntuacionTotal) : 0}
+   630→   630→                </p>
+   631→   631→                <p className="text-xs text-teal-600 mt-1">
+   632→   632→                  {locale === 'es' ? 'Puntuación Total' : 'Total Score'}
+   633→   633→                </p>
+   634→   634→              </CardContent>
+   635→   635→            </Card>
+   636→   636→            {/* Score Breakdown */}
+   637→   637→            <div className="space-y-3">
+   638→   638→              {[
+   639→   639→                { label: t.employees.scoreConocimiento, value: empleado?.puntuacionConocimiento || 0, color: 'bg-teal-500', icon: '📚' },
+   640→   640→                { label: t.employees.scoreVentas, value: empleado?.puntuacionVentas || 0, color: 'bg-emerald-500', icon: '💰' },
+   641→   641→                { label: t.employees.scoreHospitalidad, value: empleado?.puntuacionHospitalidad || 0, color: 'bg-amber-500', icon: '❤️' },
+   642→   642→              ].map((score) => (
+   643→   643→                <Card key={score.label}>
+   644→   644→                  <CardContent className="p-4">
+   645→   645→                    <div className="flex items-center justify-between mb-2">
+   646→   646→                      <span className="text-sm font-medium">{score.icon} {score.label}</span>
+   647→   647→                      <span className="text-lg font-bold">{Math.round(score.value)}</span>
+   648→   648→                    </div>
+   649→   649→                    <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+   650→   650→                      <div
+   651→   651→                        className={`h-full rounded-full ${score.color} transition-all duration-500`}
+   652→   652→                        style={{ width: `${Math.min(100, score.value)}%` }}
+   653→   653→                      />
+   654→   654→                    </div>
+   655→   655→                  </CardContent>
+   656→   656→                </Card>
+   657→   657→              ))}
+   658→   658→            </div>
+   659→   659→            <Separator />
+   660→   660→            {/* Additional Metrics */}
+   661→   661→            <div className="grid grid-cols-3 gap-3">
+   662→   662→              <Card>
+   663→   663→                <CardContent className="p-3 text-center">
+   664→   664→                  <TrendingUp className="w-4 h-4 text-emerald-600 mx-auto mb-1" />
+   665→   665→                  <p className="text-sm font-bold">{formatCurrency(empleado?.totalUpselling || 0, moneda)}</p>
+   666→   666→                  <p className="text-[10px] text-gray-500">{t.ventas.totalUpselling}</p>
+   667→   667→                </CardContent>
+   668→   668→              </Card>
+   669→   669→              <Card>
+   670→   670→                <CardContent className="p-3 text-center">
+   671→   671→                  <Star className="w-4 h-4 text-amber-500 mx-auto mb-1" />
+   672→   672→                  <p className="text-sm font-bold">{(empleado?.npsPromedio || 0).toFixed(1)}</p>
+   673→   673→                  <p className="text-[10px] text-gray-500">NPS</p>
+   674→   674→                </CardContent>
+   675→   675→              </Card>
+   676→   676→              <Card>
+   677→   677→                <CardContent className="p-3 text-center">
+   678→   678→                  <span className="text-base">😊</span>
+   679→   679→                  <p className="text-sm font-bold">{Math.round(empleado?.indiceFelicidad || 0)}%</p>
+   680→   680→                  <p className="text-[10px] text-gray-500">{t.employees.felicidad}</p>
+   681→   681→                </CardContent>
+   682→   682→              </Card>
+   683→   683→            </div>
+   684→   684→          </div>
+   685→   685→        )}
+   686→   686→      </main>
+   687→   687→
+   688→   688→      {/* ─── Sticky Footer ────────────────────────────── */}
+   689→   689→      <footer className="mt-auto border-t bg-white px-4 py-3">
+   690→   690→        <div className="flex items-center justify-between max-w-4xl mx-auto">
+   691→   691→          <p className="text-xs text-gray-500">
+   692→   692→            {empleado?.propiedad?.nombre || ''} · {empleado?.propiedad?.region || ''}
+   693→   693→          </p>
+   694→   694→          <p className="text-[10px] text-gray-400">
+   695→   695→            © 2025 HospitalityUP
+   696→   696→          </p>
+   697→   697→        </div>
+   698→   698→      </footer>
+   699→   699→    </div>
+   700→   700→  )
+   701→   701→}
+   702→   702→

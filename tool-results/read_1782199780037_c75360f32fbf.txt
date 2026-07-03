@@ -1,0 +1,1199 @@
+     1→'use client'
+     2→
+     3→import { useState, useEffect, useCallback } from 'react'
+     4→import { useAppStore } from '@/lib/store'
+     5→import { translations } from '@/lib/i18n'
+     6→import { formatCurrency } from '@/lib/currency'
+     7→import type { GerenteView } from '@/lib/store'
+     8→import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+     9→import { Button } from '@/components/ui/button'
+    10→import { Badge } from '@/components/ui/badge'
+    11→import { Input } from '@/components/ui/input'
+    12→import { Label } from '@/components/ui/label'
+    13→import { Switch } from '@/components/ui/switch'
+    14→import { Textarea } from '@/components/ui/textarea'
+    15→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+    16→import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+    17→import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
+    18→import { Progress } from '@/components/ui/progress'
+    19→import { Separator } from '@/components/ui/separator'
+    20→import { ScrollArea } from '@/components/ui/scroll-area'
+    21→import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+    22→import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+    23→import { toast } from 'sonner'
+    24→import {
+    25→  LayoutDashboard, Users, Package, DollarSign, GraduationCap, Settings,
+    26→  LogOut, TrendingUp, Star, Target, AlertTriangle, ShoppingCart,
+    27→  Plus, Edit, Trash2, Building2, Globe, ChevronRight,
+    28→} from 'lucide-react'
+    29→
+    30→// ─── Types ──────────────────────────────────────────────────────
+    31→interface Empleado {
+    32→  id: string
+    33→  empleadoId: string
+    34→  nombre: string
+    35→  posicion: string
+    36→  posicionEn: string | null
+    37→  departamento: string
+    38→  departamentoEn: string | null
+    39→  estado: string
+    40→  puntuacionConocimiento: number
+    41→  puntuacionVentas: number
+    42→  puntuacionHospitalidad: number
+    43→  puntuacionTotal: number
+    44→  totalUpselling: number
+    45→  npsPromedio: number
+    46→  cursosCompletados: number
+    47→  cursosEnProgreso: number
+    48→  indiceFelicidad: number
+    49→  riesgoRotacion: number
+    50→  fechaIngreso: string
+    51→  propiedadId: string
+    52→}
+    53→
+    54→interface Servicio {
+    55→  id: string
+    56→  nombre: string
+    57→  nombreEn: string | null
+    58→  descripcion: string | null
+    59→  descripcionEn: string | null
+    60→  categoria: string
+    61→  categoriaEn: string | null
+    62→  esUpselling: boolean
+    63→  precioNormal: number
+    64→  precioUpselling: number | null
+    65→  objetivoUpselling: string | null
+    66→  objetivoUpsellingEn: string | null
+    67→  disponible: boolean
+    68→  propiedadId: string
+    69→}
+    70→
+    71→interface Venta {
+    72→  id: string
+    73→  empleadoId: string
+    74→  empleadoNombre: string
+    75→  servicioId: string
+    76→  servicioNombre: string
+    77→  cantidad: number
+    78→  precioUnitario: number
+    79→  montoTotal: number
+    80→  esUpselling: boolean
+    81→  calificacionNps: number | null
+    82→  fecha: string
+    83→}
+    84→
+    85→interface Curso {
+    86→  id: string
+    87→  nombre: string
+    88→  nombreEn: string | null
+    89→  categoria: string
+    90→  modalidad: string
+    91→  duracion: number
+    92→  inscritos: number
+    93→  completados: number
+    94→  tasaCompletado: number
+    95→}
+    96→
+    97→interface CurrencyConfig {
+    98→  currency: string
+    99→  symbol: string
+   100→  exchangeRate: number
+   101→}
+   102→
+   103→interface PropertyConfig {
+   104→  id: string
+   105→  nombre: string
+   106→  nombreEn: string | null
+   107→  tipo: string
+   108→  region: string
+   109→  moneda: string
+   110→}
+   111→
+   112→export function GerenteDashboard() {
+   113→  const { userPropertyId, userName, locale, setLocale, gerenteView, setGerenteView, logout } = useAppStore()
+   114→  const t = translations[locale]
+   115→
+   116→  const [empleados, setEmpleados] = useState<Empleado[]>([])
+   117→  const [servicios, setServicios] = useState<Servicio[]>([])
+   118→  const [ventas, setVentas] = useState<Venta[]>([])
+   119→  const [cursos, setCursos] = useState<Curso[]>([])
+   120→  const [propiedad, setPropiedad] = useState<PropertyConfig | null>(null)
+   121→  const [currencyConfig, setCurrencyConfig] = useState<CurrencyConfig>({ currency: 'MXN', symbol: '$', exchangeRate: 17.5 })
+   122→  const [loading, setLoading] = useState(true)
+   123→
+   124→  // Dialogs
+   125→  const [showAddEmpleado, setShowAddEmpleado] = useState(false)
+   126→  const [showAddServicio, setShowAddServicio] = useState(false)
+   127→  const [editingEmpleado, setEditingEmpleado] = useState<Empleado | null>(null)
+   128→  const [editingServicio, setEditingServicio] = useState<Servicio | null>(null)
+   129→
+   130→  // New empleado form
+   131→  const [newEmpNombre, setNewEmpNombre] = useState('')
+   132→  const [newEmpEmpleadoId, setNewEmpEmpleadoId] = useState('')
+   133→  const [newEmpPosicion, setNewEmpPosicion] = useState('')
+   134→  const [newEmpDepartamento, setNewEmpDepartamento] = useState('')
+   135→
+   136→  // New servicio form
+   137→  const [newServNombre, setNewServNombre] = useState('')
+   138→  const [newServNombreEn, setNewServNombreEn] = useState('')
+   139→  const [newServCategoria, setNewServCategoria] = useState('platillo')
+   140→  const [newServPrecio, setNewServPrecio] = useState(0)
+   141→  const [newServEsUpselling, setNewServEsUpselling] = useState(false)
+   142→  const [newServObjetivo, setNewServObjetivo] = useState('')
+   143→  const [newServDescripcion, setNewServDescripcion] = useState('')
+   144→
+   145→  // Config form
+   146→  const [configMoneda, setConfigMoneda] = useState('MXN')
+   147→  const [configSimbolo, setConfigSimbolo] = useState('$')
+   148→  const [configTasa, setConfigTasa] = useState(17.5)
+   149→  const [configTipo, setConfigTipo] = useState('hotel')
+   150→  const [configNombre, setConfigNombre] = useState('')
+   151→  const [configRegion, setConfigRegion] = useState('')
+   152→
+   153→  const fc = (amount: number) => formatCurrency(amount, currencyConfig.currency, currencyConfig.symbol)
+   154→
+   155→  const fetchData = useCallback(async () => {
+   156→    if (!userPropertyId) return
+   157→    setLoading(true)
+   158→    try {
+   159→      const [empRes, servRes, ventRes, propRes, configRes] = await Promise.all([
+   160→        fetch(`/api/empleados?propiedadId=${userPropertyId}`).catch(() => ({ json: () => [] })),
+   161→        fetch(`/api/servicios?propiedadId=${userPropertyId}`).catch(() => ({ json: () => [] })),
+   162→        fetch(`/api/ventas?propiedadId=${userPropertyId}`).catch(() => ({ json: () => [] })),
+   163→        fetch(`/api/propiedades`).catch(() => ({ json: () => [] })),
+   164→        fetch(`/api/config?propertyId=${userPropertyId}`).catch(() => ({ json: () => null })),
+   165→      ])
+   166→
+   167→      const [empData, servData, ventData, propData, configData] = await Promise.all([
+   168→        empRes.json(), servRes.json(), ventRes.json(), propRes.json(), configRes.json(),
+   169→      ])
+   170→
+   171→      setEmpleados(Array.isArray(empData) ? empData : [])
+   172→      setServicios(Array.isArray(servData) ? servData : [])
+   173→      setVentas(Array.isArray(ventData) ? ventData : [])
+   174→
+   175→      if (Array.isArray(propData)) {
+   176→        const prop = propData.find((p: PropertyConfig) => p.id === userPropertyId)
+   177→        if (prop) {
+   178→          setPropiedad(prop)
+   179→          setConfigNombre(prop.nombre)
+   180→          setConfigTipo(prop.tipo)
+   181→          setConfigRegion(prop.region)
+   182→          setConfigMoneda(prop.moneda || 'MXN')
+   183→        }
+   184→      }
+   185→
+   186→      if (configData?.currency) {
+   187→        setCurrencyConfig(configData.currency)
+   188→        setConfigMoneda(configData.currency.currency)
+   189→        setConfigSimbolo(configData.currency.symbol)
+   190→        setConfigTasa(configData.currency.exchangeRate)
+   191→      }
+   192→
+   193→      // Mock cursos
+   194→      setCursos([
+   195→        { id: 'c1', nombre: 'Upselling Avanzado', nombreEn: 'Advanced Upselling', categoria: 'upselling', modalidad: 'virtual', duracion: 45, inscritos: 8, completados: 5, tasaCompletado: 62.5 },
+   196→        { id: 'c2', nombre: 'Hospitalidad 5 Estrellas', nombreEn: '5-Star Hospitality', categoria: 'hospitalidad', modalidad: 'presencial', duracion: 90, inscritos: 12, completados: 9, tasaCompletado: 75 },
+   197→        { id: 'c3', nombre: 'Conocimiento de Producto', nombreEn: 'Product Knowledge', categoria: 'producto', modalidad: 'virtual', duracion: 30, inscritos: 6, completados: 3, tasaCompletado: 50 },
+   198→      ])
+   199→    } catch {
+   200→      // Use mock fallback
+   201→    } finally {
+   202→      setLoading(false)
+   203→    }
+   204→  }, [userPropertyId])
+   205→
+   206→  useEffect(() => { fetchData() }, [fetchData])
+   207→
+   208→  // ─── Computed metrics ──────────────────────────────────────────
+   209→  const empleadosActivos = empleados.filter(e => e.estado === 'active').length
+   210→  const totalUpselling = empleados.reduce((acc, e) => acc + e.totalUpselling, 0)
+   211→  const npsPromedio = empleados.length > 0 ? (empleados.reduce((acc, e) => acc + e.npsPromedio, 0) / empleados.length) : 0
+   212→  const ventasHoy = ventas.length
+   213→  const ventasUpsellingHoy = ventas.filter(v => v.esUpselling).length
+   214→  const montoVentasHoy = ventas.reduce((acc, v) => acc + v.montoTotal, 0)
+   215→  const riesgoAlto = empleados.filter(e => e.riesgoRotacion >= 70).length
+   216→
+   217→  const positions = getPositionsForType(configTipo, locale)
+   218→
+   219→  // ─── Handlers ──────────────────────────────────────────────────
+   220→  const handleAddEmpleado = () => {
+   221→    if (!newEmpNombre || !newEmpEmpleadoId || !newEmpPosicion) {
+   222→      toast.error(locale === 'es' ? 'Completa todos los campos' : 'Fill all fields')
+   223→      return
+   224→    }
+   225→    const nuevo: Empleado = {
+   226→      id: `emp-${Date.now()}`,
+   227→      empleadoId: newEmpEmpleadoId,
+   228→      nombre: newEmpNombre,
+   229→      posicion: newEmpPosicion,
+   230→      posicionEn: null,
+   231→      departamento: newEmpDepartamento || 'General',
+   232→      departamentoEn: null,
+   233→      estado: 'onboarding',
+   234→      puntuacionConocimiento: 0,
+   235→      puntuacionVentas: 0,
+   236→      puntuacionHospitalidad: 0,
+   237→      puntuacionTotal: 0,
+   238→      totalUpselling: 0,
+   239→      npsPromedio: 0,
+   240→      cursosCompletados: 0,
+   241→      cursosEnProgreso: 0,
+   242→      indiceFelicidad: 80,
+   243→      riesgoRotacion: 20,
+   244→      fechaIngreso: new Date().toISOString().split('T')[0],
+   245→      propiedadId: userPropertyId || '',
+   246→    }
+   247→    setEmpleados(prev => [...prev, nuevo])
+   248→    setShowAddEmpleado(false)
+   249→    resetEmpForm()
+   250→    toast.success(locale === 'es' ? 'Empleado agregado' : 'Employee added')
+   251→  }
+   252→
+   253→  const handleAddServicio = () => {
+   254→    if (!newServNombre || !newServPrecio) {
+   255→      toast.error(locale === 'es' ? 'Completa los campos requeridos' : 'Fill required fields')
+   256→      return
+   257→    }
+   258→    const nuevo: Servicio = {
+   259→      id: `srv-${Date.now()}`,
+   260→      nombre: newServNombre,
+   261→      nombreEn: newServNombreEn || null,
+   262→      descripcion: newServDescripcion || null,
+   263→      descripcionEn: null,
+   264→      categoria: newServCategoria,
+   265→      categoriaEn: null,
+   266→      esUpselling: newServEsUpselling,
+   267→      precioNormal: newServPrecio,
+   268→      precioUpselling: newServEsUpselling ? newServPrecio * 1.3 : null,
+   269→      objetivoUpselling: newServEsUpselling ? newServObjetivo : null,
+   270→      objetivoUpsellingEn: null,
+   271→      disponible: true,
+   272→      propiedadId: userPropertyId || '',
+   273→    }
+   274→    setServicios(prev => [...prev, nuevo])
+   275→    setShowAddServicio(false)
+   276→    resetServForm()
+   277→    toast.success(locale === 'es' ? 'Servicio agregado' : 'Service added')
+   278→  }
+   279→
+   280→  const handleDeleteServicio = (id: string) => {
+   281→    setServicios(prev => prev.filter(s => s.id !== id))
+   282→    toast.success(locale === 'es' ? 'Servicio eliminado' : 'Service deleted')
+   283→  }
+   284→
+   285→  const handleSaveConfig = () => {
+   286→    setCurrencyConfig({ currency: configMoneda, symbol: configSimbolo, exchangeRate: configTasa })
+   287→    if (propiedad) {
+   288→      setPropiedad({ ...propiedad, nombre: configNombre, tipo: configTipo, region: configRegion })
+   289→    }
+   290→    toast.success(locale === 'es' ? 'Configuración guardada' : 'Settings saved')
+   291→  }
+   292→
+   293→  const resetEmpForm = () => {
+   294→    setNewEmpNombre('')
+   295→    setNewEmpEmpleadoId('')
+   296→    setNewEmpPosicion('')
+   297→    setNewEmpDepartamento('')
+   298→  }
+   299→
+   300→  const resetServForm = () => {
+   301→    setNewServNombre('')
+   302→    setNewServNombreEn('')
+   303→    setNewServCategoria('platillo')
+   304→    setNewServPrecio(0)
+   305→    setNewServEsUpselling(false)
+   306→    setNewServObjetivo('')
+   307→    setNewServDescripcion('')
+   308→  }
+   309→
+   310→  if (loading) {
+   311→    return (
+   312→      <div className="flex items-center justify-center min-h-screen">
+   313→        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600" />
+   314→      </div>
+   315→    )
+   316→  }
+   317→
+   318→  return (
+   319→    <div className="min-h-screen bg-gray-50/50">
+   320→      {/* ─── Header ──────────────────────────────────────────── */}
+   321→      <header className="sticky top-0 z-50 bg-white border-b shadow-sm">
+   322→        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+   323→          <div className="flex items-center gap-3">
+   324→            <div className="w-9 h-9 rounded-lg bg-emerald-600 flex items-center justify-center">
+   325→              <Building2 className="w-5 h-5 text-white" />
+   326→            </div>
+   327→            <div>
+   328→              <h1 className="font-bold text-gray-900 text-sm sm:text-base">
+   329→                {propiedad?.nombre || (locale === 'es' ? 'Mi Propiedad' : 'My Property')}
+   330→              </h1>
+   331→              <p className="text-xs text-gray-500">
+   332→                {locale === 'es' ? 'Gerente:' : 'Manager:'} {userName}
+   333→              </p>
+   334→            </div>
+   335→          </div>
+   336→          <div className="flex items-center gap-2">
+   337→            {/* Language toggle */}
+   338→            <div className="flex rounded-md border overflow-hidden">
+   339→              <button
+   340→                onClick={() => setLocale('es')}
+   341→                className={`px-2 py-1 text-xs font-medium ${locale === 'es' ? 'bg-emerald-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+   342→              >
+   343→                ES
+   344→              </button>
+   345→              <button
+   346→                onClick={() => setLocale('en')}
+   347→                className={`px-2 py-1 text-xs font-medium ${locale === 'en' ? 'bg-emerald-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+   348→              >
+   349→                EN
+   350→              </button>
+   351→            </div>
+   352→            <Badge variant="outline" className="text-emerald-700 border-emerald-200 bg-emerald-50">
+   353→              {currencyConfig.currency}
+   354→            </Badge>
+   355→            <Button variant="ghost" size="sm" onClick={logout} className="text-gray-500 hover:text-red-600">
+   356→              <LogOut className="w-4 h-4" />
+   357→            </Button>
+   358→          </div>
+   359→        </div>
+   360→      </header>
+   361→
+   362→      {/* ─── Main Content ────────────────────────────────────── */}
+   363→      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+   364→        <Tabs value={gerenteView} onValueChange={(v) => setGerenteView(v as GerenteView)} className="space-y-6">
+   365→          <TabsList className="grid w-full grid-cols-6 h-auto gap-1 bg-gray-100 p-1 rounded-xl">
+   366→            <TabsTrigger value="dashboard" className="text-xs data-[state=active]:bg-emerald-600 data-[state=active]:text-white rounded-lg py-2">
+   367→              <LayoutDashboard className="w-3.5 h-3.5 mr-1 hidden sm:inline" />
+   368→              {locale === 'es' ? 'Dashboard' : 'Dashboard'}
+   369→            </TabsTrigger>
+   370→            <TabsTrigger value="empleados" className="text-xs data-[state=active]:bg-emerald-600 data-[state=active]:text-white rounded-lg py-2">
+   371→              <Users className="w-3.5 h-3.5 mr-1 hidden sm:inline" />
+   372→              {locale === 'es' ? 'Empleados' : 'Staff'}
+   373→            </TabsTrigger>
+   374→            <TabsTrigger value="servicios" className="text-xs data-[state=active]:bg-emerald-600 data-[state=active]:text-white rounded-lg py-2">
+   375→              <Package className="w-3.5 h-3.5 mr-1 hidden sm:inline" />
+   376→              {locale === 'es' ? 'Servicios' : 'Services'}
+   377→            </TabsTrigger>
+   378→            <TabsTrigger value="ventas" className="text-xs data-[state=active]:bg-emerald-600 data-[state=active]:text-white rounded-lg py-2">
+   379→              <DollarSign className="w-3.5 h-3.5 mr-1 hidden sm:inline" />
+   380→              {locale === 'es' ? 'Ventas' : 'Sales'}
+   381→            </TabsTrigger>
+   382→            <TabsTrigger value="capacitacion" className="text-xs data-[state=active]:bg-emerald-600 data-[state=active]:text-white rounded-lg py-2">
+   383→              <GraduationCap className="w-3.5 h-3.5 mr-1 hidden sm:inline" />
+   384→              {locale === 'es' ? 'Capacitación' : 'Training'}
+   385→            </TabsTrigger>
+   386→            <TabsTrigger value="configuracion" className="text-xs data-[state=active]:bg-emerald-600 data-[state=active]:text-white rounded-lg py-2">
+   387→              <Settings className="w-3.5 h-3.5 mr-1 hidden sm:inline" />
+   388→              {locale === 'es' ? 'Config' : 'Config'}
+   389→            </TabsTrigger>
+   390→          </TabsList>
+   391→
+   392→          {/* ─── DASHBOARD TAB ──────────────────────────────────── */}
+   393→          <TabsContent value="dashboard" className="space-y-6">
+   394→            {/* KPI Cards */}
+   395→            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+   396→              <Card className="border-l-4 border-l-emerald-500">
+   397→                <CardContent className="p-4">
+   398→                  <div className="flex items-center justify-between">
+   399→                    <div>
+   400→                      <p className="text-xs text-gray-500">{locale === 'es' ? 'Empleados Activos' : 'Active Staff'}</p>
+   401→                      <p className="text-2xl font-bold text-gray-900">{empleadosActivos}</p>
+   402→                    </div>
+   403→                    <Users className="w-8 h-8 text-emerald-200" />
+   404→                  </div>
+   405→                </CardContent>
+   406→              </Card>
+   407→              <Card className="border-l-4 border-l-amber-500">
+   408→                <CardContent className="p-4">
+   409→                  <div className="flex items-center justify-between">
+   410→                    <div>
+   411→                      <p className="text-xs text-gray-500">{locale === 'es' ? 'NPS Promedio' : 'Avg NPS'}</p>
+   412→                      <p className="text-2xl font-bold text-gray-900">{npsPromedio.toFixed(1)}</p>
+   413→                    </div>
+   414→                    <Star className="w-8 h-8 text-amber-200" />
+   415→                  </div>
+   416→                </CardContent>
+   417→              </Card>
+   418→              <Card className="border-l-4 border-l-teal-500">
+   419→                <CardContent className="p-4">
+   420→                  <div className="flex items-center justify-between">
+   421→                    <div>
+   422→                      <p className="text-xs text-gray-500">{locale === 'es' ? 'Upselling Total' : 'Total Upselling'}</p>
+   423→                      <p className="text-xl font-bold text-gray-900">{fc(totalUpselling)}</p>
+   424→                    </div>
+   425→                    <TrendingUp className="w-8 h-8 text-teal-200" />
+   426→                  </div>
+   427→                </CardContent>
+   428→              </Card>
+   429→              <Card className="border-l-4 border-l-red-500">
+   430→                <CardContent className="p-4">
+   431→                  <div className="flex items-center justify-between">
+   432→                    <div>
+   433→                      <p className="text-xs text-gray-500">{locale === 'es' ? 'Riesgo Alto' : 'High Risk'}</p>
+   434→                      <p className="text-2xl font-bold text-gray-900">{riesgoAlto}</p>
+   435→                    </div>
+   436→                    <AlertTriangle className="w-8 h-8 text-red-200" />
+   437→                  </div>
+   438→                </CardContent>
+   439→              </Card>
+   440→            </div>
+   441→
+   442→            {/* Sales today & top performers */}
+   443→            <div className="grid md:grid-cols-2 gap-6">
+   444→              <Card>
+   445→                <CardHeader className="pb-3">
+   446→                  <CardTitle className="text-base">{locale === 'es' ? 'Ventas del Día' : "Today's Sales"}</CardTitle>
+   447→                </CardHeader>
+   448→                <CardContent>
+   449→                  <div className="space-y-3">
+   450→                    <div className="flex justify-between items-center">
+   451→                      <span className="text-sm text-gray-600">{locale === 'es' ? 'Total ventas' : 'Total sales'}</span>
+   452→                      <span className="font-semibold">{ventasHoy}</span>
+   453→                    </div>
+   454→                    <div className="flex justify-between items-center">
+   455→                      <span className="text-sm text-gray-600">{locale === 'es' ? 'Ventas upselling' : 'Upselling sales'}</span>
+   456→                      <span className="font-semibold text-emerald-600">{ventasUpsellingHoy}</span>
+   457→                    </div>
+   458→                    <div className="flex justify-between items-center">
+   459→                      <span className="text-sm text-gray-600">{locale === 'es' ? 'Monto total' : 'Total amount'}</span>
+   460→                      <span className="font-semibold">{fc(montoVentasHoy)}</span>
+   461→                    </div>
+   462→                    <Separator />
+   463→                    <div className="flex justify-between items-center">
+   464→                      <span className="text-sm text-gray-600">{locale === 'es' ? 'Tasa upselling' : 'Upselling rate'}</span>
+   465→                      <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
+   466→                        {ventasHoy > 0 ? ((ventasUpsellingHoy / ventasHoy) * 100).toFixed(0) : 0}%
+   467→                      </Badge>
+   468→                    </div>
+   469→                  </div>
+   470→                </CardContent>
+   471→              </Card>
+   472→
+   473→              <Card>
+   474→                <CardHeader className="pb-3">
+   475→                  <CardTitle className="text-base">{locale === 'es' ? 'Mejores Empleados' : 'Top Performers'}</CardTitle>
+   476→                </CardHeader>
+   477→                <CardContent>
+   478→                  <div className="space-y-3 max-h-64 overflow-y-auto">
+   479→                    {empleados
+   480→                      .sort((a, b) => b.puntuacionTotal - a.puntuacionTotal)
+   481→                      .slice(0, 5)
+   482→                      .map((emp, idx) => (
+   483→                        <div key={emp.id} className="flex items-center gap-3">
+   484→                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white ${
+   485→                            idx === 0 ? 'bg-amber-500' : idx === 1 ? 'bg-gray-400' : idx === 2 ? 'bg-amber-700' : 'bg-gray-300'
+   486→                          }`}>
+   487→                            {idx + 1}
+   488→                          </div>
+   489→                          <div className="flex-1 min-w-0">
+   490→                            <p className="text-sm font-medium truncate">{emp.nombre}</p>
+   491→                            <p className="text-xs text-gray-500">{emp.posicion}</p>
+   492→                          </div>
+   493→                          <div className="text-right">
+   494→                            <p className="text-sm font-semibold">{emp.puntuacionTotal.toFixed(0)}</p>
+   495→                            <p className="text-xs text-gray-500">{locale === 'es' ? 'pts' : 'pts'}</p>
+   496→                          </div>
+   497→                        </div>
+   498→                      ))}
+   499→                    {empleados.length === 0 && (
+   500→                      <p className="text-sm text-gray-400 text-center py-4">{locale === 'es' ? 'Sin empleados' : 'No employees'}</p>
+   501→                    )}
+   502→                  </div>
+   503→                </CardContent>
+   504→              </Card>
+   505→            </div>
+   506→          </TabsContent>
+   507→
+   508→          {/* ─── EMPLEADOS TAB ───────────────────────────────────── */}
+   509→          <TabsContent value="empleados" className="space-y-4">
+   510→            <div className="flex items-center justify-between">
+   511→              <h2 className="text-lg font-semibold">{locale === 'es' ? 'Empleados' : 'Employees'}</h2>
+   512→              <Button onClick={() => { resetEmpForm(); setShowAddEmpleado(true) }} className="bg-emerald-600 hover:bg-emerald-700">
+   513→                <Plus className="w-4 h-4 mr-1" />
+   514→                {locale === 'es' ? 'Agregar' : 'Add'}
+   515→              </Button>
+   516→            </div>
+   517→
+   518→            <Card>
+   519→              <CardContent className="p-0">
+   520→                <Table>
+   521→                  <TableHeader>
+   522→                    <TableRow>
+   523→                      <TableHead>{locale === 'es' ? 'Nombre' : 'Name'}</TableHead>
+   524→                      <TableHead className="hidden md:table-cell">{locale === 'es' ? 'Número' : 'ID'}</TableHead>
+   525→                      <TableHead>{locale === 'es' ? 'Puesto' : 'Position'}</TableHead>
+   526→                      <TableHead className="hidden sm:table-cell">{locale === 'es' ? 'Estado' : 'Status'}</TableHead>
+   527→                      <TableHead className="text-right">{locale === 'es' ? 'Score' : 'Score'}</TableHead>
+   528→                    </TableRow>
+   529→                  </TableHeader>
+   530→                  <TableBody>
+   531→                    {empleados.map((emp) => (
+   532→                      <TableRow key={emp.id} className="cursor-pointer hover:bg-emerald-50/50" onClick={() => setEditingEmpleado(emp)}>
+   533→                        <TableCell>
+   534→                          <div className="flex items-center gap-2">
+   535→                            <Avatar className="w-8 h-8">
+   536→                              <AvatarFallback className="bg-emerald-100 text-emerald-700 text-xs">
+   537→                                {emp.nombre.split(' ').map(n => n[0]).join('')}
+   538→                              </AvatarFallback>
+   539→                            </Avatar>
+   540→                            <span className="font-medium text-sm">{emp.nombre}</span>
+   541→                          </div>
+   542→                        </TableCell>
+   543→                        <TableCell className="hidden md:table-cell font-mono text-xs">{emp.empleadoId}</TableCell>
+   544→                        <TableCell className="text-sm">{emp.posicion}</TableCell>
+   545→                        <TableCell className="hidden sm:table-cell">
+   546→                          <Badge className={estadoBadge(emp.estado, locale)}>{estadoLabel(emp.estado, locale)}</Badge>
+   547→                        </TableCell>
+   548→                        <TableCell className="text-right font-semibold text-sm">{emp.puntuacionTotal.toFixed(0)}</TableCell>
+   549→                      </TableRow>
+   550→                    ))}
+   551→                    {empleados.length === 0 && (
+   552→                      <TableRow>
+   553→                        <TableCell colSpan={5} className="text-center py-8 text-gray-400">
+   554→                          {locale === 'es' ? 'No hay empleados' : 'No employees'}
+   555→                        </TableCell>
+   556→                      </TableRow>
+   557→                    )}
+   558→                  </TableBody>
+   559→                </Table>
+   560→              </CardContent>
+   561→            </Card>
+   562→
+   563→            {/* Add empleado dialog */}
+   564→            <Dialog open={showAddEmpleado} onOpenChange={setShowAddEmpleado}>
+   565→              <DialogContent>
+   566→                <DialogHeader>
+   567→                  <DialogTitle>{locale === 'es' ? 'Agregar Empleado' : 'Add Employee'}</DialogTitle>
+   568→                  <DialogDescription>{locale === 'es' ? 'Completa los datos del nuevo empleado' : 'Fill in new employee details'}</DialogDescription>
+   569→                </DialogHeader>
+   570→                <div className="space-y-4">
+   571→                  <div className="space-y-2">
+   572→                    <Label>{locale === 'es' ? 'Nombre completo' : 'Full name'}</Label>
+   573→                    <Input value={newEmpNombre} onChange={(e) => setNewEmpNombre(e.target.value)} placeholder="Juan Pérez" />
+   574→                  </div>
+   575→                  <div className="space-y-2">
+   576→                    <Label>{locale === 'es' ? 'Número de empleado' : 'Employee number'}</Label>
+   577→                    <Input value={newEmpEmpleadoId} onChange={(e) => setNewEmpEmpleadoId(e.target.value.toUpperCase())} placeholder="MES-401" className="font-mono" />
+   578→                  </div>
+   579→                  <div className="space-y-2">
+   580→                    <Label>{locale === 'es' ? 'Puesto' : 'Position'}</Label>
+   581→                    <Select value={newEmpPosicion} onValueChange={setNewEmpPosicion}>
+   582→                      <SelectTrigger><SelectValue placeholder={locale === 'es' ? 'Seleccionar...' : 'Select...'} /></SelectTrigger>
+   583→                      <SelectContent>
+   584→                        {positions.map(pos => (
+   585→                          <SelectItem key={pos.id} value={pos.name}>{pos.name}</SelectItem>
+   586→                        ))}
+   587→                      </SelectContent>
+   588→                    </Select>
+   589→                  </div>
+   590→                  <div className="space-y-2">
+   591→                    <Label>{locale === 'es' ? 'Departamento' : 'Department'}</Label>
+   592→                    <Input value={newEmpDepartamento} onChange={(e) => setNewEmpDepartamento(e.target.value)} placeholder="A&B" />
+   593→                  </div>
+   594→                </div>
+   595→                <DialogFooter>
+   596→                  <Button variant="outline" onClick={() => setShowAddEmpleado(false)}>{locale === 'es' ? 'Cancelar' : 'Cancel'}</Button>
+   597→                  <Button onClick={handleAddEmpleado} className="bg-emerald-600 hover:bg-emerald-700">{locale === 'es' ? 'Agregar' : 'Add'}</Button>
+   598→                </DialogFooter>
+   599→              </DialogContent>
+   600→            </Dialog>
+   601→
+   602→            {/* Edit empleado dialog */}
+   603→            <Dialog open={!!editingEmpleado} onOpenChange={(open) => !open && setEditingEmpleado(null)}>
+   604→              <DialogContent>
+   605→                <DialogHeader>
+   606→                  <DialogTitle>{locale === 'es' ? 'Detalle del Empleado' : 'Employee Detail'}</DialogTitle>
+   607→                </DialogHeader>
+   608→                {editingEmpleado && (
+   609→                  <div className="space-y-4">
+   610→                    <div className="flex items-center gap-3">
+   611→                      <Avatar className="w-12 h-12">
+   612→                        <AvatarFallback className="bg-emerald-100 text-emerald-700 text-lg">
+   613→                          {editingEmpleado.nombre.split(' ').map(n => n[0]).join('')}
+   614→                        </AvatarFallback>
+   615→                      </Avatar>
+   616→                      <div>
+   617→                        <p className="font-semibold">{editingEmpleado.nombre}</p>
+   618→                        <p className="text-sm text-gray-500 font-mono">{editingEmpleado.empleadoId} · {editingEmpleado.posicion}</p>
+   619→                      </div>
+   620→                    </div>
+   621→                    <Separator />
+   622→                    <div className="grid grid-cols-3 gap-4">
+   623→                      <div className="text-center">
+   624→                        <p className="text-xs text-gray-500">{locale === 'es' ? 'Conocimiento' : 'Knowledge'}</p>
+   625→                        <p className="text-lg font-bold text-blue-600">{editingEmpleado.puntuacionConocimiento.toFixed(0)}</p>
+   626→                      </div>
+   627→                      <div className="text-center">
+   628→                        <p className="text-xs text-gray-500">{locale === 'es' ? 'Ventas' : 'Sales'}</p>
+   629→                        <p className="text-lg font-bold text-emerald-600">{editingEmpleado.puntuacionVentas.toFixed(0)}</p>
+   630→                      </div>
+   631→                      <div className="text-center">
+   632→                        <p className="text-xs text-gray-500">{locale === 'es' ? 'Hospitalidad' : 'Hospitality'}</p>
+   633→                        <p className="text-lg font-bold text-amber-600">{editingEmpleado.puntuacionHospitalidad.toFixed(0)}</p>
+   634→                      </div>
+   635→                    </div>
+   636→                    <div className="space-y-2">
+   637→                      <div className="flex justify-between text-sm">
+   638→                        <span className="text-gray-600">{locale === 'es' ? 'NPS Promedio' : 'Avg NPS'}</span>
+   639→                        <span className="font-medium">{editingEmpleado.npsPromedio.toFixed(1)}</span>
+   640→                      </div>
+   641→                      <div className="flex justify-between text-sm">
+   642→                        <span className="text-gray-600">{locale === 'es' ? 'Total Upselling' : 'Total Upselling'}</span>
+   643→                        <span className="font-medium">{fc(editingEmpleado.totalUpselling)}</span>
+   644→                      </div>
+   645→                      <div className="flex justify-between text-sm">
+   646→                        <span className="text-gray-600">{locale === 'es' ? 'Felicidad' : 'Happiness'}</span>
+   647→                        <span className="font-medium">{editingEmpleado.indiceFelicidad}%</span>
+   648→                      </div>
+   649→                      <div className="flex justify-between text-sm">
+   650→                        <span className="text-gray-600">{locale === 'es' ? 'Riesgo Rotación' : 'Turnover Risk'}</span>
+   651→                        <Badge className={editingEmpleado.riesgoRotacion >= 70 ? 'bg-red-100 text-red-700' : editingEmpleado.riesgoRotacion >= 40 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}>
+   652→                          {editingEmpleado.riesgoRotacion}%
+   653→                        </Badge>
+   654→                      </div>
+   655→                    </div>
+   656→                  </div>
+   657→                )}
+   658→              </DialogContent>
+   659→            </Dialog>
+   660→          </TabsContent>
+   661→
+   662→          {/* ─── SERVICIOS TAB ───────────────────────────────────── */}
+   663→          <TabsContent value="servicios" className="space-y-4">
+   664→            <div className="flex items-center justify-between">
+   665→              <h2 className="text-lg font-semibold">{locale === 'es' ? 'Menú & Servicios' : 'Menu & Services'}</h2>
+   666→              <Button onClick={() => { resetServForm(); setShowAddServicio(true) }} className="bg-emerald-600 hover:bg-emerald-700">
+   667→                <Plus className="w-4 h-4 mr-1" />
+   668→                {locale === 'es' ? 'Agregar Servicio' : 'Add Service'}
+   669→              </Button>
+   670→            </div>
+   671→
+   672→            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+   673→              {servicios.map((srv) => (
+   674→                <Card key={srv.id} className="relative overflow-hidden">
+   675→                  {srv.esUpselling && (
+   676→                    <div className="absolute top-0 right-0 bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-lg">
+   677→                      🎯 UPS
+   678→                    </div>
+   679→                  )}
+   680→                  <CardContent className="p-4">
+   681→                    <div className="space-y-2">
+   682→                      <div className="flex items-start justify-between">
+   683→                        <div>
+   684→                          <p className="font-medium text-sm">{srv.nombre}</p>
+   685→                          <p className="text-xs text-gray-500">{categoriaLabel(srv.categoria, locale)}</p>
+   686→                        </div>
+   687→                      </div>
+   688→                      {srv.descripcion && <p className="text-xs text-gray-600 line-clamp-2">{srv.descripcion}</p>}
+   689→                      <div className="flex items-center justify-between">
+   690→                        <div>
+   691→                          <p className="text-lg font-bold text-emerald-600">{fc(srv.precioNormal)}</p>
+   692→                          {srv.esUpselling && srv.precioUpselling && (
+   693→                            <p className="text-xs text-amber-600">{locale === 'es' ? 'Upselling:' : 'Upsell:'} {fc(srv.precioUpselling)}</p>
+   694→                          )}
+   695→                        </div>
+   696→                        <div className="flex gap-1">
+   697→                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingServicio(srv)}>
+   698→                            <Edit className="w-3.5 h-3.5" />
+   699→                          </Button>
+   700→                          <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-700" onClick={() => handleDeleteServicio(srv.id)}>
+   701→                            <Trash2 className="w-3.5 h-3.5" />
+   702→                          </Button>
+   703→                        </div>
+   704→                      </div>
+   705→                      {srv.esUpselling && srv.objetivoUpselling && (
+   706→                        <div className="flex items-center gap-1 text-xs text-gray-500">
+   707→                          <Target className="w-3 h-3" />
+   708→                          {locale === 'es' ? 'Objetivo:' : 'Target:'} {srv.objetivoUpselling}
+   709→                        </div>
+   710→                      )}
+   711→                      <Badge className={srv.disponible ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}>
+   712→                        {srv.disponible ? (locale === 'es' ? 'Disponible' : 'Available') : (locale === 'es' ? 'No disponible' : 'Unavailable')}
+   713→                      </Badge>
+   714→                    </div>
+   715→                  </CardContent>
+   716→                </Card>
+   717→              ))}
+   718→              {servicios.length === 0 && (
+   719→                <div className="col-span-full text-center py-12 text-gray-400">
+   720→                  <Package className="w-12 h-12 mx-auto mb-2 opacity-50" />
+   721→                  <p>{locale === 'es' ? 'No hay servicios' : 'No services'}</p>
+   722→                </div>
+   723→              )}
+   724→            </div>
+   725→
+   726→            {/* Add servicio dialog */}
+   727→            <Dialog open={showAddServicio} onOpenChange={setShowAddServicio}>
+   728→              <DialogContent className="max-w-md">
+   729→                <DialogHeader>
+   730→                  <DialogTitle>{locale === 'es' ? 'Agregar Servicio' : 'Add Service'}</DialogTitle>
+   731→                </DialogHeader>
+   732→                <div className="space-y-4">
+   733→                  <div className="space-y-2">
+   734→                    <Label>{locale === 'es' ? 'Nombre (ES)' : 'Name (ES)'}</Label>
+   735→                    <Input value={newServNombre} onChange={(e) => setNewServNombre(e.target.value)} />
+   736→                  </div>
+   737→                  <div className="space-y-2">
+   738→                    <Label>{locale === 'es' ? 'Nombre (EN)' : 'Name (EN)'}</Label>
+   739→                    <Input value={newServNombreEn} onChange={(e) => setNewServNombreEn(e.target.value)} />
+   740→                  </div>
+   741→                  <div className="space-y-2">
+   742→                    <Label>{locale === 'es' ? 'Categoría' : 'Category'}</Label>
+   743→                    <Select value={newServCategoria} onValueChange={setNewServCategoria}>
+   744→                      <SelectTrigger><SelectValue /></SelectTrigger>
+   745→                      <SelectContent>
+   746→                        <SelectItem value="platillo">{locale === 'es' ? 'Platillo' : 'Dish'}</SelectItem>
+   747→                        <SelectItem value="bebida">{locale === 'es' ? 'Bebida' : 'Drink'}</SelectItem>
+   748→                        <SelectItem value="tour">Tour</SelectItem>
+   749→                        <SelectItem value="masaje">{locale === 'es' ? 'Masaje' : 'Massage'}</SelectItem>
+   750→                        <SelectItem value="habitacion">{locale === 'es' ? 'Habitación' : 'Room'}</SelectItem>
+   751→                        <SelectItem value="experiencia">{locale === 'es' ? 'Experiencia' : 'Experience'}</SelectItem>
+   752→                        <SelectItem value="paquete">{locale === 'es' ? 'Paquete' : 'Package'}</SelectItem>
+   753→                      </SelectContent>
+   754→                    </Select>
+   755→                  </div>
+   756→                  <div className="space-y-2">
+   757→                    <Label>{locale === 'es' ? 'Precio Normal' : 'Normal Price'}</Label>
+   758→                    <Input type="number" value={newServPrecio} onChange={(e) => setNewServPrecio(Number(e.target.value))} />
+   759→                  </div>
+   760→                  <div className="flex items-center gap-3">
+   761→                    <Switch checked={newServEsUpselling} onCheckedChange={setNewServEsUpselling} />
+   762→                    <Label>{locale === 'es' ? 'Es Upselling' : 'Is Upselling'}</Label>
+   763→                  </div>
+   764→                  {newServEsUpselling && (
+   765→                    <div className="space-y-2">
+   766→                      <Label>{locale === 'es' ? 'Objetivo de Upselling' : 'Upselling Target'}</Label>
+   767→                      <Input value={newServObjetivo} onChange={(e) => setNewServObjetivo(e.target.value)} placeholder="5 por día" />
+   768→                    </div>
+   769→                  )}
+   770→                  <div className="space-y-2">
+   771→                    <Label>{locale === 'es' ? 'Descripción' : 'Description'}</Label>
+   772→                    <Textarea value={newServDescripcion} onChange={(e) => setNewServDescripcion(e.target.value)} rows={2} />
+   773→                  </div>
+   774→                </div>
+   775→                <DialogFooter>
+   776→                  <Button variant="outline" onClick={() => setShowAddServicio(false)}>{locale === 'es' ? 'Cancelar' : 'Cancel'}</Button>
+   777→                  <Button onClick={handleAddServicio} className="bg-emerald-600 hover:bg-emerald-700">{locale === 'es' ? 'Guardar' : 'Save'}</Button>
+   778→                </DialogFooter>
+   779→              </DialogContent>
+   780→            </Dialog>
+   781→
+   782→            {/* Edit servicio dialog */}
+   783→            <Dialog open={!!editingServicio} onOpenChange={(open) => !open && setEditingServicio(null)}>
+   784→              <DialogContent>
+   785→                <DialogHeader>
+   786→                  <DialogTitle>{locale === 'es' ? 'Editar Servicio' : 'Edit Service'}</DialogTitle>
+   787→                </DialogHeader>
+   788→                {editingServicio && (
+   789→                  <div className="space-y-3">
+   790→                    <div className="flex items-center gap-2">
+   791→                      <p className="font-semibold">{editingServicio.nombre}</p>
+   792→                      {editingServicio.esUpselling && <Badge className="bg-amber-100 text-amber-700">Upselling</Badge>}
+   793→                    </div>
+   794→                    <Separator />
+   795→                    <div className="space-y-2 text-sm">
+   796→                      <div className="flex justify-between">
+   797→                        <span className="text-gray-600">{locale === 'es' ? 'Categoría' : 'Category'}</span>
+   798→                        <span>{categoriaLabel(editingServicio.categoria, locale)}</span>
+   799→                      </div>
+   800→                      <div className="flex justify-between">
+   801→                        <span className="text-gray-600">{locale === 'es' ? 'Precio' : 'Price'}</span>
+   802→                        <span className="font-semibold">{fc(editingServicio.precioNormal)}</span>
+   803→                      </div>
+   804→                      {editingServicio.precioUpselling && (
+   805→                        <div className="flex justify-between">
+   806→                          <span className="text-gray-600">{locale === 'es' ? 'Precio Upselling' : 'Upsell Price'}</span>
+   807→                          <span className="font-semibold text-amber-600">{fc(editingServicio.precioUpselling)}</span>
+   808→                        </div>
+   809→                      )}
+   810→                      {editingServicio.descripcion && (
+   811→                        <div>
+   812→                          <span className="text-gray-600">{locale === 'es' ? 'Descripción' : 'Description'}:</span>
+   813→                          <p className="text-gray-800 mt-1">{editingServicio.descripcion}</p>
+   814→                        </div>
+   815→                      )}
+   816→                    </div>
+   817→                  </div>
+   818→                )}
+   819→              </DialogContent>
+   820→            </Dialog>
+   821→          </TabsContent>
+   822→
+   823→          {/* ─── VENTAS TAB ──────────────────────────────────────── */}
+   824→          <TabsContent value="ventas" className="space-y-4">
+   825→            <h2 className="text-lg font-semibold">{locale === 'es' ? 'Ventas del Día' : "Today's Sales"}</h2>
+   826→
+   827→            {/* Sales summary cards */}
+   828→            <div className="grid grid-cols-3 gap-4">
+   829→              <Card>
+   830→                <CardContent className="p-4 text-center">
+   831→                  <p className="text-xs text-gray-500">{locale === 'es' ? 'Total Ventas' : 'Total Sales'}</p>
+   832→                  <p className="text-2xl font-bold">{fc(montoVentasHoy)}</p>
+   833→                </CardContent>
+   834→              </Card>
+   835→              <Card>
+   836→                <CardContent className="p-4 text-center">
+   837→                  <p className="text-xs text-gray-500">{locale === 'es' ? 'Tasa Upselling' : 'Upselling Rate'}</p>
+   838→                  <p className="text-2xl font-bold text-emerald-600">
+   839→                    {ventasHoy > 0 ? ((ventasUpsellingHoy / ventasHoy) * 100).toFixed(0) : 0}%
+   840→                  </p>
+   841→                </CardContent>
+   842→              </Card>
+   843→              <Card>
+   844→                <CardContent className="p-4 text-center">
+   845→                  <p className="text-xs text-gray-500">{locale === 'es' ? 'Ventas Hoy' : 'Sales Today'}</p>
+   846→                  <p className="text-2xl font-bold">{ventasHoy}</p>
+   847→                </CardContent>
+   848→              </Card>
+   849→            </div>
+   850→
+   851→            {/* Sales by employee */}
+   852→            <Card>
+   853→              <CardHeader className="pb-3">
+   854→                <CardTitle className="text-base">{locale === 'es' ? 'Ventas por Empleado' : 'Sales by Employee'}</CardTitle>
+   855→              </CardHeader>
+   856→              <CardContent className="p-0">
+   857→                <Table>
+   858→                  <TableHeader>
+   859→                    <TableRow>
+   860→                      <TableHead>{locale === 'es' ? 'Empleado' : 'Employee'}</TableHead>
+   861→                      <TableHead>{locale === 'es' ? 'Servicio' : 'Service'}</TableHead>
+   862→                      <TableHead className="hidden sm:table-cell">{locale === 'es' ? 'Monto' : 'Amount'}</TableHead>
+   863→                      <TableHead>{locale === 'es' ? 'Tipo' : 'Type'}</TableHead>
+   864→                      <TableHead className="hidden sm:table-cell">NPS</TableHead>
+   865→                    </TableRow>
+   866→                  </TableHeader>
+   867→                  <TableBody>
+   868→                    {ventas.slice(0, 20).map((v) => (
+   869→                      <TableRow key={v.id}>
+   870→                        <TableCell className="text-sm">{v.empleadoNombre}</TableCell>
+   871→                        <TableCell className="text-sm">{v.servicioNombre}</TableCell>
+   872→                        <TableCell className="hidden sm:table-cell text-sm font-medium">{fc(v.montoTotal)}</TableCell>
+   873→                        <TableCell>
+   874→                          {v.esUpselling ? (
+   875→                            <Badge className="bg-amber-100 text-amber-700">🎯 Ups</Badge>
+   876→                          ) : (
+   877→                            <Badge variant="outline">{locale === 'es' ? 'Normal' : 'Normal'}</Badge>
+   878→                          )}
+   879→                        </TableCell>
+   880→                        <TableCell className="hidden sm:table-cell">
+   881→                          {v.calificacionNps ? (
+   882→                            <span className="text-sm font-medium">{v.calificacionNps}</span>
+   883→                          ) : (
+   884→                            <span className="text-xs text-gray-400">—</span>
+   885→                          )}
+   886→                        </TableCell>
+   887→                      </TableRow>
+   888→                    ))}
+   889→                    {ventas.length === 0 && (
+   890→                      <TableRow>
+   891→                        <TableCell colSpan={5} className="text-center py-8 text-gray-400">
+   892→                          {locale === 'es' ? 'No hay ventas hoy' : 'No sales today'}
+   893→                        </TableCell>
+   894→                      </TableRow>
+   895→                    )}
+   896→                  </TableBody>
+   897→                </Table>
+   898→              </CardContent>
+   899→            </Card>
+   900→          </TabsContent>
+   901→
+   902→          {/* ─── CAPACITACIÓN TAB ────────────────────────────────── */}
+   903→          <TabsContent value="capacitacion" className="space-y-4">
+   904→            <h2 className="text-lg font-semibold">{locale === 'es' ? 'Capacitación' : 'Training'}</h2>
+   905→
+   906→            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+   907→              {cursos.map((curso) => (
+   908→                <Card key={curso.id}>
+   909→                  <CardContent className="p-4 space-y-3">
+   910→                    <div className="flex items-start justify-between">
+   911→                      <div>
+   912→                        <p className="font-medium text-sm">{locale === 'es' ? curso.nombre : (curso.nombreEn || curso.nombre)}</p>
+   913→                        <p className="text-xs text-gray-500 mt-0.5">
+   914→                          {curso.modalidad === 'virtual' ? (locale === 'es' ? 'Virtual' : 'Virtual') : (locale === 'es' ? 'Presencial' : 'In-person')} · {curso.duracion} {locale === 'es' ? 'min' : 'min'}
+   915→                        </p>
+   916→                      </div>
+   917→                      <Badge className="bg-emerald-100 text-emerald-700 capitalize">{curso.categoria}</Badge>
+   918→                    </div>
+   919→                    <div className="space-y-1">
+   920→                      <div className="flex justify-between text-xs">
+   921→                        <span className="text-gray-600">{locale === 'es' ? 'Progreso' : 'Progress'}</span>
+   922→                        <span className="font-medium">{curso.completados}/{curso.inscritos}</span>
+   923→                      </div>
+   924→                      <Progress value={curso.tasaCompletado} className="h-2" />
+   925→                      <p className="text-xs text-right text-gray-500">{curso.tasaCompletado.toFixed(0)}%</p>
+   926→                    </div>
+   927→                  </CardContent>
+   928→                </Card>
+   929→              ))}
+   930→            </div>
+   931→
+   932→            {/* Employee progress */}
+   933→            <Card>
+   934→              <CardHeader className="pb-3">
+   935→                <CardTitle className="text-base">{locale === 'es' ? 'Progreso por Empleado' : 'Employee Progress'}</CardTitle>
+   936→              </CardHeader>
+   937→              <CardContent className="p-0">
+   938→                <Table>
+   939→                  <TableHeader>
+   940→                    <TableRow>
+   941→                      <TableHead>{locale === 'es' ? 'Empleado' : 'Employee'}</TableHead>
+   942→                      <TableHead>{locale === 'es' ? 'Cursos Completados' : 'Completed'}</TableHead>
+   943→                      <TableHead>{locale === 'es' ? 'En Progreso' : 'In Progress'}</TableHead>
+   944→                      <TableHead>{locale === 'es' ? 'Score' : 'Score'}</TableHead>
+   945→                    </TableRow>
+   946→                  </TableHeader>
+   947→                  <TableBody>
+   948→                    {empleados.map((emp) => (
+   949→                      <TableRow key={emp.id}>
+   950→                        <TableCell className="text-sm font-medium">{emp.nombre}</TableCell>
+   951→                        <TableCell>
+   952→                          <Badge className="bg-emerald-100 text-emerald-700">{emp.cursosCompletados}</Badge>
+   953→                        </TableCell>
+   954→                        <TableCell>
+   955→                          <Badge variant="outline">{emp.cursosEnProgreso}</Badge>
+   956→                        </TableCell>
+   957→                        <TableCell className="font-semibold text-sm">{emp.puntuacionConocimiento.toFixed(0)}</TableCell>
+   958→                      </TableRow>
+   959→                    ))}
+   960→                  </TableBody>
+   961→                </Table>
+   962→              </CardContent>
+   963→            </Card>
+   964→          </TabsContent>
+   965→
+   966→          {/* ─── CONFIGURACIÓN TAB ────────────────────────────────── */}
+   967→          <TabsContent value="configuracion" className="space-y-6">
+   968→            <h2 className="text-lg font-semibold">{locale === 'es' ? 'Configuración' : 'Settings'}</h2>
+   969→
+   970→            <div className="grid md:grid-cols-2 gap-6">
+   971→              {/* Property info */}
+   972→              <Card>
+   973→                <CardHeader>
+   974→                  <CardTitle className="text-base">{locale === 'es' ? 'Información de la Propiedad' : 'Property Information'}</CardTitle>
+   975→                </CardHeader>
+   976→                <CardContent className="space-y-4">
+   977→                  <div className="space-y-2">
+   978→                    <Label>{locale === 'es' ? 'Nombre de la Propiedad' : 'Property Name'}</Label>
+   979→                    <Input value={configNombre} onChange={(e) => setConfigNombre(e.target.value)} />
+   980→                  </div>
+   981→                  <div className="space-y-2">
+   982→                    <Label>{locale === 'es' ? 'Tipo de Propiedad' : 'Property Type'}</Label>
+   983→                    <Select value={configTipo} onValueChange={setConfigTipo}>
+   984→                      <SelectTrigger><SelectValue /></SelectTrigger>
+   985→                      <SelectContent>
+   986→                        <SelectItem value="hotel">Hotel</SelectItem>
+   987→                        <SelectItem value="restaurante">{locale === 'es' ? 'Restaurante' : 'Restaurant'}</SelectItem>
+   988→                        <SelectItem value="bar">Bar</SelectItem>
+   989→                        <SelectItem value="spa">Spa</SelectItem>
+   990→                        <SelectItem value="resort">Resort</SelectItem>
+   991→                        <SelectItem value="cafe">{locale === 'es' ? 'Café' : 'Café'}</SelectItem>
+   992→                        <SelectItem value="discoteca">{locale === 'es' ? 'Discoteca' : 'Nightclub'}</SelectItem>
+   993→                        <SelectItem value="club_playa">{locale === 'es' ? 'Club de Playa' : 'Beach Club'}</SelectItem>
+   994→                      </SelectContent>
+   995→                    </Select>
+   996→                  </div>
+   997→                  <div className="space-y-2">
+   998→                    <Label>{locale === 'es' ? 'Región' : 'Region'}</Label>
+   999→                    <Input value={configRegion} onChange={(e) => setConfigRegion(e.target.value)} />
+  1000→                  </div>
+  1001→                </CardContent>
+  1002→              </Card>
+  1003→
+  1004→              {/* Currency config */}
+  1005→              <Card>
+  1006→                <CardHeader>
+  1007→                  <CardTitle className="text-base">{locale === 'es' ? 'Configuración de Moneda' : 'Currency Settings'}</CardTitle>
+  1008→                </CardHeader>
+  1009→                <CardContent className="space-y-4">
+  1010→                  <div className="space-y-2">
+  1011→                    <Label>{locale === 'es' ? 'Moneda' : 'Currency'}</Label>
+  1012→                    <Select value={configMoneda} onValueChange={setConfigMoneda}>
+  1013→                      <SelectTrigger><SelectValue /></SelectTrigger>
+  1014→                      <SelectContent>
+  1015→                        <SelectItem value="MXN">MXN - {locale === 'es' ? 'Peso Mexicano' : 'Mexican Peso'}</SelectItem>
+  1016→                        <SelectItem value="USD">USD - {locale === 'es' ? 'Dólar Americano' : 'US Dollar'}</SelectItem>
+  1017→                        <SelectItem value="EUR">EUR - Euro</SelectItem>
+  1018→                        <SelectItem value="GBP">GBP - {locale === 'es' ? 'Libra Esterlina' : 'British Pound'}</SelectItem>
+  1019→                        <SelectItem value="COP">COP - {locale === 'es' ? 'Peso Colombiano' : 'Colombian Peso'}</SelectItem>
+  1020→                        <SelectItem value="ARS">ARS - {locale === 'es' ? 'Peso Argentino' : 'Argentine Peso'}</SelectItem>
+  1021→                        <SelectItem value="BRL">BRL - {locale === 'es' ? 'Real Brasileño' : 'Brazilian Real'}</SelectItem>
+  1022→                      </SelectContent>
+  1023→                    </Select>
+  1024→                  </div>
+  1025→                  <div className="space-y-2">
+  1026→                    <Label>{locale === 'es' ? 'Símbolo de Moneda' : 'Currency Symbol'}</Label>
+  1027→                    <Input value={configSimbolo} onChange={(e) => setConfigSimbolo(e.target.value)} className="w-20" />
+  1028→                  </div>
+  1029→                  <div className="space-y-2">
+  1030→                    <Label>{locale === 'es' ? 'Tasa de Cambio (vs USD)' : 'Exchange Rate (vs USD)'}</Label>
+  1031→                    <Input type="number" step="0.01" value={configTasa} onChange={(e) => setConfigTasa(Number(e.target.value))} />
+  1032→                    <p className="text-xs text-gray-500">
+  1033→                      {locale === 'es' ? '1 USD = ' : '1 USD = '}{configTasa} {configMoneda}
+  1034→                    </p>
+  1035→                  </div>
+  1036→                  <Separator />
+  1037→                  <div className="rounded-lg bg-emerald-50 border border-emerald-100 p-3">
+  1038→                    <p className="text-xs text-emerald-700">
+  1039→                      {locale === 'es' ? 'Ejemplo: $100 USD = ' : 'Example: $100 USD = '}{formatCurrency(100 * configTasa, configMoneda, configSimbolo)}
+  1040→                    </p>
+  1041→                  </div>
+  1042→                </CardContent>
+  1043→              </Card>
+  1044→            </div>
+  1045→
+  1046→            {/* Positions for current property type */}
+  1047→            <Card>
+  1048→              <CardHeader>
+  1049→                <CardTitle className="text-base">
+  1050→                  {locale === 'es' ? 'Puestos Disponibles' : 'Available Positions'} — {configTipo}
+  1051→                </CardTitle>
+  1052→                <CardDescription>
+  1053→                  {locale === 'es' ? 'Puestos configurados para este tipo de propiedad' : 'Positions configured for this property type'}
+  1054→                </CardDescription>
+  1055→              </CardHeader>
+  1056→              <CardContent>
+  1057→                <div className="flex flex-wrap gap-2">
+  1058→                  {positions.map((pos) => (
+  1059→                    <Badge key={pos.id} variant="outline" className="py-1 px-3">
+  1060→                      {locale === 'es' ? pos.name : pos.nameEn}
+  1061→                    </Badge>
+  1062→                  ))}
+  1063→                </div>
+  1064→              </CardContent>
+  1065→            </Card>
+  1066→
+  1067→            <div className="flex justify-end">
+  1068→              <Button onClick={handleSaveConfig} className="bg-emerald-600 hover:bg-emerald-700 min-w-[200px]">
+  1069→                <Settings className="w-4 h-4 mr-2" />
+  1070→                {locale === 'es' ? 'Guardar Configuración' : 'Save Settings'}
+  1071→              </Button>
+  1072→            </div>
+  1073→          </TabsContent>
+  1074→        </Tabs>
+  1075→      </main>
+  1076→
+  1077→      {/* Footer */}
+  1078→      <footer className="mt-auto border-t bg-white px-4 py-3">
+  1079→        <div className="max-w-7xl mx-auto flex flex-col items-center justify-between gap-1 text-xs text-gray-500 sm:flex-row">
+  1080→          <span>© 2025 HospitalityUP · {locale === 'es' ? 'Panel de Gerente' : 'Manager Panel'}</span>
+  1081→          <span>{propiedad?.nombre} · {currencyConfig.currency} · {locale === 'es' ? 'Región' : 'Region'}: {propiedad?.region}</span>
+  1082→        </div>
+  1083→      </footer>
+  1084→    </div>
+  1085→  )
+  1086→}
+  1087→
+  1088→// ─── Helpers ─────────────────────────────────────────────────────
+  1089→function getPositionsForType(type: string, locale: string) {
+  1090→  const positionsMap: Record<string, { id: string; name: string; nameEn: string }[]> = {
+  1091→    hotel: [
+  1092→      { id: 'bellboy', name: 'Bellboy', nameEn: 'Bellboy' },
+  1093→      { id: 'mesero', name: 'Mesero', nameEn: 'Waiter' },
+  1094→      { id: 'recepcionista', name: 'Recepcionista', nameEn: 'Receptionist' },
+  1095→      { id: 'camarista', name: 'Camarista', nameEn: 'Housekeeper' },
+  1096→      { id: 'bartender', name: 'Bartender', nameEn: 'Bartender' },
+  1097→      { id: 'concierge', name: 'Conserje', nameEn: 'Concierge' },
+  1098→      { id: 'gerente', name: 'Gerente', nameEn: 'Manager' },
+  1099→      { id: 'chef', name: 'Chef', nameEn: 'Chef' },
+  1100→      { id: 'supervisor', name: 'Supervisor', nameEn: 'Supervisor' },
+  1101→      { id: 'valet', name: 'Valet', nameEn: 'Valet' },
+  1102→    ],
+  1103→    restaurante: [
+  1104→      { id: 'mesero', name: 'Mesero', nameEn: 'Waiter' },
+  1105→      { id: 'cajero', name: 'Cajero', nameEn: 'Cashier' },
+  1106→      { id: 'bartender', name: 'Bartender', nameEn: 'Bartender' },
+  1107→      { id: 'host', name: 'Host', nameEn: 'Host' },
+  1108→      { id: 'chef', name: 'Chef', nameEn: 'Chef' },
+  1109→      { id: 'sous_chef', name: 'Sous Chef', nameEn: 'Sous Chef' },
+  1110→      { id: 'runner', name: 'Runner', nameEn: 'Runner' },
+  1111→      { id: 'gerente', name: 'Gerente', nameEn: 'Manager' },
+  1112→    ],
+  1113→    bar: [
+  1114→      { id: 'bartender', name: 'Bartender', nameEn: 'Bartender' },
+  1115→      { id: 'mesero', name: 'Mesero', nameEn: 'Waiter' },
+  1116→      { id: 'cantinero', name: 'Cantinero', nameEn: 'Barback' },
+  1117→      { id: 'dj', name: 'DJ', nameEn: 'DJ' },
+  1118→      { id: 'gerente', name: 'Gerente', nameEn: 'Manager' },
+  1119→      { id: 'security', name: 'Security', nameEn: 'Security' },
+  1120→    ],
+  1121→    spa: [
+  1122→      { id: 'terapeuta', name: 'Terapeuta', nameEn: 'Therapist' },
+  1123→      { id: 'recepcionista', name: 'Recepcionista', nameEn: 'Receptionist' },
+  1124→      { id: 'esteticista', name: 'Esteticista', nameEn: 'Beautician' },
+  1125→      { id: 'gerente', name: 'Gerente', nameEn: 'Manager' },
+  1126→    ],
+  1127→    resort: [
+  1128→      { id: 'bellboy', name: 'Bellboy', nameEn: 'Bellboy' },
+  1129→      { id: 'mesero', name: 'Mesero', nameEn: 'Waiter' },
+  1130→      { id: 'recepcionista', name: 'Recepcionista', nameEn: 'Receptionist' },
+  1131→      { id: 'camarista', name: 'Camarista', nameEn: 'Housekeeper' },
+  1132→      { id: 'bartender', name: 'Bartender', nameEn: 'Bartender' },
+  1133→      { id: 'animador', name: 'Animador', nameEn: 'Animator' },
+  1134→      { id: 'lifeguard', name: 'Salvavidas', nameEn: 'Lifeguard' },
+  1135→      { id: 'instructor_deportivo', name: 'Instructor Deportivo', nameEn: 'Sports Instructor' },
+  1136→      { id: 'gerente', name: 'Gerente', nameEn: 'Manager' },
+  1137→      { id: 'chef', name: 'Chef', nameEn: 'Chef' },
+  1138→    ],
+  1139→    cafe: [
+  1140→      { id: 'barista', name: 'Barista', nameEn: 'Barista' },
+  1141→      { id: 'pastelero', name: 'Pastelero', nameEn: 'Pastry Chef' },
+  1142→      { id: 'cajero', name: 'Cajero', nameEn: 'Cashier' },
+  1143→      { id: 'gerente', name: 'Gerente', nameEn: 'Manager' },
+  1144→    ],
+  1145→    discoteca: [
+  1146→      { id: 'bartender', name: 'Bartender', nameEn: 'Bartender' },
+  1147→      { id: 'cantinero', name: 'Cantinero', nameEn: 'Barback' },
+  1148→      { id: 'security', name: 'Security', nameEn: 'Security' },
+  1149→      { id: 'dj', name: 'DJ', nameEn: 'DJ' },
+  1150→      { id: 'gerente', name: 'Gerente', nameEn: 'Manager' },
+  1151→      { id: 'promotor', name: 'Promotor', nameEn: 'Promoter' },
+  1152→    ],
+  1153→    club_playa: [
+  1154→      { id: 'mesero', name: 'Mesero', nameEn: 'Waiter' },
+  1155→      { id: 'bartender', name: 'Bartender', nameEn: 'Bartender' },
+  1156→      { id: 'animador', name: 'Animador', nameEn: 'Animator' },
+  1157→      { id: 'lifeguard', name: 'Salvavidas', nameEn: 'Lifeguard' },
+  1158→      { id: 'gerente', name: 'Gerente', nameEn: 'Manager' },
+  1159→    ],
+  1160→  }
+  1161→  return positionsMap[type] || positionsMap.hotel
+  1162→}
+  1163→
+  1164→function estadoLabel(estado: string, locale: string): string {
+  1165→  const labels: Record<string, Record<string, string>> = {
+  1166→    active: { es: 'Activo', en: 'Active' },
+  1167→    onboarding: { es: 'Onboarding', en: 'Onboarding' },
+  1168→    offboarding: { es: 'Offboarding', en: 'Offboarding' },
+  1169→    inactive: { es: 'Inactivo', en: 'Inactive' },
+  1170→  }
+  1171→  return labels[estado]?.[locale] || estado
+  1172→}
+  1173→
+  1174→function estadoBadge(estado: string, locale: string): string {
+  1175→  const badges: Record<string, string> = {
+  1176→    active: 'bg-emerald-100 text-emerald-700',
+  1177→    onboarding: 'bg-blue-100 text-blue-700',
+  1178→    offboarding: 'bg-amber-100 text-amber-700',
+  1179→    inactive: 'bg-gray-100 text-gray-600',
+  1180→  }
+  1181→  return badges[estado] || 'bg-gray-100 text-gray-600'
+  1182→}
+  1183→
+  1184→function categoriaLabel(cat: string, locale: string): string {
+  1185→  const labels: Record<string, Record<string, string>> = {
+  1186→    platillo: { es: 'Platillo', en: 'Dish' },
+  1187→    bebida: { es: 'Bebida', en: 'Drink' },
+  1188→    tour: { es: 'Tour', en: 'Tour' },
+  1189→    masaje: { es: 'Masaje', en: 'Massage' },
+  1190→    habitacion: { es: 'Habitación', en: 'Room' },
+  1191→    experiencia: { es: 'Experiencia', en: 'Experience' },
+  1192→    paquete: { es: 'Paquete', en: 'Package' },
+  1193→    menu: { es: 'Menú', en: 'Menu' },
+  1194→    upselling: { es: 'Upselling', en: 'Upselling' },
+  1195→    room_upgrade: { es: 'Upgrade Habitación', en: 'Room Upgrade' },
+  1196→  }
+  1197→  return labels[cat]?.[locale] || cat
+  1198→}
+  1199→

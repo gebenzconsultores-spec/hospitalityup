@@ -1,0 +1,904 @@
+     1→'use client'
+     2→
+     3→import { useState, useEffect, useCallback } from 'react'
+     4→import {
+     5→  DollarSign,
+     6→  Star,
+     7→  UserX,
+     8→  AlertTriangle,
+     9→  GraduationCap,
+    10→  PiggyBank,
+    11→  TrendingUp,
+    12→  TrendingDown,
+    13→  Bot,
+    14→  Users,
+    15→  ArrowRight,
+    16→  Calendar,
+    17→  MapPin,
+    18→  Monitor,
+    19→} from 'lucide-react'
+    20→import {
+    21→  Bar,
+    22→  Line,
+    23→  ComposedChart,
+    24→  CartesianGrid,
+    25→  XAxis,
+    26→  YAxis,
+    27→} from 'recharts'
+    28→
+    29→import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+    30→import { Badge } from '@/components/ui/badge'
+    31→import { Button } from '@/components/ui/button'
+    32→import { Progress } from '@/components/ui/progress'
+    33→import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+    34→import { Separator } from '@/components/ui/separator'
+    35→import {
+    36→  Dialog,
+    37→  DialogContent,
+    38→  DialogDescription,
+    39→  DialogFooter,
+    40→  DialogHeader,
+    41→  DialogTitle,
+    42→} from '@/components/ui/dialog'
+    43→import {
+    44→  Select,
+    45→  SelectContent,
+    46→  SelectItem,
+    47→  SelectTrigger,
+    48→  SelectValue,
+    49→} from '@/components/ui/select'
+    50→import { Input } from '@/components/ui/input'
+    51→import { Label } from '@/components/ui/label'
+    52→import { Textarea } from '@/components/ui/textarea'
+    53→import {
+    54→  ChartContainer,
+    55→  ChartTooltip,
+    56→  ChartTooltipContent,
+    57→  ChartLegend,
+    58→  ChartLegendContent,
+    59→  type ChartConfig,
+    60→} from '@/components/ui/chart'
+    61→import { useAppStore } from '@/lib/store'
+    62→import { translations } from '@/lib/i18n'
+    63→import { toast } from 'sonner'
+    64→
+    65→// ─── Types ───────────────────────────────────────────────────
+    66→interface DashboardData {
+    67→  totalEmpleados: number
+    68→  empleadosActivos: number
+    69→  npsPromedio: number
+    70→  totalUpselling: number
+    71→  tasaRotacion: number
+    72→  riesgoCritico: number
+    73→  riesgoAlto: number
+    74→  cursosCompletados: number
+    75→  cursosEnProgreso: number
+    76→  ahorroEstimado: number
+    77→  alertasPendientes: number
+    78→  montoUpsellingTotal: number
+    79→  montoTotalVentas: number
+    80→  totalVentas: number
+    81→  ventasUpselling: number
+    82→  puntuacionTotalProm: number
+    83→  topPerformers: TopPerformer[]
+    84→  empleadosRiesgo: EmpleadoRiesgo[]
+    85→}
+    86→
+    87→interface TopPerformer {
+    88→  id: string
+    89→  empleadoId: string
+    90→  nombre: string
+    91→  posicion: string
+    92→  departamento: string
+    93→  puntuacionTotal: number
+    94→  npsPromedio: number
+    95→  totalUpselling: number
+    96→  indiceFelicidad: number
+    97→  foto: string | null
+    98→  propiedad: { nombre: string; region: string }
+    99→}
+   100→
+   101→interface EmpleadoRiesgo {
+   102→  id: string
+   103→  empleadoId: string
+   104→  nombre: string
+   105→  posicion: string
+   106→  departamento: string
+   107→  riesgoBaja: number
+   108→  nivelRiesgoBaja: string
+   109→  indiceFelicidad: number
+   110→  npsPromedio: number
+   111→  foto: string | null
+   112→  propiedad: { nombre: string; region: string }
+   113→}
+   114→
+   115→interface AlertaRiesgo {
+   116→  id: string
+   117→  empleadoId: string
+   118→  tipo: string
+   119→  severidad: string
+   120→  mensaje: string
+   121→  probabilidad: number
+   122→  generadoPorIA: boolean
+   123→  leida: boolean
+   124→  resuelta: boolean
+   125→  empleado: {
+   126→    id: string
+   127→    nombre: string
+   128→    empleadoId: string
+   129→    posicion: string
+   130→    foto: string | null
+   131→    departamento: string
+   132→    riesgoBaja: number
+   133→    indiceFelicidad: number
+   134→    propiedad: { nombre: string; region: string }
+   135→  }
+   136→  propiedad: { nombre: string; region: string } | null
+   137→  createdAt: string
+   138→}
+   139→
+   140→interface Candidato {
+   141→  id: string
+   142→  nombre: string
+   143→  email: string | null
+   144→  telefono: string | null
+   145→  posicion: string
+   146→  posicionEn: string | null
+   147→  region: string
+   148→  experiencia: number
+   149→  habilidades: string | null
+   150→  estado: string
+   151→  puntuacionEntrevista: number | null
+   152→  notas: string | null
+   153→  fuente: string
+   154→  propiedad: { nombre: string; region: string } | null
+   155→}
+   156→
+   157→interface CapacitacionItem {
+   158→  id: string
+   159→  titulo: string
+   160→  tituloEn: string | null
+   161→  categoria: string
+   162→  modalidad: string
+   163→}
+   164→
+   165→// ─── Helpers ─────────────────────────────────────────────────
+   166→function getInitials(name: string): string {
+   167→  return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+   168→}
+   169→
+   170→function getNpsColor(nps: number): string {
+   171→  if (nps >= 9) return 'text-emerald-600 dark:text-emerald-400'
+   172→  if (nps >= 7) return 'text-amber-600 dark:text-amber-400'
+   173→  return 'text-red-600 dark:text-red-400'
+   174→}
+   175→
+   176→function getNpsBg(nps: number): string {
+   177→  if (nps >= 9) return 'bg-emerald-100 dark:bg-emerald-900/30'
+   178→  if (nps >= 7) return 'bg-amber-100 dark:bg-amber-900/30'
+   179→  return 'bg-red-100 dark:bg-red-900/30'
+   180→}
+   181→
+   182→function getSeverityColor(severity: string): { bg: string; text: string; border: string } {
+   183→  switch (severity) {
+   184→    case 'critico':
+   185→      return { bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-700 dark:text-red-400', border: 'border-red-200 dark:border-red-800' }
+   186→    case 'alto':
+   187→      return { bg: 'bg-amber-100 dark:bg-amber-900/30', text: 'text-amber-700 dark:text-amber-400', border: 'border-amber-200 dark:border-amber-800' }
+   188→    case 'medio':
+   189→      return { bg: 'bg-yellow-100 dark:bg-yellow-900/30', text: 'text-yellow-700 dark:text-yellow-400', border: 'border-yellow-200 dark:border-yellow-800' }
+   190→    default:
+   191→      return { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-400', border: 'border-green-200 dark:border-green-800' }
+   192→  }
+   193→}
+   194→
+   195→function getRiskBadgeColor(level: string): string {
+   196→  switch (level) {
+   197→    case 'critico': return 'bg-red-500 text-white'
+   198→    case 'alto': return 'bg-amber-500 text-white'
+   199→    case 'medio': return 'bg-yellow-500 text-white'
+   200→    default: return 'bg-green-500 text-white'
+   201→  }
+   202→}
+   203→
+   204→// ─── Chart Configs ───────────────────────────────────────────
+   205→const upsellingVsTrainingConfig: ChartConfig = {
+   206→  cursos: { label: 'Cursos Completados', color: '#0d9488' },
+   207→  upselling: { label: 'Upselling ($)', color: '#10b981' },
+   208→  tendencia: { label: 'Tendencia', color: '#f59e0b' },
+   209→}
+   210→
+   211→const npsTrendConfig: ChartConfig = {
+   212→  nps: { label: 'NPS', color: '#22c55e' },
+   213→}
+   214→
+   215→const topPerformersChartConfig: ChartConfig = {
+   216→  score: { label: 'Score', color: '#0d9488' },
+   217→}
+   218→
+   219→// ─── Main Component ──────────────────────────────────────────
+   220→export function DashboardGerencial() {
+   221→  const { locale, selectedProperty } = useAppStore()
+   222→  const t = translations[locale].dashboard
+   223→  const tc = translations[locale].common
+   224→
+   225→  const [data, setData] = useState<DashboardData | null>(null)
+   226→  const [alertas, setAlertas] = useState<AlertaRiesgo[]>([])
+   227→  const [candidatos, setCandidatos] = useState<Candidato[]>([])
+   228→  const [capacitaciones, setCapacitaciones] = useState<CapacitacionItem[]>([])
+   229→  const [loading, setLoading] = useState(true)
+   230→  const [showCapacitacionDialog, setShowCapacitacionDialog] = useState(false)
+   231→  const [showReemplazoDialog, setShowReemplazoDialog] = useState(false)
+   232→  const [reemplazoEmpleado, setReemplazoEmpleado] = useState<AlertaRiesgo | null>(null)
+   233→  const [propiedades, setPropiedades] = useState<{ id: string; nombre: string }[]>([])
+   234→
+   235→  // Capacitacion form state
+   236→  const [capForm, setCapForm] = useState({
+   237→    modalidad: 'presencial',
+   238→    capacitacionId: '',
+   239→    fechaSolicitada: '',
+   240→    participantes: '1',
+   241→    propiedadId: '',
+   242→    notas: '',
+   243→  })
+   244→
+   245→  const fetchData = useCallback(async () => {
+   246→    setLoading(true)
+   247→    try {
+   248→      const propParam = selectedProperty !== 'all' ? `?propiedadId=${selectedProperty}` : ''
+   249→      const [dashRes, alertasRes, capRes, propRes] = await Promise.all([
+   250→        fetch(`/api/dashboard${propParam}`),
+   251→        fetch(`/api/alertas${propParam ? propParam + '&' : '?'}resuelta=false&limit=10`),
+   252→        fetch(`/api/capacitaciones`),
+   253→        fetch(`/api/propiedades`),
+   254→      ])
+   255→      const dashData = await dashRes.json()
+   256→      const alertasData = await alertasRes.json()
+   257→      const capData = await capRes.json()
+   258→      const propData = await propRes.json()
+   259→
+   260→      setData(dashData)
+   261→      setAlertas(alertasData.alertas || [])
+   262→      setCapacitaciones(Array.isArray(capData) ? capData : [])
+   263→      setPropiedades(Array.isArray(propData) ? propData.map((p: { id: string; nombre: string }) => ({ id: p.id, nombre: p.nombre })) : [])
+   264→    } catch (err) {
+   265→      console.error('Error fetching dashboard data:', err)
+   266→    } finally {
+   267→      setLoading(false)
+   268→    }
+   269→  }, [selectedProperty])
+   270→
+   271→  useEffect(() => {
+   272→    fetchData()
+   273→  }, [fetchData])
+   274→
+   275→  const fetchCandidatos = useCallback(async (posicion: string, region: string) => {
+   276→    try {
+   277→      const params = new URLSearchParams({ estado: 'disponible' })
+   278→      if (posicion) params.set('posicion', posicion)
+   279→      if (region) params.set('region', region)
+   280→      const res = await fetch(`/api/candidatos?${params}`)
+   281→      const data = await res.json()
+   282→      setCandidatos(data.candidatos || [])
+   283→    } catch (err) {
+   284→      console.error('Error fetching candidatos:', err)
+   285→      setCandidatos([])
+   286→    }
+   287→  }, [])
+   288→
+   289→  const handleActivarReemplazo = (alerta: AlertaRiesgo) => {
+   290→    setReemplazoEmpleado(alerta)
+   291→    setShowReemplazoDialog(true)
+   292→    fetchCandidatos(alerta.empleado.posicion, alerta.empleado.propiedad?.region || '')
+   293→  }
+   294→
+   295→  const handleContratarCandidato = async (candidato: Candidato) => {
+   296→    if (!reemplazoEmpleado) return
+   297→    try {
+   298→      const res = await fetch('/api/candidatos', {
+   299→        method: 'PATCH',
+   300→        headers: { 'Content-Type': 'application/json' },
+   301→        body: JSON.stringify({
+   302→          id: candidato.id,
+   303→          estado: 'contratado',
+   304→          empleadoReemplazaId: reemplazoEmpleado.empleado.id,
+   305→          propiedadId: reemplazoEmpleado.propiedad?.id || selectedProperty !== 'all' ? selectedProperty : undefined,
+   306→        }),
+   307→      })
+   308→      if (res.ok) {
+   309→        toast.success(locale === 'es' ? 'Candidato contratado exitosamente' : 'Candidate hired successfully')
+   310→        setShowReemplazoDialog(false)
+   311→        setCandidatos(prev => prev.filter(c => c.id !== candidato.id))
+   312→      }
+   313→    } catch {
+   314→      toast.error(tc.error)
+   315→    }
+   316→  }
+   317→
+   318→  const handleSolicitarCapacitacion = async () => {
+   319→    try {
+   320→      const propId = capForm.propiedadId || (selectedProperty !== 'all' ? selectedProperty : propiedades[0]?.id)
+   321→      if (!propId) {
+   322→        toast.error(locale === 'es' ? 'Selecciona una propiedad' : 'Select a property')
+   323→        return
+   324→      }
+   325→      if (!capForm.fechaSolicitada) {
+   326→        toast.error(locale === 'es' ? 'Selecciona una fecha' : 'Select a date')
+   327→        return
+   328→      }
+   329→
+   330→      const res = await fetch('/api/solicitudes', {
+   331→        method: 'POST',
+   332→        headers: { 'Content-Type': 'application/json' },
+   333→        body: JSON.stringify({
+   334→          propiedadId: propId,
+   335→          capacitacionId: capForm.capacitacionId || null,
+   336→          modalidad: capForm.modalidad,
+   337→          fechaSolicitada: capForm.fechaSolicitada,
+   338→          participantes: parseInt(capForm.participantes),
+   339→          notas: capForm.notas || null,
+   340→          estado: 'pendiente',
+   341→        }),
+   342→      })
+   343→      if (res.ok) {
+   344→        toast.success(t.solicitudExitosa)
+   345→        setShowCapacitacionDialog(false)
+   346→        setCapForm({ modalidad: 'presencial', capacitacionId: '', fechaSolicitada: '', participantes: '1', propiedadId: '', notas: '' })
+   347→      }
+   348→    } catch {
+   349→      toast.error(tc.error)
+   350→    }
+   351→  }
+   352→
+   353→  // ─── Derived chart data ───────────────────────────────────
+   354→  const upsellingVsTrainingData = [
+   355→    { name: locale === 'es' ? 'Ene' : 'Jan', cursos: 3, upselling: 2400, tendencia: 2200 },
+   356→    { name: locale === 'es' ? 'Feb' : 'Feb', cursos: 5, upselling: 3200, tendencia: 2800 },
+   357→    { name: locale === 'es' ? 'Mar' : 'Mar', cursos: 8, upselling: 4100, tendencia: 3400 },
+   358→    { name: locale === 'es' ? 'Abr' : 'Apr', cursos: 12, upselling: 5300, tendencia: 4000 },
+   359→    { name: locale === 'es' ? 'May' : 'May', cursos: 15, upselling: 6800, tendencia: 4600 },
+   360→    { name: locale === 'es' ? 'Jun' : 'Jun', cursos: data?.cursosCompletados || 18, upselling: data?.montoUpsellingTotal || 7200, tendencia: 5200 },
+   361→  ]
+   362→
+   363→  const npsTrendData = [
+   364→    { name: locale === 'es' ? 'Sem 1' : 'Wk 1', nps: 7.8 },
+   365→    { name: locale === 'es' ? 'Sem 2' : 'Wk 2', nps: 8.1 },
+   366→    { name: locale === 'es' ? 'Sem 3' : 'Wk 3', nps: 7.9 },
+   367→    { name: locale === 'es' ? 'Sem 4' : 'Wk 4', nps: 8.4 },
+   368→    { name: locale === 'es' ? 'Sem 5' : 'Wk 5', nps: 8.2 },
+   369→    { name: locale === 'es' ? 'Sem 6' : 'Wk 6', nps: data?.npsPromedio || 8.7 },
+   370→  ]
+   371→
+   372→  const topPerformersData = (data?.topPerformers || []).map(p => ({
+   373→    name: p.nombre.split(' ')[0],
+   374→    score: Math.round(p.puntuacionTotal),
+   375→  }))
+   376→
+   377→  // ─── Loading skeleton ─────────────────────────────────────
+   378→  if (loading || !data) {
+   379→    return (
+   380→      <div className="space-y-6">
+   381→        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
+   382→          {Array.from({ length: 6 }).map((_, i) => (
+   383→            <Card key={i} className="py-4">
+   384→              <CardContent className="px-4">
+   385→                <div className="h-20 animate-pulse rounded bg-muted" />
+   386→              </CardContent>
+   387→            </Card>
+   388→          ))}
+   389→        </div>
+   390→        <div className="grid gap-4 md:grid-cols-2">
+   391→          {Array.from({ length: 2 }).map((_, i) => (
+   392→            <Card key={i}>
+   393→              <CardContent className="p-6">
+   394→                <div className="h-64 animate-pulse rounded bg-muted" />
+   395→              </CardContent>
+   396→            </Card>
+   397→          ))}
+   398→        </div>
+   399→      </div>
+   400→    )
+   401→  }
+   402→
+   403→  // ─── Metric cards ─────────────────────────────────────────
+   404→  const ticketPromedio = data.totalVentas > 0 ? data.montoTotalVentas / data.totalVentas : 0
+   405→  const metrics = [
+   406→    {
+   407→      title: t.ticketPromedio,
+   408→      value: `$${ticketPromedio.toFixed(0)} USD`,
+   409→      icon: DollarSign,
+   410→      iconBg: 'bg-teal-100 dark:bg-teal-900/30',
+   411→      iconColor: 'text-teal-600 dark:text-teal-400',
+   412→      trend: '+12%',
+   413→      trendUp: true,
+   414→    },
+   415→    {
+   416→      title: t.npsPromedio,
+   417→      value: data.npsPromedio.toFixed(1),
+   418→      icon: Star,
+   419→      iconBg: getNpsBg(data.npsPromedio),
+   420→      iconColor: getNpsColor(data.npsPromedio),
+   421→      trend: '+0.4',
+   422→      trendUp: true,
+   423→      npsValue: data.npsPromedio,
+   424→    },
+   425→    {
+   426→      title: t.tasaRotacion,
+   427→      value: `${data.tasaRotacion}%`,
+   428→      icon: UserX,
+   429→      iconBg: data.tasaRotacion > 15 ? 'bg-red-100 dark:bg-red-900/30' : data.tasaRotacion > 10 ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-green-100 dark:bg-green-900/30',
+   430→      iconColor: data.tasaRotacion > 15 ? 'text-red-600 dark:text-red-400' : data.tasaRotacion > 10 ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-400',
+   431→      trend: '-3%',
+   432→      trendUp: false,
+   433→    },
+   434→    {
+   435→      title: t.empleadosEnRiesgo,
+   436→      value: `${data.riesgoCritico + data.riesgoAlto}`,
+   437→      icon: AlertTriangle,
+   438→      iconBg: 'bg-red-100 dark:bg-red-900/30',
+   439→      iconColor: 'text-red-600 dark:text-red-400',
+   440→      severity: `${data.riesgoCritico} ${locale === 'es' ? 'crítico' : 'critical'}`,
+   441→    },
+   442→    {
+   443→      title: t.cursosCompletados,
+   444→      value: `${data.cursosCompletados}`,
+   445→      icon: GraduationCap,
+   446→      iconBg: 'bg-teal-100 dark:bg-teal-900/30',
+   447→      iconColor: 'text-teal-600 dark:text-teal-400',
+   448→      trend: '+18%',
+   449→      trendUp: true,
+   450→    },
+   451→    {
+   452→      title: t.ahorroRetencion,
+   453→      value: `$${(data.ahorroEstimado / 100).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} USD`,
+   454→      icon: PiggyBank,
+   455→      iconBg: 'bg-emerald-100 dark:bg-emerald-900/30',
+   456→      iconColor: 'text-emerald-600 dark:text-emerald-400',
+   457→      trend: '+22%',
+   458→      trendUp: true,
+   459→    },
+   460→  ]
+   461→
+   462→  return (
+   463→    <div className="space-y-6">
+   464→      {/* ─── Header with Capacitación Button ─────────────── */}
+   465→      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+   466→        <div>
+   467→          <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
+   468→          <p className="text-sm text-muted-foreground">
+   469→            {locale === 'es' ? 'Resumen ejecutivo de tu operación' : 'Executive summary of your operations'}
+   470→          </p>
+   471→        </div>
+   472→        <Button
+   473→          className="bg-teal-600 hover:bg-teal-700 text-white gap-2"
+   474→          onClick={() => setShowCapacitacionDialog(true)}
+   475→        >
+   476→          <GraduationCap className="size-4" />
+   477→          {t.solicitarCapacitacion}
+   478→        </Button>
+   479→      </div>
+   480→
+   481→      {/* ─── Metrics Cards Row ────────────────────────────── */}
+   482→      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
+   483→        {metrics.map((metric) => (
+   484→          <Card key={metric.title} className="py-4">
+   485→            <CardContent className="flex flex-col gap-3 px-4">
+   486→              <div className="flex items-center gap-3">
+   487→                <div className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${metric.iconBg}`}>
+   488→                  <metric.icon className={`size-4 ${metric.iconColor}`} />
+   489→                </div>
+   490→                <span className="text-xs font-medium text-muted-foreground leading-tight">
+   491→                  {metric.title}
+   492→                </span>
+   493→              </div>
+   494→              <div className="flex flex-col gap-1">
+   495→                <span className="text-xl font-bold tracking-tight">{metric.value}</span>
+   496→                <span className="flex items-center gap-1 text-xs">
+   497→                  {metric.trendUp ? (
+   498→                    <TrendingUp className="size-3 text-emerald-500" />
+   499→                  ) : (
+   500→                    <TrendingDown className="size-3 text-emerald-500" />
+   501→                  )}
+   502→                  {metric.trend && (
+   503→                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+   504→                      {metric.trend}
+   505→                    </span>
+   506→                  )}
+   507→                  {metric.severity && (
+   508→                    <Badge className={`text-[9px] px-1 py-0 ${getRiskBadgeColor('critico')}`}>
+   509→                      {metric.severity}
+   510→                    </Badge>
+   511→                  )}
+   512→                  <span className="text-muted-foreground">{t.vsMesAnterior}</span>
+   513→                </span>
+   514→              </div>
+   515→            </CardContent>
+   516→          </Card>
+   517→        ))}
+   518→      </div>
+   519→
+   520→      {/* ─── Charts Row ───────────────────────────────────── */}
+   521→      <div className="grid gap-4 md:grid-cols-2">
+   522→        {/* Capacitación vs Upselling ComposedChart */}
+   523→        <Card>
+   524→          <CardHeader className="pb-2">
+   525→            <CardTitle className="text-base">{t.upsellingVsCapacitacion}</CardTitle>
+   526→            <CardDescription className="text-xs">
+   527→              {locale === 'es' ? 'Correlación entre cursos completados e ingresos por upselling' : 'Correlation between completed courses and upselling revenue'}
+   528→            </CardDescription>
+   529→          </CardHeader>
+   530→          <CardContent>
+   531→            <ChartContainer config={upsellingVsTrainingConfig} className="h-[280px] w-full">
+   532→              <ComposedChart data={upsellingVsTrainingData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+   533→                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+   534→                <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={8} />
+   535→                <YAxis yAxisId="left" tickLine={false} axisLine={false} tickMargin={8} />
+   536→                <YAxis yAxisId="right" orientation="right" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`} />
+   537→                <ChartTooltip content={<ChartTooltipContent />} />
+   538→                <ChartLegend content={<ChartLegendContent />} />
+   539→                <Bar yAxisId="left" dataKey="cursos" fill="var(--color-cursos)" radius={[4, 4, 0, 0]} />
+   540→                <Bar yAxisId="right" dataKey="upselling" fill="var(--color-upselling)" radius={[4, 4, 0, 0]} />
+   541→                <Line yAxisId="right" type="monotone" dataKey="tendencia" stroke="var(--color-tendencia)" strokeWidth={2} dot={{ r: 3 }} />
+   542→              </ComposedChart>
+   543→            </ChartContainer>
+   544→          </CardContent>
+   545→        </Card>
+   546→
+   547→        {/* NPS Trend */}
+   548→        <Card>
+   549→          <CardHeader className="pb-2">
+   550→            <CardTitle className="text-base">{t.npsTendencia}</CardTitle>
+   551→            <CardDescription className="text-xs">
+   552→              {locale === 'es' ? 'Evolución semanal del NPS promedio' : 'Weekly NPS average evolution'}
+   553→            </CardDescription>
+   554→          </CardHeader>
+   555→          <CardContent>
+   556→            <ChartContainer config={npsTrendConfig} className="h-[280px] w-full">
+   557→              <ComposedChart data={npsTrendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+   558→                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+   559→                <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={8} />
+   560→                <YAxis domain={[6, 10]} tickLine={false} axisLine={false} tickMargin={8} />
+   561→                <ChartTooltip content={<ChartTooltipContent />} />
+   562→                <Line type="monotone" dataKey="nps" stroke="var(--color-nps)" strokeWidth={2.5} dot={{ r: 4, fill: 'var(--color-nps)' }} activeDot={{ r: 6 }} />
+   563→              </ComposedChart>
+   564→            </ChartContainer>
+   565→          </CardContent>
+   566→        </Card>
+   567→      </div>
+   568→
+   569→      {/* ─── Top Performers + Alertas Row ─────────────────── */}
+   570→      <div className="grid gap-4 lg:grid-cols-3">
+   571→        {/* Top Performers */}
+   572→        <Card>
+   573→          <CardHeader className="pb-2">
+   574→            <CardTitle className="text-base">{t.topPerformers}</CardTitle>
+   575→          </CardHeader>
+   576→          <CardContent className="space-y-4">
+   577→            {data.topPerformers.length > 0 ? (
+   578→              <>
+   579→                {/* Horizontal bar chart */}
+   580→                <ChartContainer config={topPerformersChartConfig} className="h-[160px] w-full">
+   581→                  <ComposedChart data={topPerformersData} layout="vertical" margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
+   582→                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+   583→                    <XAxis type="number" domain={[0, 100]} tickLine={false} axisLine={false} />
+   584→                    <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} width={50} />
+   585→                    <ChartTooltip content={<ChartTooltipContent />} />
+   586→                    <Bar dataKey="score" fill="var(--color-score)" radius={[0, 4, 4, 0]} />
+   587→                  </ComposedChart>
+   588→                </ChartContainer>
+   589→                <Separator />
+   590→                {data.topPerformers.slice(0, 3).map((employee, index) => (
+   591→                  <div key={employee.id} className="flex items-center gap-3">
+   592→                    <div className="relative">
+   593→                      <Avatar className="size-9">
+   594→                        <AvatarFallback className="bg-teal-100 text-teal-700 text-xs font-semibold dark:bg-teal-900/40 dark:text-teal-300">
+   595→                          {getInitials(employee.nombre)}
+   596→                        </AvatarFallback>
+   597→                      </Avatar>
+   598→                      <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-amber-400 text-[10px] font-bold text-amber-900">
+   599→                        {index + 1}
+   600→                      </span>
+   601→                    </div>
+   602→                    <div className="flex-1 min-w-0">
+   603→                      <div className="flex items-center justify-between gap-2">
+   604→                        <span className="text-sm font-medium truncate">{employee.nombre}</span>
+   605→                        <Badge variant="secondary" className="shrink-0 bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400 text-xs">
+   606→                          {Math.round(employee.puntuacionTotal)}
+   607→                        </Badge>
+   608→                      </div>
+   609→                      <p className="text-xs text-muted-foreground truncate">{employee.posicion}</p>
+   610→                      <Progress value={employee.puntuacionTotal} className="mt-1.5 h-1.5 bg-teal-100 dark:bg-teal-900/30 [&>[data-slot=progress-indicator]]:bg-teal-500" />
+   611→                    </div>
+   612→                  </div>
+   613→                ))}
+   614→              </>
+   615→            ) : (
+   616→              <p className="text-sm text-muted-foreground text-center py-8">{tc.sinDatos}</p>
+   617→            )}
+   618→          </CardContent>
+   619→        </Card>
+   620→
+   621→        {/* Alertas de Riesgo de Baja - CRUCIAL */}
+   622→        <Card className="lg:col-span-2">
+   623→          <CardHeader className="pb-2">
+   624→            <div className="flex items-center justify-between">
+   625→              <CardTitle className="text-base flex items-center gap-2">
+   626→                <AlertTriangle className="size-4 text-amber-500" />
+   627→                {t.alertasRiesgo}
+   628→              </CardTitle>
+   629→              <Badge variant="outline" className="bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 border-red-200 dark:border-red-800">
+   630→                {alertas.length} {locale === 'es' ? 'alertas' : 'alerts'}
+   631→              </Badge>
+   632→            </div>
+   633→          </CardHeader>
+   634→          <CardContent>
+   635→            {alertas.length > 0 ? (
+   636→              <div className="max-h-96 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
+   637→                {alertas.map((alerta) => {
+   638→                  const sev = getSeverityColor(alerta.severidad)
+   639→                  return (
+   640→                    <div key={alerta.id} className={`rounded-lg border p-4 ${sev.border} ${sev.bg} transition-all hover:shadow-sm`}>
+   641→                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+   642→                        <div className="flex items-start gap-3 flex-1 min-w-0">
+   643→                          <Avatar className="size-10 shrink-0 mt-0.5">
+   644→                            <AvatarFallback className="text-xs font-semibold">
+   645→                              {getInitials(alerta.empleado.nombre)}
+   646→                            </AvatarFallback>
+   647→                          </Avatar>
+   648→                          <div className="flex-1 min-w-0">
+   649→                            <div className="flex flex-wrap items-center gap-2 mb-1">
+   650→                              <span className="font-semibold text-sm">{alerta.empleado.nombre}</span>
+   651→                              <Badge className={`text-[10px] px-1.5 py-0.5 ${getRiskBadgeColor(alerta.severidad)}`}>
+   652→                                {t[alerta.severidad as keyof typeof t] || alerta.severidad}
+   653→                              </Badge>
+   654→                              {alerta.generadoPorIA && (
+   655→                                <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 gap-1 bg-violet-50 text-violet-700 dark:bg-violet-900/20 dark:text-violet-400 border-violet-200 dark:border-violet-800">
+   656→                                  <Bot className="size-3" />
+   657→                                  {t.analizadoPorIA}
+   658→                                </Badge>
+   659→                              )}
+   660→                            </div>
+   661→                            <p className="text-xs text-muted-foreground">
+   662→                              {alerta.empleado.posicion} · {alerta.empleado.propiedad?.nombre || ''}
+   663→                            </p>
+   664→
+   665→                            {/* Probabilidad de abandono */}
+   666→                            <div className="mt-2">
+   667→                              <div className="flex items-center justify-between mb-1">
+   668→                                <span className="text-[11px] font-medium text-muted-foreground">
+   669→                                  {t.probabilidadAbandono}
+   670→                                </span>
+   671→                                <span className="text-[11px] font-bold">{Math.round(alerta.probabilidad)}%</span>
+   672→                              </div>
+   673→                              <Progress
+   674→                                value={alerta.probabilidad}
+   675→                                className="h-2 [&>[data-slot=progress-indicator]]:bg-red-500"
+   676→                              />
+   677→                            </div>
+   678→
+   679→                            {/* Justificación y sugerencia */}
+   680→                            <div className="mt-2 space-y-1">
+   681→                              <p className="text-xs leading-relaxed">
+   682→                                <span className="font-medium">{t.justificacion}:</span>{' '}
+   683→                                {alerta.mensaje?.substring(0, 200)}{alerta.mensaje && alerta.mensaje.length > 200 ? '...' : ''}
+   684→                              </p>
+   685→                            </div>
+   686→                          </div>
+   687→                        </div>
+   688→
+   689→                        <Button
+   690→                          size="sm"
+   691→                          variant="outline"
+   692→                          className="shrink-0 gap-1.5 text-xs border-amber-300 dark:border-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/30"
+   693→                          onClick={() => handleActivarReemplazo(alerta)}
+   694→                        >
+   695→                          <Users className="size-3.5" />
+   696→                          {t.activarReemplazo}
+   697→                          <ArrowRight className="size-3" />
+   698→                        </Button>
+   699→                      </div>
+   700→                    </div>
+   701→                  )
+   702→                })}
+   703→              </div>
+   704→            ) : (
+   705→              <div className="flex flex-col items-center py-8 text-center">
+   706→                <div className="size-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-3">
+   707→                  <AlertTriangle className="size-6 text-green-600 dark:text-green-400" />
+   708→                </div>
+   709→                <p className="text-sm text-muted-foreground">{t.noHayAlertas}</p>
+   710→              </div>
+   711→            )}
+   712→          </CardContent>
+   713→        </Card>
+   714→      </div>
+   715→
+   716→      {/* ─── Dialog: Solicitar Capacitación Híbrida ──────── */}
+   717→      <Dialog open={showCapacitacionDialog} onOpenChange={setShowCapacitacionDialog}>
+   718→        <DialogContent className="sm:max-w-lg">
+   719→          <DialogHeader>
+   720→            <DialogTitle className="flex items-center gap-2">
+   721→              <GraduationCap className="size-5 text-teal-600" />
+   722→              {t.capacitacionHibrida}
+   723→            </DialogTitle>
+   724→            <DialogDescription>
+   725→              {locale === 'es' ? 'Solicita una sesión de capacitación presencial o virtual' : 'Request an in-person or virtual training session'}
+   726→            </DialogDescription>
+   727→          </DialogHeader>
+   728→
+   729→          <div className="space-y-4 py-4">
+   730→            {/* Modalidad */}
+   731→            <div className="space-y-2">
+   732→              <Label>{t.modalidad}</Label>
+   733→              <div className="flex gap-2">
+   734→                <Button
+   735→                  type="button"
+   736→                  variant={capForm.modalidad === 'presencial' ? 'default' : 'outline'}
+   737→                  className={capForm.modalidad === 'presencial' ? 'bg-teal-600 hover:bg-teal-700' : ''}
+   738→                  onClick={() => setCapForm(p => ({ ...p, modalidad: 'presencial' }))}
+   739→                >
+   740→                  <MapPin className="size-4 mr-1.5" />
+   741→                  {t.presencial}
+   742→                </Button>
+   743→                <Button
+   744→                  type="button"
+   745→                  variant={capForm.modalidad === 'virtual' ? 'default' : 'outline'}
+   746→                  className={capForm.modalidad === 'virtual' ? 'bg-teal-600 hover:bg-teal-700' : ''}
+   747→                  onClick={() => setCapForm(p => ({ ...p, modalidad: 'virtual' }))}
+   748→                >
+   749→                  <Monitor className="size-4 mr-1.5" />
+   750→                  {t.virtual}
+   751→                </Button>
+   752→              </div>
+   753→            </div>
+   754→
+   755→            {/* Tema/Capacitación */}
+   756→            <div className="space-y-2">
+   757→              <Label>{t.tema}</Label>
+   758→              <Select value={capForm.capacitacionId} onValueChange={v => setCapForm(p => ({ ...p, capacitacionId: v }))}>
+   759→                <SelectTrigger>
+   760→                  <SelectValue placeholder={t.seleccionar} />
+   761→                </SelectTrigger>
+   762→                <SelectContent>
+   763→                  {capacitaciones.map(cap => (
+   764→                    <SelectItem key={cap.id} value={cap.id}>
+   765→                      {locale === 'en' && cap.tituloEn ? cap.tituloEn : cap.titulo}
+   766→                    </SelectItem>
+   767→                  ))}
+   768→                </SelectContent>
+   769→              </Select>
+   770→            </div>
+   771→
+   772→            {/* Propiedad */}
+   773→            <div className="space-y-2">
+   774→              <Label>{t.propiedad}</Label>
+   775→              <Select value={capForm.propiedadId || selectedProperty} onValueChange={v => setCapForm(p => ({ ...p, propiedadId: v }))}>
+   776→                <SelectTrigger>
+   777→                  <SelectValue />
+   778→                </SelectTrigger>
+   779→                <SelectContent>
+   780→                  {propiedades.map(p => (
+   781→                    <SelectItem key={p.id} value={p.id}>{p.nombre}</SelectItem>
+   782→                  ))}
+   783→                </SelectContent>
+   784→              </Select>
+   785→            </div>
+   786→
+   787→            {/* Fecha */}
+   788→            <div className="space-y-2">
+   789→              <Label>{t.fecha}</Label>
+   790→              <Input
+   791→                type="date"
+   792→                value={capForm.fechaSolicitada}
+   793→                onChange={e => setCapForm(p => ({ ...p, fechaSolicitada: e.target.value }))}
+   794→                min={new Date().toISOString().split('T')[0]}
+   795→              />
+   796→            </div>
+   797→
+   798→            {/* Participantes */}
+   799→            <div className="space-y-2">
+   800→              <Label>{t.participantes}</Label>
+   801→              <Input
+   802→                type="number"
+   803→                min="1"
+   804→                max="100"
+   805→                value={capForm.participantes}
+   806→                onChange={e => setCapForm(p => ({ ...p, participantes: e.target.value }))}
+   807→              />
+   808→            </div>
+   809→
+   810→            {/* Notas */}
+   811→            <div className="space-y-2">
+   812→              <Label>{locale === 'es' ? 'Notas adicionales' : 'Additional notes'}</Label>
+   813→              <Textarea
+   814→                value={capForm.notas}
+   815→                onChange={e => setCapForm(p => ({ ...p, notas: e.target.value }))}
+   816→                placeholder={locale === 'es' ? 'Notas o requisitos especiales...' : 'Special requirements or notes...'}
+   817→                rows={2}
+   818→              />
+   819→            </div>
+   820→          </div>
+   821→
+   822→          <DialogFooter>
+   823→            <Button variant="outline" onClick={() => setShowCapacitacionDialog(false)}>
+   824→              {t.cancelar}
+   825→            </Button>
+   826→            <Button className="bg-teal-600 hover:bg-teal-700 text-white gap-1.5" onClick={handleSolicitarCapacitacion}>
+   827→              <Calendar className="size-4" />
+   828→              {t.confirmar}
+   829→            </Button>
+   830→          </DialogFooter>
+   831→        </DialogContent>
+   832→      </Dialog>
+   833→
+   834→      {/* ─── Dialog: Activar Reemplazo / Terna ────────────── */}
+   835→      <Dialog open={showReemplazoDialog} onOpenChange={setShowReemplazoDialog}>
+   836→        <DialogContent className="sm:max-w-2xl">
+   837→          <DialogHeader>
+   838→            <DialogTitle className="flex items-center gap-2">
+   839→              <Users className="size-5 text-amber-600" />
+   840→              {t.activarReemplazo}
+   841→            </DialogTitle>
+   842→            <DialogDescription>
+   843→              {reemplazoEmpleado
+   844→                ? `${locale === 'es' ? 'Buscar reemplazo para' : 'Find replacement for'} ${reemplazoEmpleado.empleado.nombre} — ${reemplazoEmpleado.empleado.posicion}`
+   845→                : ''}
+   846→            </DialogDescription>
+   847→          </DialogHeader>
+   848→
+   849→          <div className="space-y-3 max-h-80 overflow-y-auto pr-1 custom-scrollbar">
+   850→            {candidatos.length > 0 ? (
+   851→              candidatos.map((candidato) => (
+   852→                <div key={candidato.id} className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors">
+   853→                  <Avatar className="size-10 shrink-0">
+   854→                    <AvatarFallback className="text-xs font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+   855→                      {getInitials(candidato.nombre)}
+   856→                    </AvatarFallback>
+   857→                  </Avatar>
+   858→                  <div className="flex-1 min-w-0">
+   859→                    <div className="flex items-center gap-2">
+   860→                      <span className="font-medium text-sm truncate">{candidato.nombre}</span>
+   861→                      {candidato.puntuacionEntrevista && (
+   862→                        <Badge variant="outline" className="text-[10px] shrink-0 bg-teal-50 text-teal-700 dark:bg-teal-900/20 dark:text-teal-400">
+   863→                          {candidato.puntuacionEntrevista}/100
+   864→                        </Badge>
+   865→                      )}
+   866→                    </div>
+   867→                    <p className="text-xs text-muted-foreground">
+   868→                      {candidato.posicion} · {candidato.experiencia} {locale === 'es' ? 'años exp.' : 'yrs exp.'} · {candidato.region}
+   869→                    </p>
+   870→                    {candidato.habilidades && (
+   871→                      <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+   872→                        {candidato.habilidades}
+   873→                      </p>
+   874→                    )}
+   875→                  </div>
+   876→                  <Button
+   877→                    size="sm"
+   878→                    className="bg-teal-600 hover:bg-teal-700 text-white shrink-0"
+   879→                    onClick={() => handleContratarCandidato(candidato)}
+   880→                  >
+   881→                    {locale === 'es' ? 'Contratar' : 'Hire'}
+   882→                  </Button>
+   883→                </div>
+   884→              ))
+   885→            ) : (
+   886→              <div className="text-center py-8">
+   887→                <p className="text-sm text-muted-foreground">
+   888→                  {locale === 'es' ? 'No hay candidatos disponibles para esta posición y región' : 'No candidates available for this position and region'}
+   889→                </p>
+   890→              </div>
+   891→            )}
+   892→          </div>
+   893→
+   894→          <DialogFooter>
+   895→            <Button variant="outline" onClick={() => setShowReemplazoDialog(false)}>
+   896→              {t.cancelar}
+   897→            </Button>
+   898→          </DialogFooter>
+   899→        </DialogContent>
+   900→      </Dialog>
+   901→    </div>
+   902→  )
+   903→}
+   904→

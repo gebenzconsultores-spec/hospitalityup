@@ -1,0 +1,1126 @@
+     1→'use client'
+     2→
+     3→import { useState, useEffect, useCallback } from 'react'
+     4→import { useAppStore } from '@/lib/store'
+     5→import { translations } from '@/lib/i18n'
+     6→import { formatCurrency, getCurrencyLabel } from '@/lib/currency'
+     7→import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+     8→import { Button } from '@/components/ui/button'
+     9→import { Input } from '@/components/ui/input'
+    10→import { Label } from '@/components/ui/label'
+    11→import { Badge } from '@/components/ui/badge'
+    12→import { Switch } from '@/components/ui/switch'
+    13→import { Textarea } from '@/components/ui/textarea'
+    14→import { Progress } from '@/components/ui/progress'
+    15→import { Separator } from '@/components/ui/separator'
+    16→import { ScrollArea } from '@/components/ui/scroll-area'
+    17→import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+    18→import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+    19→import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+    20→import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+    21→import { toast } from 'sonner'
+    22→import {
+    23→  LayoutDashboard,
+    24→  Users,
+    25→  Package,
+    26→  DollarSign,
+    27→  GraduationCap,
+    28→  Settings,
+    29→  LogOut,
+    30→  Globe,
+    31→  TrendingUp,
+    32→  AlertTriangle,
+    33→  Plus,
+    34→  Pencil,
+    35→  Trash2,
+    36→  Award,
+    37→  Hotel,
+    38→  ChevronDown,
+    39→} from 'lucide-react'
+    40→
+    41→// ─── Types ────────────────────────────────────────────────────
+    42→interface Empleado {
+    43→  id: string
+    44→  empleadoId: string
+    45→  nombre: string
+    46→  posicion: string
+    47→  posicionEn?: string | null
+    48→  departamento: string
+    49→  departamentoEn?: string | null
+    50→  estado: string
+    51→  fechaIngreso: string
+    52→  puntuacionConocimiento: number
+    53→  puntuacionVentas: number
+    54→  puntuacionHospitalidad: number
+    55→  puntuacionTotal: number
+    56→  totalUpselling: number
+    57→  npsPromedio: number
+    58→  indiceFelicidad: number
+    59→  riesgoBaja: number
+    60→  nivelRiesgoBaja: string
+    61→  rutaCarrera?: string | null
+    62→  cursosCompletados: number
+    63→  cursosEnProgreso: number
+    64→  propiedadId: string
+    65→  propiedad: { id: string; nombre: string; nombreEn?: string | null; region?: string }
+    66→}
+    67→
+    68→interface Servicio {
+    69→  id: string
+    70→  nombre: string
+    71→  nombreEn?: string | null
+    72→  descripcion?: string | null
+    73→  categoria: string
+    74→  esUpselling: boolean
+    75→  precioNormal: number
+    76→  precioUpselling?: number | null
+    77→  objetivoUpselling?: string | null
+    78→  disponible: boolean
+    79→  propiedadId: string
+    80→  propiedad: { id: string; nombre: string; nombreEn?: string | null; moneda: string }
+    81→}
+    82→
+    83→interface Venta {
+    84→  id: string
+    85→  empleadoId: string
+    86→  propiedadId: string
+    87→  nombreServicio?: string | null
+    88→  cantidad: number
+    89→  precioUnitario: number
+    90→  montoTotal: number
+    91→  montoUpselling: number
+    92→  esUpselling: boolean
+    93→  calificacionNPS?: number | null
+    94→  comentario?: string | null
+    95→  categoriaServicio?: string | null
+    96→  fechaVenta: string
+    97→  empleado: { id: string; nombre: string; empleadoId: string; posicion: string }
+    98→}
+    99→
+   100→interface CapacitacionItem {
+   101→  id: string
+   102→  titulo: string
+   103→  tituloEn?: string | null
+   104→  descripcion: string
+   105→  categoria: string
+   106→  modalidad: string
+   107→  duracion: number
+   108→  dificultad: string
+   109→  activo: boolean
+   110→  inscripcionesCount: number
+   111→  completadosCount: number
+   112→  enProgresoCount: number
+   113→  tasaCompletado: number
+   114→  propiedad?: { id: string; nombre: string } | null
+   115→}
+   116→
+   117→interface PropiedadItem {
+   118→  id: string
+   119→  nombre: string
+   120→  nombreEn?: string | null
+   121→  tipo: string
+   122→  ubicacion: string
+   123→  region: string
+   124→  moneda: string
+   125→  plan: string
+   126→  activo: boolean
+   127→  empleadosActivos?: number
+   128→}
+   129→
+   130→interface ConfigData {
+   131→  propiedad: PropiedadItem
+   132→  counts: { empleados: number; servicios: number; capacitaciones: number }
+   133→  positions: { posicion: string; departamento: string }[]
+   134→}
+   135→
+   136→// ─── Helpers ──────────────────────────────────────────────────
+   137→const mapEmpleado = (e: Record<string, unknown>): Empleado => ({
+   138→  id: e.id as string,
+   139→  empleadoId: e.empleadoId as string,
+   140→  nombre: e.nombre as string,
+   141→  posicion: e.posicion as string,
+   142→  posicionEn: e.posicionEn as string | null,
+   143→  departamento: e.departamento as string,
+   144→  departamentoEn: e.departamentoEn as string | null,
+   145→  estado: e.estado as string,
+   146→  fechaIngreso: e.fechaIngreso as string,
+   147→  puntuacionConocimiento: (e.puntuacionConocimiento as number) || 0,
+   148→  puntuacionVentas: (e.puntuacionVentas as number) || 0,
+   149→  puntuacionHospitalidad: (e.puntuacionHospitalidad as number) || 0,
+   150→  puntuacionTotal: (e.puntuacionTotal as number) || 0,
+   151→  totalUpselling: (e.totalUpselling as number) || 0,
+   152→  npsPromedio: (e.npsPromedio as number) || 0,
+   153→  indiceFelicidad: (e.indiceFelicidad as number) || 80,
+   154→  riesgoBaja: (e.riesgoBaja as number) || 0,
+   155→  nivelRiesgoBaja: (e.nivelRiesgoBaja as string) || 'bajo',
+   156→  rutaCarrera: e.rutaCarrera as string | null,
+   157→  cursosCompletados: (e.cursosCompletados as number) || 0,
+   158→  cursosEnProgreso: (e.cursosEnProgreso as number) || 0,
+   159→  propiedadId: e.propiedadId as string,
+   160→  propiedad: e.propiedad as Empleado['propiedad'],
+   161→})
+   162→
+   163→const mapServicio = (s: Record<string, unknown>): Servicio => ({
+   164→  id: s.id as string,
+   165→  nombre: s.nombre as string,
+   166→  nombreEn: s.nombreEn as string | null,
+   167→  descripcion: s.descripcion as string | null,
+   168→  categoria: s.categoria as string,
+   169→  esUpselling: s.esUpselling as boolean,
+   170→  precioNormal: s.precioNormal as number,
+   171→  precioUpselling: s.precioUpselling as number | null,
+   172→  objetivoUpselling: s.objetivoUpselling as string | null,
+   173→  disponible: s.disponible as boolean,
+   174→  propiedadId: s.propiedadId as string,
+   175→  propiedad: s.propiedad as Servicio['propiedad'],
+   176→})
+   177→
+   178→const estadoBadge = (estado: string, t: typeof translations.es) => {
+   179→  const map: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
+   180→    activo: { label: t.employees.activo, variant: 'default' },
+   181→    onboarding: { label: t.employees.onboarding, variant: 'secondary' },
+   182→    offboarding: { label: t.employees.offboarding, variant: 'outline' },
+   183→    inactivo: { label: t.employees.inactivo, variant: 'destructive' },
+   184→  }
+   185→  const info = map[estado] || { label: estado, variant: 'secondary' as const }
+   186→  return <Badge variant={info.variant}>{info.label}</Badge>
+   187→}
+   188→
+   189→const riesgoBadge = (nivel: string) => {
+   190→  const map: Record<string, { label: string; className: string }> = {
+   191→    critico: { label: 'Crítico', className: 'bg-red-100 text-red-800 border-red-300' },
+   192→    alto: { label: 'Alto', className: 'bg-orange-100 text-orange-800 border-orange-300' },
+   193→    medio: { label: 'Medio', className: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
+   194→    bajo: { label: 'Bajo', className: 'bg-green-100 text-green-800 border-green-300' },
+   195→  }
+   196→  const info = map[nivel] || map.bajo
+   197→  return <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${info.className}`}>{info.label}</span>
+   198→}
+   199→
+   200→const categoriaLabel = (cat: string, t: typeof translations.es) => {
+   201→  const map: Record<string, string> = {
+   202→    platillo: t.serviciosAdmin.platillo,
+   203→    bebida: t.serviciosAdmin.bebida,
+   204→    tour: t.serviciosAdmin.tour,
+   205→    masaje: t.serviciosAdmin.masaje,
+   206→    habitacion: t.serviciosAdmin.habitacion,
+   207→    experiencia: t.serviciosAdmin.experiencia,
+   208→    paquete: t.serviciosAdmin.paquete,
+   209→    otro: t.serviciosAdmin.otro,
+   210→  }
+   211→  return map[cat] || cat
+   212→}
+   213→
+   214→const categorias = ['platillo', 'bebida', 'tour', 'masaje', 'habitacion', 'experiencia', 'paquete', 'otro']
+   215→
+   216→const positionsByType: Record<string, string[]> = {
+   217→  hotel: ['Recepcionista', 'Conserje', 'Botones', 'Mesero', 'Chef', 'Ama de Llaves', 'Gerente de Turno', 'Barman', 'Bellboy', 'Room Service'],
+   218→  restaurante: ['Mesero', 'Capitán', 'Barman', 'Host', 'Chef', 'Sous Chef', 'Runner', 'Cajero'],
+   219→  bar: ['Barman', 'Barback', 'Cajero', 'Host', 'Mixólogo'],
+   220→  spa: ['Terapeuta', 'Recepcionista', 'Masajista', 'Esteticista'],
+   221→  resort: ['Animador', 'Mesero', 'Recepcionista', 'Conserje', 'Lifeguard', 'Barman', 'Chef', 'Botones'],
+   222→  cafe: ['Barista', 'Cajero', 'Pastelero', 'Runner'],
+   223→  discoteca: ['Barman', 'Cajero', 'Seguridad', 'Host', 'DJ'],
+   224→  club_playa: ['Mesero', 'Barman', 'Lifeguard', 'Animador', 'Recepcionista'],
+   225→}
+   226→
+   227→export function GerenteDashboard() {
+   228→  const { userPropertyId, userName, locale, setLocale, logout, gerenteView, setGerenteView } = useAppStore()
+   229→  const t = translations[locale]
+   230→  const [loading, setLoading] = useState(true)
+   231→
+   232→  // Data
+   233→  const [empleados, setEmpleados] = useState<Empleado[]>([])
+   234→  const [servicios, setServicios] = useState<Servicio[]>([])
+   235→  const [ventas, setVentas] = useState<Venta[]>([])
+   236→  const [propiedades, setPropiedades] = useState<PropiedadItem[]>([])
+   237→  const [configData, setConfigData] = useState<ConfigData | null>(null)
+   238→  const [capacitaciones, setCapacitaciones] = useState<CapacitacionItem[]>([])
+   239→  const [dashboardData, setDashboardData] = useState<Record<string, unknown> | null>(null)
+   240→
+   241→  // Dialogs
+   242→  const [showAddEmpleado, setShowAddEmpleado] = useState(false)
+   243→  const [showAddServicio, setShowAddServicio] = useState(false)
+   244→  const [editServicio, setEditServicio] = useState<Servicio | null>(null)
+   245→  const [selectedEmpleado, setSelectedEmpleado] = useState<Empleado | null>(null)
+   246→
+   247→  // Property info
+   248→  const currentProp = propiedades.find((p) => p.id === userPropertyId)
+   249→  const moneda = currentProp?.moneda || 'USD'
+   250→
+   251→  // Fetch all data
+   252→  const fetchData = useCallback(async () => {
+   253→    if (!userPropertyId) return
+   254→    setLoading(true)
+   255→    try {
+   256→      const [empRes, servRes, ventRes, propRes, configRes, capRes, dashRes] = await Promise.all([
+   257→        fetch(`/api/empleados?propiedadId=${userPropertyId}`).catch(() => ({ json: () => [] })),
+   258→        fetch(`/api/servicios?propiedadId=${userPropertyId}`).catch(() => ({ json: () => [] })),
+   259→        fetch(`/api/ventas?propiedadId=${userPropertyId}`).catch(() => ({ json: () => ({ ventas: [] }) })),
+   260→        fetch(`/api/propiedades`).catch(() => ({ json: () => [] })),
+   261→        fetch(`/api/config?propertyId=${userPropertyId}`).catch(() => ({ json: () => null })),
+   262→        fetch(`/api/capacitaciones?propiedadId=${userPropertyId}`).catch(() => ({ json: () => [] })),
+   263→        fetch(`/api/dashboard?propiedadId=${userPropertyId}`).catch(() => ({ json: () => null })),
+   264→      ])
+   265→
+   266→      const [empData, servData, ventData, propData, configResult, capData, dashData] = await Promise.all([
+   267→        empRes.json(),
+   268→        servRes.json(),
+   269→        ventRes.json(),
+   270→        propRes.json(),
+   271→        configRes.json(),
+   272→        capRes.json(),
+   273→        dashRes.json(),
+   274→      ])
+   275→
+   276→      setEmpleados(Array.isArray(empData) ? empData.map((e: Record<string, unknown>) => mapEmpleado(e)) : [])
+   277→      setServicios(Array.isArray(servData) ? servData.map((s: Record<string, unknown>) => mapServicio(s)) : [])
+   278→      setVentas(ventData?.ventas || (Array.isArray(ventData) ? ventData : []))
+   279→      setPropiedades(Array.isArray(propData) ? propData : [])
+   280→      setConfigData(configResult)
+   281→      setCapacitaciones(Array.isArray(capData) ? capData : [])
+   282→      setDashboardData(dashData)
+   283→    } catch (err) {
+   284→      console.error('Fetch error:', err)
+   285→    } finally {
+   286→      setLoading(false)
+   287→    }
+   288→  }, [userPropertyId])
+   289→
+   290→  useEffect(() => {
+   291→    fetchData()
+   292→  }, [fetchData])
+   293→
+   294→  // Active view from store
+   295→  const activeView = gerenteView || 'dashboard'
+   296→
+   297→  // ─── Add Empleado ────────────────────────────────────
+   298→  const [newEmp, setNewEmp] = useState({ nombre: '', empleadoId: '', posicion: '', departamento: '' })
+   299→
+   300→  const handleAddEmpleado = async () => {
+   301→    try {
+   302→      const res = await fetch('/api/empleados', {
+   303→        method: 'POST',
+   304→        headers: { 'Content-Type': 'application/json' },
+   305→        body: JSON.stringify({
+   306→          ...newEmp,
+   307→          propiedadId: userPropertyId,
+   308→          fechaIngreso: new Date().toISOString(),
+   309→          estado: 'onboarding',
+   310→        }),
+   311→      })
+   312→      if (res.ok) {
+   313→        toast.success(t.employees.agregar + ' ✓')
+   314→        setShowAddEmpleado(false)
+   315→        setNewEmp({ nombre: '', empleadoId: '', posicion: '', departamento: '' })
+   316→        fetchData()
+   317→      }
+   318→    } catch {
+   319→      toast.error(t.common.error)
+   320→    }
+   321→  }
+   322→
+   323→  // ─── Update Empleado Status ──────────────────────────
+   324→  const handleUpdateEstado = async (empId: string, estado: string) => {
+   325→    try {
+   326→      await fetch(`/api/empleados/${empId}`, {
+   327→        method: 'PATCH',
+   328→        headers: { 'Content-Type': 'application/json' },
+   329→        body: JSON.stringify({ estado }),
+   330→      })
+   331→      toast.success(t.common.actualizar + ' ✓')
+   332→      fetchData()
+   333→    } catch {
+   334→      toast.error(t.common.error)
+   335→    }
+   336→  }
+   337→
+   338→  // ─── Add / Edit Servicio ─────────────────────────────
+   339→  const emptyServ = { nombre: '', nombreEn: '', categoria: 'platillo', precioNormal: 0, esUpselling: false, precioUpselling: 0, objetivoUpselling: '', descripcion: '' }
+   340→  const [servForm, setServForm] = useState(emptyServ)
+   341→
+   342→  const openEditServicio = (s: Servicio) => {
+   343→    setEditServicio(s)
+   344→    setServForm({
+   345→      nombre: s.nombre,
+   346→      nombreEn: s.nombreEn || '',
+   347→      categoria: s.categoria,
+   348→      precioNormal: s.precioNormal,
+   349→      esUpselling: s.esUpselling,
+   350→      precioUpselling: s.precioUpselling || 0,
+   351→      objetivoUpselling: s.objetivoUpselling || '',
+   352→      descripcion: s.descripcion || '',
+   353→    })
+   354→  }
+   355→
+   356→  const handleSaveServicio = async () => {
+   357→    try {
+   358→      const url = editServicio ? `/api/servicios/${editServicio.id}` : '/api/servicios'
+   359→      const method = editServicio ? 'PATCH' : 'POST'
+   360→      const body = {
+   361→        ...servForm,
+   362→        propiedadId: userPropertyId,
+   363→      }
+   364→      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+   365→      if (res.ok) {
+   366→        toast.success(editServicio ? t.serviciosAdmin.actualizado : t.serviciosAdmin.creado)
+   367→        setShowAddServicio(false)
+   368→        setEditServicio(null)
+   369→        setServForm(emptyServ)
+   370→        fetchData()
+   371→      }
+   372→    } catch {
+   373→      toast.error(t.common.error)
+   374→    }
+   375→  }
+   376→
+   377→  const handleDeleteServicio = async (id: string) => {
+   378→    try {
+   379→      await fetch(`/api/servicios/${id}`, { method: 'DELETE' })
+   380→      toast.success(t.serviciosAdmin.eliminado)
+   381→      fetchData()
+   382→    } catch {
+   383→      toast.error(t.common.error)
+   384→    }
+   385→  }
+   386→
+   387→  // ─── Config Save ─────────────────────────────────────
+   388→  const [configForm, setConfigForm] = useState<Record<string, string>>({})
+   389→  useEffect(() => {
+   390→    if (configData?.propiedad) {
+   391→      setConfigForm({
+   392→        nombre: configData.propiedad.nombre,
+   393→        tipo: configData.propiedad.tipo,
+   394→        region: configData.propiedad.region,
+   395→        moneda: configData.propiedad.moneda,
+   396→      })
+   397→    }
+   398→  }, [configData])
+   399→
+   400→  const handleSaveConfig = async () => {
+   401→    try {
+   402→      await fetch(`/api/propiedades/${userPropertyId}`, {
+   403→        method: 'PATCH',
+   404→        headers: { 'Content-Type': 'application/json' },
+   405→        body: JSON.stringify(configForm),
+   406→      })
+   407→      toast.success(t.common.actualizar + ' ✓')
+   408→      fetchData()
+   409→    } catch {
+   410→      toast.error(t.common.error)
+   411→    }
+   412→  }
+   413→
+   414→  // Computed values
+   415→  const empleadosActivos = empleados.filter((e) => e.estado === 'activo' || e.estado === 'onboarding')
+   416→  const riesgoAlto = empleados.filter((e) => e.nivelRiesgoBaja === 'alto' || e.nivelRiesgoBaja === 'critico')
+   417→  const npsPromedio = empleadosActivos.length > 0 ? Math.round(empleadosActivos.reduce((sum, e) => sum + e.npsPromedio, 0) / empleadosActivos.length * 10) / 10 : 0
+   418→  const totalUpselling = empleadosActivos.reduce((sum, e) => sum + e.totalUpselling, 0)
+   419→  const topPerformers = [...empleadosActivos].sort((a, b) => b.puntuacionTotal - a.puntuacionTotal).slice(0, 5)
+   420→  const ventasHoy = Array.isArray(ventas) ? ventas : []
+   421→  const ventasUpsellingHoy = ventasHoy.filter((v) => v.esUpselling)
+   422→  const montoTotalHoy = ventasHoy.reduce((s, v) => s + v.montoTotal, 0)
+   423→
+   424→  // Category groups for services
+   425→  const serviciosByCategory = categorias.reduce((acc, cat) => {
+   426→    const items = servicios.filter((s) => s.categoria === cat)
+   427→    if (items.length > 0) acc[cat] = items
+   428→    return acc
+   429→  }, {} as Record<string, Servicio[]>)
+   430→
+   431→  if (loading) {
+   432→    return (
+   433→      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+   434→        <div className="text-center">
+   435→          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-teal-600 mx-auto mb-3"></div>
+   436→          <p className="text-sm text-gray-500">{t.common.cargando}</p>
+   437→        </div>
+   438→      </div>
+   439→    )
+   440→  }
+   441→
+   442→  return (
+   443→    <div className="min-h-screen flex flex-col bg-gray-50">
+   444→      {/* ─── Sticky Header ────────────────────────────── */}
+   445→      <header className="sticky top-0 z-50 bg-white border-b shadow-sm px-4 py-3">
+   446→        <div className="flex items-center justify-between max-w-7xl mx-auto">
+   447→          <div className="flex items-center gap-3">
+   448→            <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center">
+   449→              <Hotel className="w-4 h-4 text-white" />
+   450→            </div>
+   451→            <div>
+   452→              <h1 className="font-bold text-sm text-gray-900">{currentProp?.nombre || userName}</h1>
+   453→              <p className="text-[10px] text-gray-500">{currentProp?.tipo} · {currentProp?.region}</p>
+   454→            </div>
+   455→          </div>
+   456→          <div className="flex items-center gap-3">
+   457→            <Badge variant="outline" className="text-[10px]">{getCurrencyLabel(moneda)}</Badge>
+   458→            <div className="flex rounded-md overflow-hidden border">
+   459→              <button onClick={() => setLocale('es')} className={`px-2 py-1 text-[10px] font-semibold ${locale === 'es' ? 'bg-teal-600 text-white' : 'bg-white text-gray-600'}`}>ES</button>
+   460→              <button onClick={() => setLocale('en')} className={`px-2 py-1 text-[10px] font-semibold ${locale === 'en' ? 'bg-teal-600 text-white' : 'bg-white text-gray-600'}`}>EN</button>
+   461→            </div>
+   462→            <Button variant="ghost" size="sm" onClick={logout}>
+   463→              <LogOut className="w-4 h-4" />
+   464→            </Button>
+   465→          </div>
+   466→        </div>
+   467→      </header>
+   468→
+   469→      {/* ─── Tab Navigation ───────────────────────────── */}
+   470→      <div className="bg-white border-b px-4 overflow-x-auto">
+   471→        <div className="flex gap-1 max-w-7xl mx-auto py-2">
+   472→          {[
+   473→            { key: 'dashboard', icon: LayoutDashboard, label: t.nav.dashboard },
+   474→            { key: 'empleados', icon: Users, label: t.nav.empleados },
+   475→            { key: 'servicios', icon: Package, label: t.nav.servicios },
+   476→            { key: 'ventas', icon: DollarSign, label: t.nav.ventas },
+   477→            { key: 'capacitacion', icon: GraduationCap, label: t.nav.capacitacion },
+   478→            { key: 'configuracion', icon: Settings, label: t.nav.configuracion },
+   479→          ].map((tab) => {
+   480→            const Icon = tab.icon
+   481→            const isActive = activeView === tab.key
+   482→            return (
+   483→              <button
+   484→                key={tab.key}
+   485→                onClick={() => setGerenteView(tab.key as 'dashboard' | 'empleados' | 'servicios' | 'ventas' | 'capacitacion' | 'configuracion')}
+   486→                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
+   487→                  isActive ? 'bg-teal-600 text-white' : 'text-gray-600 hover:bg-gray-100'
+   488→                }`}
+   489→              >
+   490→                <Icon className="w-3.5 h-3.5" />
+   491→                {tab.label}
+   492→              </button>
+   493→            )
+   494→          })}
+   495→        </div>
+   496→      </div>
+   497→
+   498→      {/* ─── Main Content ─────────────────────────────── */}
+   499→      <main className="flex-1 p-4 md:p-6 max-w-7xl mx-auto w-full">
+   500→        {/* ═══════════════ DASHBOARD TAB ═══════════════ */}
+   501→        {activeView === 'dashboard' && (
+   502→          <div className="space-y-6">
+   503→            {/* KPI Cards */}
+   504→            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+   505→              <Card>
+   506→                <CardContent className="p-4">
+   507→                  <div className="flex items-center gap-2 mb-1">
+   508→                    <Users className="w-4 h-4 text-teal-600" />
+   509→                    <span className="text-[10px] text-gray-500 uppercase">{t.dashboard.totalEmpleados}</span>
+   510→                  </div>
+   511→                  <p className="text-2xl font-bold">{empleadosActivos.length}</p>
+   512→                </CardContent>
+   513→              </Card>
+   514→              <Card>
+   515→                <CardContent className="p-4">
+   516→                  <div className="flex items-center gap-2 mb-1">
+   517→                    <TrendingUp className="w-4 h-4 text-emerald-600" />
+   518→                    <span className="text-[10px] text-gray-500 uppercase">NPS {t.dashboard.npsPromedio}</span>
+   519→                  </div>
+   520→                  <p className="text-2xl font-bold">{npsPromedio}</p>
+   521→                </CardContent>
+   522→              </Card>
+   523→              <Card>
+   524→                <CardContent className="p-4">
+   525→                  <div className="flex items-center gap-2 mb-1">
+   526→                    <DollarSign className="w-4 h-4 text-amber-600" />
+   527→                    <span className="text-[10px] text-gray-500 uppercase">{t.dashboard.ingresosUpselling}</span>
+   528→                  </div>
+   529→                  <p className="text-2xl font-bold">{formatCurrency(totalUpselling, moneda)}</p>
+   530→                </CardContent>
+   531→              </Card>
+   532→              <Card>
+   533→                <CardContent className="p-4">
+   534→                  <div className="flex items-center gap-2 mb-1">
+   535→                    <AlertTriangle className="w-4 h-4 text-red-500" />
+   536→                    <span className="text-[10px] text-gray-500 uppercase">{t.dashboard.empleadosEnRiesgo}</span>
+   537→                  </div>
+   538→                  <p className="text-2xl font-bold">{riesgoAlto.length}</p>
+   539→                </CardContent>
+   540→              </Card>
+   541→            </div>
+   542→
+   543→            {/* Sales Today */}
+   544→            <Card>
+   545→              <CardHeader className="pb-2">
+   546→                <CardTitle className="text-sm">
+   547→                  {locale === 'es' ? 'Ventas de Hoy' : "Today's Sales"}
+   548→                </CardTitle>
+   549→              </CardHeader>
+   550→              <CardContent>
+   551→                <div className="grid grid-cols-3 gap-4">
+   552→                  <div>
+   553→                    <p className="text-[10px] text-gray-500">{t.ventas.totalUpselling}</p>
+   554→                    <p className="font-bold text-lg">{formatCurrency(montoTotalHoy, moneda)}</p>
+   555→                  </div>
+   556→                  <div>
+   557→                    <p className="text-[10px] text-gray-500">{t.ventas.tasaUpselling}</p>
+   558→                    <p className="font-bold text-lg">{ventasHoy.length > 0 ? Math.round((ventasUpsellingHoy.length / ventasHoy.length) * 100) : 0}%</p>
+   559→                  </div>
+   560→                  <div>
+   561→                    <p className="text-[10px] text-gray-500">{t.ventas.ventasRecientes}</p>
+   562→                    <p className="font-bold text-lg">{ventasHoy.length}</p>
+   563→                  </div>
+   564→                </div>
+   565→              </CardContent>
+   566→            </Card>
+   567→
+   568→            {/* Top Performers */}
+   569→            <Card>
+   570→              <CardHeader className="pb-2">
+   571→                <CardTitle className="text-sm">{t.dashboard.topPerformers}</CardTitle>
+   572→              </CardHeader>
+   573→              <CardContent>
+   574→                <div className="space-y-2">
+   575→                  {topPerformers.map((emp, i) => (
+   576→                    <div key={emp.id} className="flex items-center gap-3 p-2 rounded-lg bg-gray-50">
+   577→                      <div className="w-6 h-6 rounded-full bg-teal-100 flex items-center justify-center text-xs font-bold text-teal-700">
+   578→                        {i + 1}
+   579→                      </div>
+   580→                      <Avatar className="w-8 h-8">
+   581→                        <AvatarFallback className="text-xs">{emp.nombre.split(' ').map(n => n[0]).join('').slice(0, 2)}</AvatarFallback>
+   582→                      </Avatar>
+   583→                      <div className="flex-1 min-w-0">
+   584→                        <p className="text-sm font-medium truncate">{emp.nombre}</p>
+   585→                        <p className="text-[10px] text-gray-500">{emp.posicion}</p>
+   586→                      </div>
+   587→                      <div className="text-right">
+   588→                        <p className="text-sm font-bold">{Math.round(emp.puntuacionTotal)}</p>
+   589→                        <p className="text-[10px] text-gray-500">Score</p>
+   590→                      </div>
+   591→                    </div>
+   592→                  ))}
+   593→                  {topPerformers.length === 0 && (
+   594→                    <p className="text-sm text-gray-400 text-center py-4">{t.common.sinDatos}</p>
+   595→                  )}
+   596→                </div>
+   597→              </CardContent>
+   598→            </Card>
+   599→          </div>
+   600→        )}
+   601→
+   602→        {/* ═══════════════ EMPLEADOS TAB ═══════════════ */}
+   603→        {activeView === 'empleados' && (
+   604→          <div className="space-y-4">
+   605→            <div className="flex items-center justify-between">
+   606→              <h2 className="text-lg font-bold">{t.employees.title}</h2>
+   607→              <Button size="sm" className="bg-teal-600 hover:bg-teal-700" onClick={() => setShowAddEmpleado(true)}>
+   608→                <Plus className="w-4 h-4 mr-1" />
+   609→                {t.employees.agregar}
+   610→              </Button>
+   611→            </div>
+   612→            <Card>
+   613→              <CardContent className="p-0">
+   614→                <div className="overflow-x-auto">
+   615→                  <table className="w-full text-sm">
+   616→                    <thead>
+   617→                      <tr className="border-b bg-gray-50">
+   618→                        <th className="text-left p-3 text-xs font-medium text-gray-500">{t.employees.title}</th>
+   619→                        <th className="text-left p-3 text-xs font-medium text-gray-500">ID</th>
+   620→                        <th className="text-left p-3 text-xs font-medium text-gray-500">{t.employees.posicion}</th>
+   621→                        <th className="text-left p-3 text-xs font-medium text-gray-500">{t.employees.estado}</th>
+   622→                        <th className="text-left p-3 text-xs font-medium text-gray-500">{t.employees.score}</th>
+   623→                        <th className="text-left p-3 text-xs font-medium text-gray-500">{t.employees.riesgo}</th>
+   624→                      </tr>
+   625→                    </thead>
+   626→                    <tbody>
+   627→                      {empleados.map((emp) => (
+   628→                        <tr
+   629→                          key={emp.id}
+   630→                          className="border-b hover:bg-gray-50 cursor-pointer"
+   631→                          onClick={() => setSelectedEmpleado(emp)}
+   632→                        >
+   633→                          <td className="p-3">
+   634→                            <div className="flex items-center gap-2">
+   635→                              <Avatar className="w-7 h-7">
+   636→                                <AvatarFallback className="text-[10px]">{emp.nombre.split(' ').map(n => n[0]).join('').slice(0, 2)}</AvatarFallback>
+   637→                              </Avatar>
+   638→                              <span className="font-medium">{emp.nombre}</span>
+   639→                            </div>
+   640→                          </td>
+   641→                          <td className="p-3 text-gray-500">{emp.empleadoId}</td>
+   642→                          <td className="p-3 text-gray-500">{emp.posicion}</td>
+   643→                          <td className="p-3">{estadoBadge(emp.estado, t)}</td>
+   644→                          <td className="p-3">
+   645→                            <span className={`font-semibold ${emp.puntuacionTotal >= 70 ? 'text-green-600' : emp.puntuacionTotal >= 40 ? 'text-yellow-600' : 'text-red-600'}`}>
+   646→                              {Math.round(emp.puntuacionTotal)}
+   647→                            </span>
+   648→                          </td>
+   649→                          <td className="p-3">{riesgoBadge(emp.nivelRiesgoBaja)}</td>
+   650→                        </tr>
+   651→                      ))}
+   652→                      {empleados.length === 0 && (
+   653→                        <tr>
+   654→                          <td colSpan={6} className="p-6 text-center text-gray-400">{t.employees.noResultados}</td>
+   655→                        </tr>
+   656→                      )}
+   657→                    </tbody>
+   658→                  </table>
+   659→                </div>
+   660→              </CardContent>
+   661→            </Card>
+   662→
+   663→            {/* Add Employee Dialog */}
+   664→            <Dialog open={showAddEmpleado} onOpenChange={setShowAddEmpleado}>
+   665→              <DialogContent>
+   666→                <DialogHeader>
+   667→                  <DialogTitle>{t.employees.agregar}</DialogTitle>
+   668→                </DialogHeader>
+   669→                <div className="space-y-3">
+   670→                  <div>
+   671→                    <Label className="text-xs">{locale === 'es' ? 'Nombre completo' : 'Full name'}</Label>
+   672→                    <Input value={newEmp.nombre} onChange={(e) => setNewEmp({ ...newEmp, nombre: e.target.value })} />
+   673→                  </div>
+   674→                  <div>
+   675→                    <Label className="text-xs">ID {locale === 'es' ? 'Empleado' : 'Employee'}</Label>
+   676→                    <Input placeholder="MES-501" value={newEmp.empleadoId} onChange={(e) => setNewEmp({ ...newEmp, empleadoId: e.target.value.toUpperCase() })} />
+   677→                  </div>
+   678→                  <div>
+   679→                    <Label className="text-xs">{t.employees.posicion}</Label>
+   680→                    <Select value={newEmp.posicion} onValueChange={(v) => setNewEmp({ ...newEmp, posicion: v })}>
+   681→                      <SelectTrigger><SelectValue placeholder={t.employees.posicion} /></SelectTrigger>
+   682→                      <SelectContent>
+   683→                        {(positionsByType[currentProp?.tipo || 'hotel'] || positionsByType.hotel).map((p) => (
+   684→                          <SelectItem key={p} value={p}>{p}</SelectItem>
+   685→                        ))}
+   686→                      </SelectContent>
+   687→                    </Select>
+   688→                  </div>
+   689→                  <div>
+   690→                    <Label className="text-xs">{t.employees.departamento}</Label>
+   691→                    <Input value={newEmp.departamento} onChange={(e) => setNewEmp({ ...newEmp, departamento: e.target.value })} />
+   692→                  </div>
+   693→                </div>
+   694→                <DialogFooter>
+   695→                  <Button variant="outline" onClick={() => setShowAddEmpleado(false)}>{t.common.cancelar}</Button>
+   696→                  <Button className="bg-teal-600 hover:bg-teal-700" onClick={handleAddEmpleado} disabled={!newEmp.nombre || !newEmp.empleadoId}>
+   697→                    {t.common.crear}
+   698→                  </Button>
+   699→                </DialogFooter>
+   700→              </DialogContent>
+   701→            </Dialog>
+   702→
+   703→            {/* Employee Detail Dialog */}
+   704→            <Dialog open={!!selectedEmpleado} onOpenChange={() => setSelectedEmpleado(null)}>
+   705→              <DialogContent className="max-w-md">
+   706→                <DialogHeader>
+   707→                  <DialogTitle>{t.employees.detalle}</DialogTitle>
+   708→                </DialogHeader>
+   709→                {selectedEmpleado && (
+   710→                  <div className="space-y-4">
+   711→                    <div className="flex items-center gap-3">
+   712→                      <Avatar className="w-12 h-12">
+   713→                        <AvatarFallback>{selectedEmpleado.nombre.split(' ').map(n => n[0]).join('').slice(0, 2)}</AvatarFallback>
+   714→                      </Avatar>
+   715→                      <div>
+   716→                        <p className="font-bold">{selectedEmpleado.nombre}</p>
+   717→                        <p className="text-xs text-gray-500">{selectedEmpleado.empleadoId} · {selectedEmpleado.posicion}</p>
+   718→                        <div className="flex gap-2 mt-1">
+   719→                          {estadoBadge(selectedEmpleado.estado, t)}
+   720→                          {riesgoBadge(selectedEmpleado.nivelRiesgoBaja)}
+   721→                        </div>
+   722→                      </div>
+   723→                    </div>
+   724→                    <Separator />
+   725→                    {/* Scores */}
+   726→                    <div className="space-y-2">
+   727→                      <p className="text-xs font-semibold text-gray-500">{t.employees.score}</p>
+   728→                      {[
+   729→                        { label: t.employees.scoreConocimiento, value: selectedEmpleado.puntuacionConocimiento, color: 'bg-teal-500' },
+   730→                        { label: t.employees.scoreVentas, value: selectedEmpleado.puntuacionVentas, color: 'bg-emerald-500' },
+   731→                        { label: t.employees.scoreHospitalidad, value: selectedEmpleado.puntuacionHospitalidad, color: 'bg-amber-500' },
+   732→                      ].map((s) => (
+   733→                        <div key={s.label}>
+   734→                          <div className="flex justify-between text-xs mb-1">
+   735→                            <span>{s.label}</span>
+   736→                            <span className="font-semibold">{Math.round(s.value)}</span>
+   737→                          </div>
+   738→                          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+   739→                            <div className={`h-full rounded-full ${s.color}`} style={{ width: `${Math.min(100, s.value)}%` }} />
+   740→                          </div>
+   741→                        </div>
+   742→                      ))}
+   743→                    </div>
+   744→                    <Separator />
+   745→                    {/* Metrics */}
+   746→                    <div className="grid grid-cols-2 gap-3 text-sm">
+   747→                      <div><span className="text-gray-500 text-xs">{t.ventas.totalUpselling}:</span><p className="font-semibold">{formatCurrency(selectedEmpleado.totalUpselling, moneda)}</p></div>
+   748→                      <div><span className="text-gray-500 text-xs">NPS:</span><p className="font-semibold">{selectedEmpleado.npsPromedio.toFixed(1)}</p></div>
+   749→                      <div><span className="text-gray-500 text-xs">{t.employees.felicidad}:</span><p className="font-semibold">{Math.round(selectedEmpleado.indiceFelicidad)}%</p></div>
+   750→                      <div><span className="text-gray-500 text-xs">{t.employees.cursos}:</span><p className="font-semibold">{selectedEmpleado.cursosCompletados}/{selectedEmpleado.cursosCompletados + selectedEmpleado.cursosEnProgreso}</p></div>
+   751→                    </div>
+   752→                    {selectedEmpleado.rutaCarrera && (
+   753→                      <div>
+   754→                        <p className="text-xs text-gray-500">{t.employees.rutaCarrera}</p>
+   755→                        <p className="text-sm font-medium">{selectedEmpleado.rutaCarrera}</p>
+   756→                      </div>
+   757→                    )}
+   758→                    {/* Status change */}
+   759→                    <div className="flex gap-2">
+   760→                      <Select onValueChange={(v) => handleUpdateEstado(selectedEmpleado.id, v)}>
+   761→                        <SelectTrigger className="h-8 text-xs">
+   762→                          <SelectValue placeholder={locale === 'es' ? 'Cambiar estado...' : 'Change status...'} />
+   763→                        </SelectTrigger>
+   764→                        <SelectContent>
+   765→                          <SelectItem value="activo">{t.employees.activo}</SelectItem>
+   766→                          <SelectItem value="onboarding">{t.employees.onboarding}</SelectItem>
+   767→                          <SelectItem value="offboarding">{t.employees.offboarding}</SelectItem>
+   768→                          <SelectItem value="inactivo">{t.employees.inactivo}</SelectItem>
+   769→                        </SelectContent>
+   770→                      </Select>
+   771→                    </div>
+   772→                  </div>
+   773→                )}
+   774→              </DialogContent>
+   775→            </Dialog>
+   776→          </div>
+   777→        )}
+   778→
+   779→        {/* ═══════════════ SERVICIOS TAB ═══════════════ */}
+   780→        {activeView === 'servicios' && (
+   781→          <div className="space-y-4">
+   782→            <div className="flex items-center justify-between">
+   783→              <h2 className="text-lg font-bold">{t.serviciosAdmin.catalogo}</h2>
+   784→              <Button size="sm" className="bg-teal-600 hover:bg-teal-700" onClick={() => { setEditServicio(null); setServForm(emptyServ); setShowAddServicio(true) }}>
+   785→                <Plus className="w-4 h-4 mr-1" />
+   786→                {t.serviciosAdmin.agregarServicio}
+   787→              </Button>
+   788→            </div>
+   789→            {/* Services by category */}
+   790→            {Object.entries(serviciosByCategory).map(([cat, items]) => (
+   791→              <div key={cat}>
+   792→                <h3 className="text-sm font-semibold text-gray-600 mb-2">{categoriaLabel(cat, t)} ({items.length})</h3>
+   793→                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+   794→                  {items.map((s) => (
+   795→                    <Card key={s.id} className={`relative ${!s.disponible ? 'opacity-50' : ''}`}>
+   796→                      <CardContent className="p-4">
+   797→                        <div className="flex items-start justify-between mb-2">
+   798→                          <div>
+   799→                            <p className="font-semibold text-sm">{s.nombre}</p>
+   800→                            {s.nombreEn && <p className="text-[10px] text-gray-400">{s.nombreEn}</p>}
+   801→                          </div>
+   802→                          {s.esUpselling && (
+   803→                            <Badge className="bg-amber-100 text-amber-800 text-[10px]">Upselling</Badge>
+   804→                          )}
+   805→                        </div>
+   806→                        <p className="text-lg font-bold text-teal-700">{formatCurrency(s.precioNormal, moneda)}</p>
+   807→                        {s.esUpselling && s.precioUpselling && (
+   808→                          <p className="text-xs text-amber-600">↑ {formatCurrency(s.precioUpselling, moneda)}</p>
+   809→                        )}
+   810→                        {s.descripcion && (
+   811→                          <p className="text-xs text-gray-500 mt-1 line-clamp-2">{s.descripcion}</p>
+   812→                        )}
+   813→                        <div className="flex gap-1 mt-3">
+   814→                          <Button variant="outline" size="sm" className="h-7 text-xs flex-1" onClick={() => { openEditServicio(s); setShowAddServicio(true) }}>
+   815→                            <Pencil className="w-3 h-3 mr-1" /> {t.serviciosAdmin.editar}
+   816→                          </Button>
+   817→                          <Button variant="outline" size="sm" className="h-7 text-xs text-red-600" onClick={() => handleDeleteServicio(s.id)}>
+   818→                            <Trash2 className="w-3 h-3" />
+   819→                          </Button>
+   820→                        </div>
+   821→                      </CardContent>
+   822→                    </Card>
+   823→                  ))}
+   824→                </div>
+   825→              </div>
+   826→            ))}
+   827→            {Object.keys(serviciosByCategory).length === 0 && (
+   828→              <p className="text-center text-gray-400 py-8">{t.common.sinDatos}</p>
+   829→            )}
+   830→
+   831→            {/* Add/Edit Service Dialog */}
+   832→            <Dialog open={showAddServicio} onOpenChange={(open) => { setShowAddServicio(open); if (!open) setEditServicio(null) }}>
+   833→              <DialogContent className="max-w-md">
+   834→                <DialogHeader>
+   835→                  <DialogTitle>{editServicio ? t.serviciosAdmin.actualizar : t.serviciosAdmin.agregarServicio}</DialogTitle>
+   836→                </DialogHeader>
+   837→                <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+   838→                  <div>
+   839→                    <Label className="text-xs">{t.serviciosAdmin.nombreES}</Label>
+   840→                    <Input value={servForm.nombre} onChange={(e) => setServForm({ ...servForm, nombre: e.target.value })} />
+   841→                  </div>
+   842→                  <div>
+   843→                    <Label className="text-xs">{t.serviciosAdmin.nombreEN}</Label>
+   844→                    <Input value={servForm.nombreEn} onChange={(e) => setServForm({ ...servForm, nombreEn: e.target.value })} />
+   845→                  </div>
+   846→                  <div>
+   847→                    <Label className="text-xs">{t.serviciosAdmin.categoria}</Label>
+   848→                    <Select value={servForm.categoria} onValueChange={(v) => setServForm({ ...servForm, categoria: v })}>
+   849→                      <SelectTrigger><SelectValue /></SelectTrigger>
+   850→                      <SelectContent>
+   851→                        {categorias.map((c) => (
+   852→                          <SelectItem key={c} value={c}>{categoriaLabel(c, t)}</SelectItem>
+   853→                        ))}
+   854→                      </SelectContent>
+   855→                    </Select>
+   856→                  </div>
+   857→                  <div>
+   858→                    <Label className="text-xs">{t.serviciosAdmin.precioNormal}</Label>
+   859→                    <Input type="number" value={servForm.precioNormal} onChange={(e) => setServForm({ ...servForm, precioNormal: parseFloat(e.target.value) || 0 })} />
+   860→                  </div>
+   861→                  <div className="flex items-center gap-2">
+   862→                    <Switch checked={servForm.esUpselling} onCheckedChange={(v) => setServForm({ ...servForm, esUpselling: v })} />
+   863→                    <Label className="text-xs">{t.serviciosAdmin.esUpselling}</Label>
+   864→                  </div>
+   865→                  {servForm.esUpselling && (
+   866→                    <>
+   867→                      <div>
+   868→                        <Label className="text-xs">{t.serviciosAdmin.precioUpselling}</Label>
+   869→                        <Input type="number" value={servForm.precioUpselling} onChange={(e) => setServForm({ ...servForm, precioUpselling: parseFloat(e.target.value) || 0 })} />
+   870→                      </div>
+   871→                      <div>
+   872→                        <Label className="text-xs">{t.serviciosAdmin.objetivoUpselling}</Label>
+   873→                        <Input value={servForm.objetivoUpselling} onChange={(e) => setServForm({ ...servForm, objetivoUpselling: e.target.value })} />
+   874→                      </div>
+   875→                    </>
+   876→                  )}
+   877→                  <div>
+   878→                    <Label className="text-xs">{t.serviciosAdmin.descripcion}</Label>
+   879→                    <Textarea value={servForm.descripcion} onChange={(e) => setServForm({ ...servForm, descripcion: e.target.value })} rows={2} />
+   880→                  </div>
+   881→                </div>
+   882→                <DialogFooter>
+   883→                  <Button variant="outline" onClick={() => { setShowAddServicio(false); setEditServicio(null) }}>{t.common.cancelar}</Button>
+   884→                  <Button className="bg-teal-600 hover:bg-teal-700" onClick={handleSaveServicio} disabled={!servForm.nombre}>
+   885→                    {editServicio ? t.common.actualizar : t.common.crear}
+   886→                  </Button>
+   887→                </DialogFooter>
+   888→              </DialogContent>
+   889→            </Dialog>
+   890→          </div>
+   891→        )}
+   892→
+   893→        {/* ═══════════════ VENTAS TAB ═══════════════ */}
+   894→        {activeView === 'ventas' && (
+   895→          <div className="space-y-4">
+   896→            <h2 className="text-lg font-bold">{t.ventas.title}</h2>
+   897→            {/* Summary Cards */}
+   898→            <div className="grid grid-cols-3 gap-4">
+   899→              <Card>
+   900→                <CardContent className="p-4 text-center">
+   901→                  <p className="text-[10px] text-gray-500 uppercase">{t.ventas.montoTotal}</p>
+   902→                  <p className="text-xl font-bold">{formatCurrency(montoTotalHoy, moneda)}</p>
+   903→                </CardContent>
+   904→              </Card>
+   905→              <Card>
+   906→                <CardContent className="p-4 text-center">
+   907→                  <p className="text-[10px] text-gray-500 uppercase">{t.ventas.tasaUpselling}</p>
+   908→                  <p className="text-xl font-bold">{ventasHoy.length > 0 ? Math.round((ventasUpsellingHoy.length / ventasHoy.length) * 100) : 0}%</p>
+   909→                </CardContent>
+   910→              </Card>
+   911→              <Card>
+   912→                <CardContent className="p-4 text-center">
+   913→                  <p className="text-[10px] text-gray-500 uppercase">{t.ventas.ventasRecientes}</p>
+   914→                  <p className="text-xl font-bold">{ventasHoy.length}</p>
+   915→                </CardContent>
+   916→              </Card>
+   917→            </div>
+   918→            {/* Sales Table */}
+   919→            <Card>
+   920→              <CardContent className="p-0">
+   921→                <div className="overflow-x-auto">
+   922→                  <table className="w-full text-sm">
+   923→                    <thead>
+   924→                      <tr className="border-b bg-gray-50">
+   925→                        <th className="text-left p-3 text-xs font-medium text-gray-500">{t.ventas.empleado}</th>
+   926→                        <th className="text-left p-3 text-xs font-medium text-gray-500">{t.ventas.servicio}</th>
+   927→                        <th className="text-left p-3 text-xs font-medium text-gray-500">{t.ventas.monto}</th>
+   928→                        <th className="text-left p-3 text-xs font-medium text-gray-500">{t.ventas.upselling}</th>
+   929→                        <th className="text-left p-3 text-xs font-medium text-gray-500">NPS</th>
+   930→                      </tr>
+   931→                    </thead>
+   932→                    <tbody>
+   933→                      {ventasHoy.slice(0, 20).map((v) => (
+   934→                        <tr key={v.id} className="border-b">
+   935→                          <td className="p-3">{v.empleado?.nombre || '—'}</td>
+   936→                          <td className="p-3 text-gray-600">{v.nombreServicio || '—'}</td>
+   937→                          <td className="p-3 font-semibold">{formatCurrency(v.montoTotal, moneda)}</td>
+   938→                          <td className="p-3">{v.esUpselling ? <Badge className="bg-amber-100 text-amber-800 text-[10px]">↑</Badge> : '—'}</td>
+   939→                          <td className="p-3">{v.calificacionNPS ?? '—'}</td>
+   940→                        </tr>
+   941→                      ))}
+   942→                      {ventasHoy.length === 0 && (
+   943→                        <tr>
+   944→                          <td colSpan={5} className="p-6 text-center text-gray-400">{t.ventas.noVentas}</td>
+   945→                        </tr>
+   946→                      )}
+   947→                    </tbody>
+   948→                  </table>
+   949→                </div>
+   950→              </CardContent>
+   951→            </Card>
+   952→          </div>
+   953→        )}
+   954→
+   955→        {/* ═══════════════ CAPACITACIÓN TAB ═══════════════ */}
+   956→        {activeView === 'capacitacion' && (
+   957→          <div className="space-y-4">
+   958→            <h2 className="text-lg font-bold">{t.capacitacion.title}</h2>
+   959→            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+   960→              {capacitaciones.map((cap) => (
+   961→                <Card key={cap.id}>
+   962→                  <CardContent className="p-4">
+   963→                    <div className="flex items-start justify-between mb-2">
+   964→                      <h3 className="font-semibold text-sm">{cap.titulo}</h3>
+   965→                      <Badge variant="outline" className="text-[10px]">{cap.modalidad === 'virtual' ? t.capacitacion.virtual : t.capacitacion.presencial}</Badge>
+   966→                    </div>
+   967→                    <p className="text-xs text-gray-500 mb-3 line-clamp-2">{cap.descripcion}</p>
+   968→                    <div className="grid grid-cols-3 gap-2 text-center text-xs">
+   969→                      <div>
+   970→                        <p className="font-bold">{cap.inscripcionesCount}</p>
+   971→                        <p className="text-gray-400">{t.capacitacion.inscritos}</p>
+   972→                      </div>
+   973→                      <div>
+   974→                        <p className="font-bold text-green-600">{cap.completadosCount}</p>
+   975→                        <p className="text-gray-400">{t.capacitacion.completados}</p>
+   976→                      </div>
+   977→                      <div>
+   978→                        <p className="font-bold">{cap.tasaCompletado}%</p>
+   979→                        <p className="text-gray-400">{t.capacitacion.tasaCompletado}</p>
+   980→                      </div>
+   981→                    </div>
+   982→                    <Progress value={cap.tasaCompletado} className="mt-2 h-1.5" />
+   983→                    <div className="flex items-center justify-between mt-2 text-[10px] text-gray-400">
+   984→                      <span>{cap.duracion} {t.capacitacion.minutos}</span>
+   985→                      <span>{cap.dificultad}</span>
+   986→                    </div>
+   987→                  </CardContent>
+   988→                </Card>
+   989→              ))}
+   990→              {capacitaciones.length === 0 && (
+   991→                <p className="text-center text-gray-400 py-8 col-span-3">{t.capacitacion.noCursos}</p>
+   992→              )}
+   993→            </div>
+   994→
+   995→            {/* Employee Progress */}
+   996→            <Card>
+   997→              <CardHeader className="pb-2">
+   998→                <CardTitle className="text-sm">{t.capacitacion.progreso}</CardTitle>
+   999→              </CardHeader>
+  1000→              <CardContent className="p-0">
+  1001→                <div className="overflow-x-auto">
+  1002→                  <table className="w-full text-sm">
+  1003→                    <thead>
+  1004→                      <tr className="border-b bg-gray-50">
+  1005→                        <th className="text-left p-3 text-xs font-medium text-gray-500">{t.employees.title}</th>
+  1006→                        <th className="text-left p-3 text-xs font-medium text-gray-500">{t.capacitacion.completados}</th>
+  1007→                        <th className="text-left p-3 text-xs font-medium text-gray-500">{t.employees.score}</th>
+  1008→                      </tr>
+  1009→                    </thead>
+  1010→                    <tbody>
+  1011→                      {empleadosActivos.slice(0, 10).map((emp) => (
+  1012→                        <tr key={emp.id} className="border-b">
+  1013→                          <td className="p-3 font-medium">{emp.nombre}</td>
+  1014→                          <td className="p-3">{emp.cursosCompletados}/{emp.cursosCompletados + emp.cursosEnProgreso}</td>
+  1015→                          <td className="p-3">
+  1016→                            <Progress value={emp.puntuacionConocimiento} className="h-1.5 w-20 inline-block" />
+  1017→                            <span className="ml-2 text-xs">{Math.round(emp.puntuacionConocimiento)}</span>
+  1018→                          </td>
+  1019→                        </tr>
+  1020→                      ))}
+  1021→                    </tbody>
+  1022→                  </table>
+  1023→                </div>
+  1024→              </CardContent>
+  1025→            </Card>
+  1026→          </div>
+  1027→        )}
+  1028→
+  1029→        {/* ═══════════════ CONFIGURACIÓN TAB ═══════════════ */}
+  1030→        {activeView === 'configuracion' && (
+  1031→          <div className="space-y-4">
+  1032→            <h2 className="text-lg font-bold">{t.settings.title}</h2>
+  1033→            {/* Property Info */}
+  1034→            <Card>
+  1035→              <CardHeader className="pb-2">
+  1036→                <CardTitle className="text-sm">{t.settings.propiedad}</CardTitle>
+  1037→              </CardHeader>
+  1038→              <CardContent className="space-y-3">
+  1039→                <div className="grid grid-cols-2 gap-3">
+  1040→                  <div>
+  1041→                    <Label className="text-xs">{locale === 'es' ? 'Nombre' : 'Name'}</Label>
+  1042→                    <Input value={configForm.nombre || ''} onChange={(e) => setConfigForm({ ...configForm, nombre: e.target.value })} />
+  1043→                  </div>
+  1044→                  <div>
+  1045→                    <Label className="text-xs">{locale === 'es' ? 'Tipo' : 'Type'}</Label>
+  1046→                    <Select value={configForm.tipo || ''} onValueChange={(v) => setConfigForm({ ...configForm, tipo: v })}>
+  1047→                      <SelectTrigger><SelectValue /></SelectTrigger>
+  1048→                      <SelectContent>
+  1049→                        <SelectItem value="hotel">Hotel</SelectItem>
+  1050→                        <SelectItem value="restaurante">Restaurante</SelectItem>
+  1051→                        <SelectItem value="bar">Bar</SelectItem>
+  1052→                        <SelectItem value="spa">Spa</SelectItem>
+  1053→                        <SelectItem value="resort">Resort</SelectItem>
+  1054→                        <SelectItem value="cafe">Café</SelectItem>
+  1055→                        <SelectItem value="discoteca">Discoteca</SelectItem>
+  1056→                        <SelectItem value="club_playa">Club de Playa</SelectItem>
+  1057→                      </SelectContent>
+  1058→                    </Select>
+  1059→                  </div>
+  1060→                  <div>
+  1061→                    <Label className="text-xs">{t.settings.region}</Label>
+  1062→                    <Input value={configForm.region || ''} onChange={(e) => setConfigForm({ ...configForm, region: e.target.value })} />
+  1063→                  </div>
+  1064→                </div>
+  1065→              </CardContent>
+  1066→            </Card>
+  1067→            {/* Currency Config */}
+  1068→            <Card>
+  1069→              <CardHeader className="pb-2">
+  1070→                <CardTitle className="text-sm">{locale === 'es' ? 'Configuración de Moneda' : 'Currency Config'}</CardTitle>
+  1071→              </CardHeader>
+  1072→              <CardContent>
+  1073→                <div className="grid grid-cols-2 gap-3">
+  1074→                  <div>
+  1075→                    <Label className="text-xs">{locale === 'es' ? 'Moneda' : 'Currency'}</Label>
+  1076→                    <Select value={configForm.moneda || 'USD'} onValueChange={(v) => setConfigForm({ ...configForm, moneda: v })}>
+  1077→                      <SelectTrigger><SelectValue /></SelectTrigger>
+  1078→                      <SelectContent>
+  1079→                        <SelectItem value="USD">USD</SelectItem>
+  1080→                        <SelectItem value="MXN">MXN</SelectItem>
+  1081→                        <SelectItem value="EUR">EUR</SelectItem>
+  1082→                      </SelectContent>
+  1083→                    </Select>
+  1084→                  </div>
+  1085→                  <div>
+  1086→                    <Label className="text-xs">{locale === 'es' ? 'Símbolo' : 'Symbol'}</Label>
+  1087→                    <Input value={getCurrencyLabel(configForm.moneda || 'USD')} disabled />
+  1088→                  </div>
+  1089→                </div>
+  1090→              </CardContent>
+  1091→            </Card>
+  1092→            {/* Positions */}
+  1093→            <Card>
+  1094→              <CardHeader className="pb-2">
+  1095→                <CardTitle className="text-sm">{locale === 'es' ? 'Posiciones' : 'Positions'}</CardTitle>
+  1096→              </CardHeader>
+  1097→              <CardContent>
+  1098→                <div className="flex flex-wrap gap-2">
+  1099→                  {(positionsByType[configForm.tipo || currentProp?.tipo || 'hotel'] || positionsByType.hotel).map((pos) => (
+  1100→                    <Badge key={pos} variant="outline" className="text-xs">{pos}</Badge>
+  1101→                  ))}
+  1102→                </div>
+  1103→              </CardContent>
+  1104→            </Card>
+  1105→            <Button className="bg-teal-600 hover:bg-teal-700" onClick={handleSaveConfig}>
+  1106→              {t.common.guardar}
+  1107→            </Button>
+  1108→          </div>
+  1109→        )}
+  1110→      </main>
+  1111→
+  1112→      {/* ─── Sticky Footer ────────────────────────────── */}
+  1113→      <footer className="mt-auto border-t bg-white px-4 py-3">
+  1114→        <div className="flex items-center justify-between max-w-7xl mx-auto">
+  1115→          <p className="text-xs text-gray-500">
+  1116→            {currentProp?.nombre} · {currentProp?.region}
+  1117→          </p>
+  1118→          <p className="text-[10px] text-gray-400">
+  1119→            © 2025 HospitalityUP
+  1120→          </p>
+  1121→        </div>
+  1122→      </footer>
+  1123→    </div>
+  1124→  )
+  1125→}
+  1126→

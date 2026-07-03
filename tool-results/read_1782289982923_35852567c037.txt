@@ -1,0 +1,1302 @@
+     1→import { PrismaClient } from '@prisma/client'
+     2→
+     3→const prisma = new PrismaClient()
+     4→
+     5→async function main() {
+     6→  console.log('🌱 Iniciando seed de HospitalityUP en Supabase...')
+     7→
+     8→  // Limpiar datos existentes (en orden de dependencias)
+     9→  console.log('🧹 Limpiando datos previos...')
+    10→  await prisma.logAgenteIA.deleteMany()
+    11→  await prisma.notificacion.deleteMany()
+    12→  await prisma.respuestaNPS.deleteMany()
+    13→  await prisma.empleadoCapacitacion.deleteMany()
+    14→  await prisma.solicitudCapacitacion.deleteMany()
+    15→  await prisma.alertaRiesgo.deleteMany()
+    16→  await prisma.ventaNPS.deleteMany()
+    17→  await prisma.candidatoPool.deleteMany()
+    18→  await prisma.servicio.deleteMany()
+    19→  await prisma.capacitacion.deleteMany()
+    20→  await prisma.empleado.deleteMany()
+    21→  await prisma.instructor.deleteMany()
+    22→  await prisma.propiedad.deleteMany()
+    23→
+    24→  // =============================================
+    25→  // 1. PROPIEDADES (6 propiedades en zonas turísticas)
+    26→  // =============================================
+    27→  console.log('🏨 Creando propiedades...')
+    28→  const propiedades = await Promise.all([
+    29→    prisma.propiedad.create({
+    30→      data: {
+    31→        nombre: 'Hotel Grand Cancún',
+    32→        nombreEn: 'Grand Cancún Hotel',
+    33→        tipo: 'hotel',
+    34→        ubicacion: 'Boulevard Kukulcán KM 12.5, Cancún',
+    35→        region: 'cancun',
+    36→        plan: 'growth',
+    37→        moneda: 'USD',
+    38→        activo: true,
+    39→      }
+    40→    }),
+    41→    prisma.propiedad.create({
+    42→      data: {
+    43→        nombre: 'Restaurante La Terraza',
+    44→        nombreEn: 'The Terrace Restaurant',
+    45→        tipo: 'restaurante',
+    46→        ubicacion: 'Av. Reforma 222, CDMX',
+    47→        region: 'cdmx',
+    48→        plan: 'boutique',
+    49→        moneda: 'MXN',
+    50→        activo: true,
+    51→      }
+    52→    }),
+    53→    prisma.propiedad.create({
+    54→      data: {
+    55→        nombre: 'Bar Mar Caribe',
+    56→        nombreEn: 'Caribbean Sea Bar',
+    57→        tipo: 'bar',
+    58→        ubicacion: 'Zona Hotelera, Playa del Carmen',
+    59→        region: 'playa_carmen',
+    60→        plan: 'boutique',
+    61→        moneda: 'USD',
+    62→        activo: true,
+    63→      }
+    64→    }),
+    65→    prisma.propiedad.create({
+    66→      data: {
+    67→        nombre: 'Spa Sentir',
+    68→        nombreEn: 'Feel Spa',
+    69→        tipo: 'spa',
+    70→        ubicacion: 'Fraccionamiento Club Alta, Los Cabos',
+    71→        region: 'los_cabos',
+    72→        plan: 'growth',
+    73→        moneda: 'USD',
+    74→        activo: true,
+    75→      }
+    76→    }),
+    77→    prisma.propiedad.create({
+    78→      data: {
+    79→        nombre: 'Resort Sol Puebla',
+    80→        nombreEn: 'Sun Puebla Resort',
+    81→        tipo: 'resort',
+    82→        ubicacion: 'Calle 5 de Mayo 100, Puebla',
+    83→        region: 'puebla',
+    84→        plan: 'enterprise',
+    85→        moneda: 'MXN',
+    86→        activo: true,
+    87→      }
+    88→    }),
+    89→    prisma.propiedad.create({
+    90→      data: {
+    91→        nombre: 'Café Orígenes',
+    92→        nombreEn: 'Origins Coffee',
+    93→        tipo: 'cafe',
+    94→        ubicacion: 'Col. Roma Norte 45, CDMX',
+    95→        region: 'cdmx',
+    96→        plan: 'boutique',
+    97→        moneda: 'MXN',
+    98→        activo: true,
+    99→      }
+   100→    }),
+   101→  ])
+   102→
+   103→  const [hotelCancun, restauranteTerraza, barMarCaribe, spaSentir, resortPuebla, cafeOrigenes] = propiedades
+   104→  console.log(`  ✅ ${propiedades.length} propiedades creadas`)
+   105→
+   106→  // =============================================
+   107→  // 2. EMPLEADOS (17 empleados con IDs internos)
+   108→  // =============================================
+   109→  console.log('👥 Creando empleados...')
+   110→  const empleados = await Promise.all([
+   111→    // Hotel Grand Cancún - 5 empleados
+   112→    prisma.empleado.create({
+   113→      data: {
+   114→        empleadoId: 'BEL-101',
+   115→        nombre: 'Carlos Mendoza',
+   116→        posicion: 'Bellboy Sr.',
+   117→        posicionEn: 'Sr. Bellboy',
+   118→        departamento: 'Conserjería',
+   119→        departamentoEn: 'Concierge',
+   120→        fechaIngreso: new Date('2021-03-15'),
+   121→        estado: 'activo',
+   122→        nivelCarrera: 3,
+   123→        rutaCarrera: 'Bellboy Jr. → Bellboy Sr. → Jefe de Conserjería',
+   124→        puntuacionConocimiento: 78,
+   125→        puntuacionVentas: 65,
+   126→        puntuacionHospitalidad: 88,
+   127→        puntuacionTotal: 77,
+   128→        totalUpselling: 1250,
+   129→        npsPromedio: 9.1,
+   130→        cursosCompletados: 4,
+   131→        cursosEnProgreso: 1,
+   132→        indiceFelicidad: 85,
+   133→        riesgoBaja: 12,
+   134→        nivelRiesgoBaja: 'bajo',
+   135→        propiedadId: hotelCancun.id,
+   136→      }
+   137→    }),
+   138→    prisma.empleado.create({
+   139→      data: {
+   140→        empleadoId: 'MES-401',
+   141→        nombre: 'Ana García López',
+   142→        posicion: 'Mesera',
+   143→        posicionEn: 'Waitress',
+   144→        departamento: 'Alimentos y Bebidas',
+   145→        departamentoEn: 'Food & Beverage',
+   146→        fechaIngreso: new Date('2022-06-01'),
+   147→        estado: 'activo',
+   148→        nivelCarrera: 2,
+   149→        rutaCarrera: 'Mesera Jr. → Mesera Sr. → Capitana → Gerente A&B',
+   150→        puntuacionConocimiento: 85,
+   151→        puntuacionVentas: 92,
+   152→        puntuacionHospitalidad: 90,
+   153→        puntuacionTotal: 89,
+   154→        totalUpselling: 4800,
+   155→        npsPromedio: 9.3,
+   156→        cursosCompletados: 6,
+   157→        cursosEnProgreso: 1,
+   158→        indiceFelicidad: 92,
+   159→        riesgoBaja: 5,
+   160→        nivelRiesgoBaja: 'bajo',
+   161→        propiedadId: hotelCancun.id,
+   162→      }
+   163→    }),
+   164→    prisma.empleado.create({
+   165→      data: {
+   166→        empleadoId: 'MES-402',
+   167→        nombre: 'Roberto Sánchez',
+   168→        posicion: 'Mesero Sr.',
+   169→        posicionEn: 'Sr. Waiter',
+   170→        departamento: 'Alimentos y Bebidas',
+   171→        departamentoEn: 'Food & Beverage',
+   172→        fechaIngreso: new Date('2020-11-10'),
+   173→        estado: 'activo',
+   174→        nivelCarrera: 3,
+   175→        rutaCarrera: 'Mesero Jr. → Mesero Sr. → Capitán → Gerente A&B',
+   176→        puntuacionConocimiento: 80,
+   177→        puntuacionVentas: 75,
+   178→        puntuacionHospitalidad: 82,
+   179→        puntuacionTotal: 79,
+   180→        totalUpselling: 2100,
+   181→        npsPromedio: 8.5,
+   182→        cursosCompletados: 5,
+   183→        indiceFelicidad: 70,
+   184→        riesgoBaja: 35,
+   185→        nivelRiesgoBaja: 'medio',
+   186→        justificacionRiesgo: 'NPS ligeramente bajo en comparación con el equipo',
+   187→        propiedadId: hotelCancun.id,
+   188→      }
+   189→    }),
+   190→    prisma.empleado.create({
+   191→      data: {
+   192→        empleadoId: 'CAP-501',
+   193→        nombre: 'María Elena Torres',
+   194→        posicion: 'Capitana',
+   195→        posicionEn: 'Captain',
+   196→        departamento: 'Alimentos y Bebidas',
+   197→        departamentoEn: 'Food & Beverage',
+   198→        fechaIngreso: new Date('2019-01-20'),
+   199→        estado: 'activo',
+   200→        nivelCarrera: 4,
+   201→        rutaCarrera: 'Mesera → Capitana → Gerente A&B',
+   202→        puntuacionConocimiento: 90,
+   203→        puntuacionVentas: 88,
+   204→        puntuacionHospitalidad: 95,
+   205→        puntuacionTotal: 91,
+   206→        totalUpselling: 6200,
+   207→        npsPromedio: 9.6,
+   208→        cursosCompletados: 8,
+   209→        indiceFelicidad: 94,
+   210→        riesgoBaja: 3,
+   211→        nivelRiesgoBaja: 'bajo',
+   212→        propiedadId: hotelCancun.id,
+   213→      }
+   214→    }),
+   215→    prisma.empleado.create({
+   216→      data: {
+   217→        empleadoId: 'REC-701',
+   218→        nombre: 'Luis Fernández',
+   219→        posicion: 'Recepcionista',
+   220→        posicionEn: 'Receptionist',
+   221→        departamento: 'Recepción',
+   222→        departamentoEn: 'Front Desk',
+   223→        fechaIngreso: new Date('2023-02-14'),
+   224→        estado: 'activo',
+   225→        nivelCarrera: 1,
+   226→        rutaCarrera: 'Recepcionista Jr. → Recepcionista Sr. → Gerente Recepción',
+   227→        puntuacionConocimiento: 60,
+   228→        puntuacionVentas: 55,
+   229→        puntuacionHospitalidad: 72,
+   230→        puntuacionTotal: 62,
+   231→        totalUpselling: 400,
+   232→        npsPromedio: 7.8,
+   233→        cursosCompletados: 2,
+   234→        cursosEnProgreso: 2,
+   235→        indiceFelicidad: 60,
+   236→        riesgoBaja: 55,
+   237→        nivelRiesgoBaja: 'alto',
+   238→        justificacionRiesgo: 'Empleado nuevo con bajo rendimiento y felicidad decreciente',
+   239→        sugerenciaCapacitacion: 'Curso de hospitalidad y técnicas de upselling para recepcionistas',
+   240→        propiedadId: hotelCancun.id,
+   241→      }
+   242→    }),
+   243→
+   244→    // Restaurante La Terraza - 3 empleados
+   245→    prisma.empleado.create({
+   246→      data: {
+   247→        empleadoId: 'MES-403',
+   248→        nombre: 'Patricia Ruiz',
+   249→        posicion: 'Mesera',
+   250→        posicionEn: 'Waitress',
+   251→        departamento: 'Alimentos y Bebidas',
+   252→        departamentoEn: 'Food & Beverage',
+   253→        fechaIngreso: new Date('2022-09-01'),
+   254→        estado: 'activo',
+   255→        nivelCarrera: 2,
+   256→        rutaCarrera: 'Mesera Jr. → Mesera Sr. → Capitana',
+   257→        puntuacionConocimiento: 76,
+   258→        puntuacionVentas: 88,
+   259→        puntuacionHospitalidad: 85,
+   260→        puntuacionTotal: 83,
+   261→        totalUpselling: 3200,
+   262→        npsPromedio: 8.9,
+   263→        cursosCompletados: 4,
+   264→        indiceFelicidad: 82,
+   265→        riesgoBaja: 15,
+   266→        nivelRiesgoBaja: 'bajo',
+   267→        propiedadId: restauranteTerraza.id,
+   268→      }
+   269→    }),
+   270→    prisma.empleado.create({
+   271→      data: {
+   272→        empleadoId: 'BAR-601',
+   273→        nombre: 'Jorge Ramírez',
+   274→        posicion: 'Bartender',
+   275→        posicionEn: 'Bartender',
+   276→        departamento: 'Alimentos y Bebidas',
+   277→        departamentoEn: 'Food & Beverage',
+   278→        fechaIngreso: new Date('2021-05-20'),
+   279→        estado: 'activo',
+   280→        nivelCarrera: 3,
+   281→        rutaCarrera: 'Barback → Bartender Jr. → Bartender Sr. → Bar Manager',
+   282→        puntuacionConocimiento: 92,
+   283→        puntuacionVentas: 95,
+   284→        puntuacionHospitalidad: 88,
+   285→        puntuacionTotal: 92,
+   286→        totalUpselling: 5600,
+   287→        npsPromedio: 9.2,
+   288→        cursosCompletados: 7,
+   289→        indiceFelicidad: 90,
+   290→        riesgoBaja: 8,
+   291→        nivelRiesgoBaja: 'bajo',
+   292→        propiedadId: restauranteTerraza.id,
+   293→      }
+   294→    }),
+   295→    prisma.empleado.create({
+   296→      data: {
+   297→        empleadoId: 'HST-201',
+   298→        nombre: 'Diana Morales',
+   299→        posicion: 'Hostess',
+   300→        posicionEn: 'Hostess',
+   301→        departamento: 'Alimentos y Bebidas',
+   302→        departamentoEn: 'Food & Beverage',
+   303→        fechaIngreso: new Date('2023-08-15'),
+   304→        estado: 'onboarding',
+   305→        nivelCarrera: 1,
+   306→        rutaCarrera: 'Hostess → Capitana → Gerente A&B',
+   307→        puntuacionConocimiento: 45,
+   308→        puntuacionVentas: 30,
+   309→        puntuacionHospitalidad: 60,
+   310→        puntuacionTotal: 45,
+   311→        totalUpselling: 100,
+   312→        npsPromedio: 7.0,
+   313→        cursosCompletados: 1,
+   314→        cursosEnProgreso: 3,
+   315→        indiceFelicidad: 65,
+   316→        riesgoBaja: 40,
+   317→        nivelRiesgoBaja: 'medio',
+   318→        justificacionRiesgo: 'Empleado en onboarding con métricas bajas iniciales',
+   319→        sugerenciaCapacitacion: 'Programa de onboarding acelerado + curso de hospitalidad básica',
+   320→        propiedadId: restauranteTerraza.id,
+   321→      }
+   322→    }),
+   323→
+   324→    // Bar Mar Caribe - 2 empleados
+   325→    prisma.empleado.create({
+   326→      data: {
+   327→        empleadoId: 'BAR-602',
+   328→        nombre: 'Miguel Ángel Cruz',
+   329→        posicion: 'Bartender Sr.',
+   330→        posicionEn: 'Sr. Bartender',
+   331→        departamento: 'Alimentos y Bebidas',
+   332→        departamentoEn: 'Food & Beverage',
+   333→        fechaIngreso: new Date('2020-03-10'),
+   334→        estado: 'activo',
+   335→        nivelCarrera: 4,
+   336→        rutaCarrera: 'Bartender → Bartender Sr. → Bar Manager → Director A&B',
+   337→        puntuacionConocimiento: 95,
+   338→        puntuacionVentas: 90,
+   339→        puntuacionHospitalidad: 87,
+   340→        puntuacionTotal: 91,
+   341→        totalUpselling: 7200,
+   342→        npsPromedio: 9.4,
+   343→        cursosCompletados: 9,
+   344→        indiceFelicidad: 88,
+   345→        riesgoBaja: 10,
+   346→        nivelRiesgoBaja: 'bajo',
+   347→        propiedadId: barMarCaribe.id,
+   348→      }
+   349→    }),
+   350→    prisma.empleado.create({
+   351→      data: {
+   352→        empleadoId: 'MES-404',
+   353→        nombre: 'Laura Gutiérrez',
+   354→        posicion: 'Mesera',
+   355→        posicionEn: 'Waitress',
+   356→        departamento: 'Alimentos y Bebidas',
+   357→        departamentoEn: 'Food & Beverage',
+   358→        fechaIngreso: new Date('2022-01-15'),
+   359→        estado: 'activo',
+   360→        nivelCarrera: 2,
+   361→        rutaCarrera: 'Mesera Jr. → Mesera Sr. → Capitana',
+   362→        puntuacionConocimiento: 70,
+   363→        puntuacionVentas: 72,
+   364→        puntuacionHospitalidad: 78,
+   365→        puntuacionTotal: 73,
+   366→        totalUpselling: 1800,
+   367→        npsPromedio: 8.2,
+   368→        cursosCompletados: 3,
+   369→        indiceFelicidad: 75,
+   370→        riesgoBaja: 25,
+   371→        nivelRiesgoBaja: 'bajo',
+   372→        propiedadId: barMarCaribe.id,
+   373→      }
+   374→    }),
+   375→
+   376→    // Spa Sentir - 2 empleados
+   377→    prisma.empleado.create({
+   378→      data: {
+   379→        empleadoId: 'TER-801',
+   380→        nombre: 'Isabella Vargas',
+   381→        posicion: 'Terapeuta Sr.',
+   382→        posicionEn: 'Sr. Therapist',
+   383→        departamento: 'Spa y Bienestar',
+   384→        departamentoEn: 'Spa & Wellness',
+   385→        fechaIngreso: new Date('2020-07-01'),
+   386→        estado: 'activo',
+   387→        nivelCarrera: 3,
+   388→        rutaCarrera: 'Terapeuta → Terapeuta Sr. → Coordinadora Spa → Directora Spa',
+   389→        puntuacionConocimiento: 94,
+   390→        puntuacionVentas: 80,
+   391→        puntuacionHospitalidad: 96,
+   392→        puntuacionTotal: 90,
+   393→        totalUpselling: 3800,
+   394→        npsPromedio: 9.7,
+   395→        cursosCompletados: 7,
+   396→        indiceFelicidad: 93,
+   397→        riesgoBaja: 4,
+   398→        nivelRiesgoBaja: 'bajo',
+   399→        propiedadId: spaSentir.id,
+   400→      }
+   401→    }),
+   402→    prisma.empleado.create({
+   403→      data: {
+   404→        empleadoId: 'REC-802',
+   405→        nombre: 'Sofía Hernández',
+   406→        posicion: 'Recepcionista Spa',
+   407→        posicionEn: 'Spa Receptionist',
+   408→        departamento: 'Spa y Bienestar',
+   409→        departamentoEn: 'Spa & Wellness',
+   410→        fechaIngreso: new Date('2023-04-01'),
+   411→        estado: 'activo',
+   412→        nivelCarrera: 1,
+   413→        rutaCarrera: 'Recepcionista → Coordinadora Spa',
+   414→        puntuacionConocimiento: 55,
+   415→        puntuacionVentas: 62,
+   416→        puntuacionHospitalidad: 75,
+   417→        puntuacionTotal: 64,
+   418→        totalUpselling: 600,
+   419→        npsPromedio: 8.0,
+   420→        cursosCompletados: 2,
+   421→        cursosEnProgreso: 1,
+   422→        indiceFelicidad: 68,
+   423→        riesgoBaja: 45,
+   424→        nivelRiesgoBaja: 'medio',
+   425→        justificacionRiesgo: 'Rendimiento por debajo del promedio del equipo y felicidad decreciente',
+   426→        sugerenciaCapacitacion: 'Mentoría con Isabella Vargas + curso de ventas en spa',
+   427→        propiedadId: spaSentir.id,
+   428→      }
+   429→    }),
+   430→
+   431→    // Resort Sol Puebla - 3 empleados
+   432→    prisma.empleado.create({
+   433→      data: {
+   434→        empleadoId: 'MES-405',
+   435→        nombre: 'Fernando Castillo',
+   436→        posicion: 'Capitán',
+   437→        posicionEn: 'Captain',
+   438→        departamento: 'Alimentos y Bebidas',
+   439→        departamentoEn: 'Food & Beverage',
+   440→        fechaIngreso: new Date('2018-10-01'),
+   441→        estado: 'activo',
+   442→        nivelCarrera: 4,
+   443→        rutaCarrera: 'Mesero → Capitán → Gerente A&B → Director Operaciones',
+   444→        puntuacionConocimiento: 88,
+   445→        puntuacionVentas: 85,
+   446→        puntuacionHospitalidad: 90,
+   447→        puntuacionTotal: 88,
+   448→        totalUpselling: 5500,
+   449→        npsPromedio: 9.1,
+   450→        cursosCompletados: 8,
+   451→        indiceFelicidad: 87,
+   452→        riesgoBaja: 7,
+   453→        nivelRiesgoBaja: 'bajo',
+   454→        propiedadId: resortPuebla.id,
+   455→      }
+   456→    }),
+   457→    prisma.empleado.create({
+   458→      data: {
+   459→        empleadoId: 'BEL-102',
+   460→        nombre: 'Alejandro Díaz',
+   461→        posicion: 'Bellboy',
+   462→        posicionEn: 'Bellboy',
+   463→        departamento: 'Conserjería',
+   464→        departamentoEn: 'Concierge',
+   465→        fechaIngreso: new Date('2022-12-01'),
+   466→        estado: 'activo',
+   467→        nivelCarrera: 2,
+   468→        rutaCarrera: 'Bellboy Jr. → Bellboy Sr. → Jefe de Conserjería',
+   469→        puntuacionConocimiento: 65,
+   470→        puntuacionVentas: 58,
+   471→        puntuacionHospitalidad: 72,
+   472→        puntuacionTotal: 65,
+   473→        totalUpselling: 700,
+   474→        npsPromedio: 8.0,
+   475→        cursosCompletados: 3,
+   476→        indiceFelicidad: 62,
+   477→        riesgoBaja: 50,
+   478→        nivelRiesgoBaja: 'alto',
+   479→        justificacionRiesgo: 'Bajo upselling y felicidad decreciente en los últimos 3 meses',
+   480→        sugerenciaCapacitacion: 'Capacitación en técnicas de upselling para conserjería',
+   481→        propiedadId: resortPuebla.id,
+   482→      }
+   483→    }),
+   484→    prisma.empleado.create({
+   485→      data: {
+   486→        empleadoId: 'COC-901',
+   487→        nombre: 'Ricardo Moreno',
+   488→        posicion: 'Chef de Partie',
+   489→        posicionEn: 'Chef de Partie',
+   490→        departamento: 'Cocina',
+   491→        departamentoEn: 'Kitchen',
+   492→        fechaIngreso: new Date('2019-06-15'),
+   493→        estado: 'activo',
+   494→        nivelCarrera: 3,
+   495→        rutaCarrera: 'Commis → Demi Chef → Chef de Partie → Sous Chef → Head Chef',
+   496→        puntuacionConocimiento: 91,
+   497→        puntuacionVentas: 60,
+   498→        puntuacionHospitalidad: 70,
+   499→        puntuacionTotal: 74,
+   500→        totalUpselling: 900,
+   501→        npsPromedio: 8.3,
+   502→        cursosCompletados: 6,
+   503→        indiceFelicidad: 78,
+   504→        riesgoBaja: 20,
+   505→        nivelRiesgoBaja: 'bajo',
+   506→        propiedadId: resortPuebla.id,
+   507→      }
+   508→    }),
+   509→
+   510→    // Café Orígenes - 2 empleados
+   511→    prisma.empleado.create({
+   512→      data: {
+   513→        empleadoId: 'BAR-603',
+   514→        nombre: 'Valentina Ríos',
+   515→        posicion: 'Barista',
+   516→        posicionEn: 'Barista',
+   517→        departamento: 'Alimentos y Bebidas',
+   518→        departamentoEn: 'Food & Beverage',
+   519→        fechaIngreso: new Date('2022-04-01'),
+   520→        estado: 'activo',
+   521→        nivelCarrera: 2,
+   522→        rutaCarrera: 'Barista Jr. → Barista Sr. → Shift Manager → Store Manager',
+   523→        puntuacionConocimiento: 82,
+   524→        puntuacionVentas: 78,
+   525→        puntuacionHospitalidad: 85,
+   526→        puntuacionTotal: 82,
+   527→        totalUpselling: 1500,
+   528→        npsPromedio: 8.8,
+   529→        cursosCompletados: 4,
+   530→        indiceFelicidad: 80,
+   531→        riesgoBaja: 18,
+   532→        nivelRiesgoBaja: 'bajo',
+   533→        propiedadId: cafeOrigenes.id,
+   534→      }
+   535→    }),
+   536→    prisma.empleado.create({
+   537→      data: {
+   538→        empleadoId: 'MES-406',
+   539→        nombre: 'Camila Ortiz',
+   540→        posicion: 'Mesera',
+   541→        posicionEn: 'Waitress',
+   542→        departamento: 'Alimentos y Bebidas',
+   543→        departamentoEn: 'Food & Beverage',
+   544→        fechaIngreso: new Date('2023-09-01'),
+   545→        estado: 'onboarding',
+   546→        nivelCarrera: 1,
+   547→        rutaCarrera: 'Mesera Jr. → Mesera Sr. → Shift Manager',
+   548→        puntuacionConocimiento: 40,
+   549→        puntuacionVentas: 35,
+   550→        puntuacionHospitalidad: 55,
+   551→        puntuacionTotal: 43,
+   552→        totalUpselling: 50,
+   553→        npsPromedio: 7.2,
+   554→        cursosCompletados: 0,
+   555→        cursosEnProgreso: 3,
+   556→        indiceFelicidad: 55,
+   557→        riesgoBaja: 60,
+   558→        nivelRiesgoBaja: 'alto',
+   559→        justificacionRiesgo: 'Empleado nueva en onboarding con métricas muy bajas y baja felicidad',
+   560→        sugerenciaCapacitacion: 'Programa de onboarding intensivo + asignación de mentor',
+   561→        propiedadId: cafeOrigenes.id,
+   562→      }
+   563→    }),
+   564→  ])
+   565→
+   566→  console.log(`  ✅ ${empleados.length} empleados creados`)
+   567→
+   568→  // Encontrar empleados por ID para referencias
+   569→  const empMap: Record<string, typeof empleados[0]> = {}
+   570→  for (const emp of empleados) {
+   571→    empMap[emp.empleadoId] = emp
+   572→  }
+   573→
+   574→  // =============================================
+   575→  // 3. SERVICIOS (36 servicios con categorías y upselling)
+   576→  // =============================================
+   577→  console.log('📋 Creando servicios...')
+   578→  const serviciosData = [
+   579→    // Hotel Grand Cancún
+   580→    { nombre: 'Habitación Deluxe Mar', nombreEn: 'Deluxe Ocean Room', categoria: 'habitacion', precio: 350, esUpselling: false, propiedadId: hotelCancun.id },
+   581→    { nombre: 'Upgrade Suite Presidencial', nombreEn: 'Presidential Suite Upgrade', categoria: 'habitacion', precio: 800, precioUpselling: 1200, esUpselling: true, objetivoUpselling: 'Upgrade de Deluxe a Suite Presidencial con vista panorámica', objetivoUpsellingEn: 'Upgrade from Deluxe to Presidential Suite with panoramic view', propiedadId: hotelCancun.id },
+   582→    { nombre: 'Tour Isla Mujeres', nombreEn: 'Isla Mujeres Tour', categoria: 'tour', precio: 120, esUpselling: false, propiedadId: hotelCancun.id },
+   583→    { nombre: 'Tour Isla Mujeres Premium', nombreEn: 'Premium Isla Mujeres Tour', categoria: 'tour', precio: 120, precioUpselling: 220, esUpselling: true, objetivoUpselling: 'Upgrade a tour premium con lunch y open bar', objetivoUpsellingEn: 'Upgrade to premium tour with lunch and open bar', propiedadId: hotelCancun.id },
+   584→    { nombre: 'Desbuffet Internacional', nombreEn: 'International Breakfast Buffet', categoria: 'platillo', precio: 35, esUpselling: false, propiedadId: hotelCancun.id },
+   585→    { nombre: 'Maridaje Vinos Premium', nombreEn: 'Premium Wine Pairing', categoria: 'platillo', precio: 35, precioUpselling: 85, esUpselling: true, objetivoUpselling: 'Agregar maridaje de vinos premium al desayuno', objetivoUpsellingEn: 'Add premium wine pairing to breakfast', propiedadId: hotelCancun.id },
+   586→    { nombre: 'Cena en la Playa', nombreEn: 'Beach Dinner', categoria: 'experiencia', precio: 250, precioUpselling: 450, esUpselling: true, objetivoUpselling: 'Cena romántica privada en la playa con chef personal', objetivoUpsellingEn: 'Private romantic beach dinner with personal chef', propiedadId: hotelCancun.id },
+   587→
+   588→    // Restaurante La Terraza
+   589→    { nombre: 'Filete Mignon', nombreEn: 'Filet Mignon', categoria: 'platillo', precio: 480, esUpselling: false, propiedadId: restauranteTerraza.id },
+   590→    { nombre: 'Maridaje Vinos Reserva', nombreEn: 'Reserve Wine Pairing', categoria: 'platillo', precio: 480, precioUpselling: 780, esUpselling: true, objetivoUpselling: 'Agregar maridaje de vinos de reserva al filete', objetivoUpsellingEn: 'Add reserve wine pairing to the filet', propiedadId: restauranteTerraza.id },
+   591→    { nombre: 'Pasta Trufa Negra', nombreEn: 'Black Truffle Pasta', categoria: 'platillo', precio: 380, esUpselling: false, propiedadId: restauranteTerraza.id },
+   592→    { nombre: 'Cocktail Artesanal', nombreEn: 'Artisan Cocktail', categoria: 'bebida', precio: 180, esUpselling: false, propiedadId: restauranteTerraza.id },
+   593→    { nombre: 'Menú Degustación 7 Tiempos', nombreEn: '7-Course Tasting Menu', categoria: 'experiencia', precio: 1200, precioUpselling: 1800, esUpselling: true, objetivoUpselling: 'Upgrade a menú degustación con maridaje de vinos', objetivoUpsellingEn: 'Upgrade to tasting menu with wine pairing', propiedadId: restauranteTerraza.id },
+   594→    { nombre: 'Postre del Chef', nombreEn: "Chef's Dessert", categoria: 'platillo', precio: 150, precioUpselling: 250, esUpselling: true, objetivoUpselling: 'Agregar postre especial del chef con licor', objetivoUpsellingEn: 'Add special chef dessert with liqueur', propiedadId: restauranteTerraza.id },
+   595→
+   596→    // Bar Mar Caribe
+   597→    { nombre: 'Margarita Clásica', nombreEn: 'Classic Margarita', categoria: 'bebida', precio: 12, esUpselling: false, propiedadId: barMarCaribe.id },
+   598→    { nombre: 'Margarita Premium Don Julio', nombreEn: 'Premium Don Julio Margarita', categoria: 'bebida', precio: 12, precioUpselling: 28, esUpselling: true, objetivoUpselling: 'Upgrade a tequila premium Don Julio 1942', objetivoUpsellingEn: 'Upgrade to premium Don Julio 1942 tequila', propiedadId: barMarCaribe.id },
+   599→    { nombre: 'Cerveza Artesanal', nombreEn: 'Craft Beer', categoria: 'bebida', precio: 8, esUpselling: false, propiedadId: barMarCaribe.id },
+   600→    { nombre: 'Flight de Cervezas', nombreEn: 'Beer Flight', categoria: 'bebida', precio: 8, precioUpselling: 22, esUpselling: true, objetivoUpselling: 'Ofrecer flight de 4 cervezas artesanales en lugar de una', objetivoUpsellingEn: 'Offer flight of 4 craft beers instead of one', propiedadId: barMarCaribe.id },
+   601→    { nombre: 'Tapas del Mar', nombreEn: 'Sea Tapas', categoria: 'platillo', precio: 18, esUpselling: false, propiedadId: barMarCaribe.id },
+   602→    { nombre: 'Tabla de Mariscos Premium', nombreEn: 'Premium Seafood Platter', categoria: 'platillo', precio: 18, precioUpselling: 55, esUpselling: true, objetivoUpselling: 'Upgrade a tabla premium con ostras y caviar', objetivoUpsellingEn: 'Upgrade to premium platter with oysters and caviar', propiedadId: barMarCaribe.id },
+   603→
+   604→    // Spa Sentir
+   605→    { nombre: 'Masaje Relajante 60min', nombreEn: 'Relaxing Massage 60min', categoria: 'masaje', precio: 150, esUpselling: false, propiedadId: spaSentir.id },
+   606→    { nombre: 'Masaje Hot Stones 90min', nombreEn: 'Hot Stones Massage 90min', categoria: 'masaje', precio: 150, precioUpselling: 280, esUpselling: true, objetivoUpselling: 'Upgrade a masaje de piedras calientes de 90 min', objetivoUpsellingEn: 'Upgrade to 90 min hot stones massage', propiedadId: spaSentir.id },
+   607→    { nombre: 'Facial Básico', nombreEn: 'Basic Facial', categoria: 'masaje', precio: 100, esUpselling: false, propiedadId: spaSentir.id },
+   608→    { nombre: 'Facial con Oro 24K', nombreEn: '24K Gold Facial', categoria: 'masaje', precio: 100, precioUpselling: 250, esUpselling: true, objetivoUpselling: 'Upgrade a facial premium con oro de 24 quilates', objetivoUpsellingEn: 'Upgrade to premium 24K gold facial', propiedadId: spaSentir.id },
+   609→    { nombre: 'Paquete Spa Day', nombreEn: 'Spa Day Package', categoria: 'paquete', precio: 350, precioUpselling: 550, esUpselling: true, objetivoUpselling: 'Agregar acceso a area húmeda y lunch al paquete', objetivoUpsellingEn: 'Add wet area access and lunch to the package', propiedadId: spaSentir.id },
+   610→    { nombre: 'Aromaterapia', nombreEn: 'Aromatherapy', categoria: 'experiencia', precio: 50, precioUpselling: 90, esUpselling: true, objetivoUpselling: 'Agregar aromaterapia premium a cualquier tratamiento', objetivoUpsellingEn: 'Add premium aromatherapy to any treatment', propiedadId: spaSentir.id },
+   611→
+   612→    // Resort Sol Puebla
+   613→    { nombre: 'Habitación Estándar', nombreEn: 'Standard Room', categoria: 'habitacion', precio: 180, esUpselling: false, propiedadId: resortPuebla.id },
+   614→    { nombre: 'Upgrade Suite Junior', nombreEn: 'Junior Suite Upgrade', categoria: 'habitacion', precio: 180, precioUpselling: 320, esUpselling: true, objetivoUpselling: 'Upgrade a Junior Suite con sala y balcón', objetivoUpsellingEn: 'Upgrade to Junior Suite with living room and balcony', propiedadId: resortPuebla.id },
+   615→    { nombre: 'Tour Cholula y Cantares', nombreEn: 'Cholula & Cantares Tour', categoria: 'tour', precio: 85, esUpselling: false, propiedadId: resortPuebla.id },
+   616→    { nombre: 'Experiencia Gastronómica Poblana', nombreEn: 'Pueblan Gastronomic Experience', categoria: 'experiencia', precio: 85, precioUpselling: 180, esUpselling: true, objetivoUpselling: 'Agregar experiencia gastronómica completa con clase de cocina', objetivoUpsellingEn: 'Add full gastronomic experience with cooking class', propiedadId: resortPuebla.id },
+   617→    { nombre: 'Brunch Dominical', nombreEn: 'Sunday Brunch', categoria: 'platillo', precio: 45, esUpselling: false, propiedadId: resortPuebla.id },
+   618→    { nombre: 'Brunch con Champagne', nombreEn: 'Champagne Brunch', categoria: 'platillo', precio: 45, precioUpselling: 95, esUpselling: true, objetivoUpselling: 'Upgrade a brunch con champagne ilimitado', objetivoUpsellingEn: 'Upgrade to brunch with unlimited champagne', propiedadId: resortPuebla.id },
+   619→
+   620→    // Café Orígenes
+   621→    { nombre: 'Café Americano', nombreEn: 'Americano Coffee', categoria: 'bebida', precio: 55, esUpselling: false, propiedadId: cafeOrigenes.id },
+   622→    { nombre: 'Café de Especialidad V60', nombreEn: 'Specialty V60 Coffee', categoria: 'bebida', precio: 55, precioUpselling: 120, esUpselling: true, objetivoUpselling: 'Ofrecer café de especialidad preparado en V60', objetivoUpsellingEn: 'Offer specialty coffee prepared with V60 method', propiedadId: cafeOrigenes.id },
+   623→    { nombre: 'Pastel del Día', nombreEn: 'Cake of the Day', categoria: 'platillo', precio: 75, esUpselling: false, propiedadId: cafeOrigenes.id },
+   624→    { nombre: 'Repostería Artesanal 3 piezas', nombreEn: 'Artisan Pastry 3-piece', categoria: 'platillo', precio: 75, precioUpselling: 160, esUpselling: true, objetivoUpselling: 'Ofrecer selección de 3 reposterías artesanales', objetivoUpsellingEn: 'Offer selection of 3 artisan pastries', propiedadId: cafeOrigenes.id },
+   625→  ]
+   626→
+   627→  const servicios = await Promise.all(
+   628→    serviciosData.map(s => prisma.servicio.create({ data: s }))
+   629→  )
+   630→  console.log(`  ✅ ${servicios.length} servicios creados`)
+   631→
+   632→  // =============================================
+   633→  // 4. CAPACITACIONES (8 cursos)
+   634→  // =============================================
+   635→  console.log('📚 Creando capacitaciones...')
+   636→  const capacitaciones = await Promise.all([
+   637→    prisma.capacitacion.create({
+   638→      data: {
+   639→        titulo: 'Técnicas de Upselling en Hospitalidad',
+   640→        tituloEn: 'Hospitality Upselling Techniques',
+   641→        descripcion: 'Aprende las mejores técnicas para incrementar ventas sugiriendo upgrades y servicios premium a los huéspedes.',
+   642→        descripcionEn: 'Learn the best techniques to increase sales by suggesting upgrades and premium services to guests.',
+   643→        categoria: 'upselling',
+   644→        categoriaEn: 'upselling',
+   645→        modalidad: 'virtual',
+   646→        duracion: 45,
+   647→        dificultad: 'intermedio',
+   648→        dificultadEn: 'intermediate',
+   649→        puntos: 15,
+   650→        activo: true,
+   651→        posicion: 'Mesero / Bartender',
+   652→        posicionEn: 'Waiter / Bartender',
+   653→      }
+   654→    }),
+   655→    prisma.capacitacion.create({
+   656→      data: {
+   657→        titulo: 'Hospitalidad de Clase Mundial',
+   658→        tituloEn: 'World-Class Hospitality',
+   659→        descripcion: 'Principios de servicio al cliente excepcional aplicados a la industria hotelera y restaurantera.',
+   660→        descripcionEn: 'Exceptional customer service principles applied to the hotel and restaurant industry.',
+   661→        categoria: 'hospitalidad',
+   662→        categoriaEn: 'hospitality',
+   663→        modalidad: 'presencial',
+   664→        duracion: 60,
+   665→        dificultad: 'principiante',
+   666→        dificultadEn: 'beginner',
+   667→        puntos: 10,
+   668→        activo: true,
+   669→        posicion: 'Todos los puestos',
+   670→        posicionEn: 'All positions',
+   671→      }
+   672→    }),
+   673→    prisma.capacitacion.create({
+   674→      data: {
+   675→        titulo: 'Conocimiento de Vinos y Maridaje',
+   676→        tituloEn: 'Wine Knowledge & Pairing',
+   677→        descripcion: 'Fundamentos de viticultura, variedades de uva, y técnicas de maridaje con alimentos.',
+   678→        descripcionEn: 'Fundamentals of viticulture, grape varieties, and food pairing techniques.',
+   679→        categoria: 'conocimiento_producto',
+   680→        categoriaEn: 'product_knowledge',
+   681→        modalidad: 'presencial',
+   682→        duracion: 90,
+   683→        dificultad: 'avanzado',
+   684→        dificultadEn: 'advanced',
+   685→        puntos: 20,
+   686→        activo: true,
+   687→        posicion: 'Mesero / Sommelier',
+   688→        posicionEn: 'Waiter / Sommelier',
+   689→      }
+   690→    }),
+   691→    prisma.capacitacion.create({
+   692→      data: {
+   693→        titulo: 'Onboarding: Tu Primer Día',
+   694→        tituloEn: 'Onboarding: Your First Day',
+   695→        descripcion: 'Guía completa para nuevos empleados. Cultura organizacional, políticas, y primeros pasos en tu rol.',
+   696→        descripcionEn: 'Complete guide for new employees. Organizational culture, policies, and first steps in your role.',
+   697→        categoria: 'onboarding',
+   698→        categoriaEn: 'onboarding',
+   699→        modalidad: 'virtual',
+   700→        duracion: 30,
+   701→        dificultad: 'principiante',
+   702→        dificultadEn: 'beginner',
+   703→        puntos: 5,
+   704→        activo: true,
+   705→        posicion: 'Todos los puestos',
+   706→        posicionEn: 'All positions',
+   707→      }
+   708→    }),
+   709→    prisma.capacitacion.create({
+   710→      data: {
+   711→        titulo: 'Liderazgo en el Piso',
+   712→        tituloEn: 'Floor Leadership',
+   713→        descripcion: 'Habilidades de liderazgo para capitanes y supervisores. Manejo de equipo, resolución de conflictos y estándares de servicio.',
+   714→        descripcionEn: 'Leadership skills for captains and supervisors. Team management, conflict resolution and service standards.',
+   715→        categoria: 'liderazgo',
+   716→        categoriaEn: 'leadership',
+   717→        modalidad: 'presencial',
+   718→        duracion: 120,
+   719→        dificultad: 'avanzado',
+   720→        dificultadEn: 'advanced',
+   721→        puntos: 25,
+   722→        activo: true,
+   723→        posicion: 'Capitán / Supervisor',
+   724→        posicionEn: 'Captain / Supervisor',
+   725→      }
+   726→    }),
+   727→    prisma.capacitacion.create({
+   728→      data: {
+   729→        titulo: 'Coctelería Avanzada',
+   730→        tituloEn: 'Advanced Mixology',
+   731→        descripcion: 'Técnicas avanzadas de mixología, creación de cócteles signature y presentación.',
+   732→        descripcionEn: 'Advanced mixology techniques, signature cocktail creation and presentation.',
+   733→        categoria: 'conocimiento_producto',
+   734→        categoriaEn: 'product_knowledge',
+   735→        modalidad: 'presencial',
+   736→        duracion: 90,
+   737→        dificultad: 'avanzado',
+   738→        dificultadEn: 'advanced',
+   739→        puntos: 20,
+   740→        activo: true,
+   741→        posicion: 'Bartender',
+   742→        posicionEn: 'Bartender',
+   743→      }
+   744→    }),
+   745→    prisma.capacitacion.create({
+   746→      data: {
+   747→        titulo: 'Ventas en Spa y Bienestar',
+   748→        tituloEn: 'Spa & Wellness Sales',
+   749→        descripcion: 'Técnicas de venta consultiva para servicios de spa, upselling de tratamientos y paquetes.',
+   750→        descripcionEn: 'Consultative sales techniques for spa services, treatment and package upselling.',
+   751→        categoria: 'upselling',
+   752→        categoriaEn: 'upselling',
+   753→        modalidad: 'virtual',
+   754→        duracion: 45,
+   755→        dificultad: 'intermedio',
+   756→        dificultadEn: 'intermediate',
+   757→        puntos: 15,
+   758→        activo: true,
+   759→        posicion: 'Recepcionista Spa / Terapeuta',
+   760→        posicionEn: 'Spa Receptionist / Therapist',
+   761→      }
+   762→    }),
+   763→    prisma.capacitacion.create({
+   764→      data: {
+   765→        titulo: 'Coffee Mastery: Del Grano a la Taza',
+   766→        tituloEn: 'Coffee Mastery: From Bean to Cup',
+   767→        descripcion: 'Conocimiento profundo del café: origen, tostado, métodos de extracción y latte art.',
+   768→        descripcionEn: 'Deep coffee knowledge: origin, roasting, extraction methods and latte art.',
+   769→        categoria: 'conocimiento_producto',
+   770→        categoriaEn: 'product_knowledge',
+   771→        modalidad: 'presencial',
+   772→        duracion: 75,
+   773→        dificultad: 'intermedio',
+   774→        dificultadEn: 'intermediate',
+   775→        puntos: 18,
+   776→        activo: true,
+   777→        posicion: 'Barista',
+   778→        posicionEn: 'Barista',
+   779→      }
+   780→    }),
+   781→  ])
+   782→
+   783→  console.log(`  ✅ ${capacitaciones.length} capacitaciones creadas`)
+   784→
+   785→  // =============================================
+   786→  // 5. EMPLEADO-CAPACITACIÓN (inscripciones)
+   787→  // =============================================
+   788→  console.log('📖 Creando inscripciones a capacitaciones...')
+   789→  const [capUpselling, capHospitalidad, capVinos, capOnboarding, capLiderazgo, capCocteleria, capSpaSales, capCoffee] = capacitaciones
+   790→
+   791→  const inscripcionesData = [
+   792→    // Ana García - estrella del equipo
+   793→    { empleadoId: empMap['MES-401'].id, capacitacionId: capUpselling.id, estado: 'completado', progreso: 100, puntuacion: 95, fechaInicio: new Date('2022-08-01'), fechaCompletado: new Date('2022-08-15') },
+   794→    { empleadoId: empMap['MES-401'].id, capacitacionId: capVinos.id, estado: 'completado', progreso: 100, puntuacion: 92, fechaInicio: new Date('2023-01-10'), fechaCompletado: new Date('2023-02-01') },
+   795→    { empleadoId: empMap['MES-401'].id, capacitacionId: capHospitalidad.id, estado: 'completado', progreso: 100, puntuacion: 98, fechaInicio: new Date('2022-06-15'), fechaCompletado: new Date('2022-06-30') },
+   796→    { empleadoId: empMap['MES-401'].id, capacitacionId: capLiderazgo.id, estado: 'en_progreso', progreso: 45, fechaInicio: new Date('2024-01-15') },
+   797→
+   798→    // María Elena Torres - capitana
+   799→    { empleadoId: empMap['CAP-501'].id, capacitacionId: capLiderazgo.id, estado: 'completado', progreso: 100, puntuacion: 97, fechaInicio: new Date('2020-03-01'), fechaCompletado: new Date('2020-04-01') },
+   800→    { empleadoId: empMap['CAP-501'].id, capacitacionId: capVinos.id, estado: 'completado', progreso: 100, puntuacion: 94, fechaInicio: new Date('2021-01-10'), fechaCompletado: new Date('2021-02-15') },
+   801→    { empleadoId: empMap['CAP-501'].id, capacitacionId: capUpselling.id, estado: 'completado', progreso: 100, puntuacion: 91, fechaInicio: new Date('2020-06-01'), fechaCompletado: new Date('2020-06-20') },
+   802→
+   803→    // Jorge Ramírez - bartender
+   804→    { empleadoId: empMap['BAR-601'].id, capacitacionId: capCocteleria.id, estado: 'completado', progreso: 100, puntuacion: 96, fechaInicio: new Date('2021-06-01'), fechaCompletado: new Date('2021-07-15') },
+   805→    { empleadoId: empMap['BAR-601'].id, capacitacionId: capUpselling.id, estado: 'completado', progreso: 100, puntuacion: 93, fechaInicio: new Date('2022-03-01'), fechaCompletado: new Date('2022-03-20') },
+   806→    { empleadoId: empMap['BAR-601'].id, capacitacionId: capVinos.id, estado: 'completado', progreso: 100, puntuacion: 88, fechaInicio: new Date('2022-09-01'), fechaCompletado: new Date('2022-10-01') },
+   807→
+   808→    // Luis Fernández - recepcionista en riesgo
+   809→    { empleadoId: empMap['REC-701'].id, capacitacionId: capOnboarding.id, estado: 'completado', progreso: 100, puntuacion: 70, fechaInicio: new Date('2023-02-14'), fechaCompletado: new Date('2023-02-20') },
+   810→    { empleadoId: empMap['REC-701'].id, capacitacionId: capHospitalidad.id, estado: 'en_progreso', progreso: 35, fechaInicio: new Date('2024-02-01') },
+   811→    { empleadoId: empMap['REC-701'].id, capacitacionId: capUpselling.id, estado: 'no_iniciado', progreso: 0 },
+   812→
+   813→    // Diana Morales - hostess en onboarding
+   814→    { empleadoId: empMap['HST-201'].id, capacitacionId: capOnboarding.id, estado: 'en_progreso', progreso: 60, fechaInicio: new Date('2023-08-15') },
+   815→    { empleadoId: empMap['HST-201'].id, capacitacionId: capHospitalidad.id, estado: 'en_progreso', progreso: 20, fechaInicio: new Date('2023-09-01') },
+   816→    { empleadoId: empMap['HST-201'].id, capacitacionId: capUpselling.id, estado: 'no_iniciado', progreso: 0 },
+   817→
+   818→    // Isabella Vargas - terapeuta estrella
+   819→    { empleadoId: empMap['TER-801'].id, capacitacionId: capSpaSales.id, estado: 'completado', progreso: 100, puntuacion: 98, fechaInicio: new Date('2021-01-01'), fechaCompletado: new Date('2021-01-20') },
+   820→    { empleadoId: empMap['TER-801'].id, capacitacionId: capHospitalidad.id, estado: 'completado', progreso: 100, puntuacion: 99, fechaInicio: new Date('2020-07-15'), fechaCompletado: new Date('2020-08-01') },
+   821→    { empleadoId: empMap['TER-801'].id, capacitacionId: capUpselling.id, estado: 'completado', progreso: 100, puntuacion: 90, fechaInicio: new Date('2022-05-01'), fechaCompletado: new Date('2022-05-20') },
+   822→
+   823→    // Sofía Hernández - recepcionista spa en riesgo
+   824→    { empleadoId: empMap['REC-802'].id, capacitacionId: capOnboarding.id, estado: 'completado', progreso: 100, puntuacion: 72, fechaInicio: new Date('2023-04-01'), fechaCompletado: new Date('2023-04-10') },
+   825→    { empleadoId: empMap['REC-802'].id, capacitacionId: capSpaSales.id, estado: 'en_progreso', progreso: 40, fechaInicio: new Date('2024-01-15') },
+   826→
+   827→    // Miguel Ángel Cruz - bartender sr
+   828→    { empleadoId: empMap['BAR-602'].id, capacitacionId: capCocteleria.id, estado: 'completado', progreso: 100, puntuacion: 99, fechaInicio: new Date('2020-04-01'), fechaCompletado: new Date('2020-05-15') },
+   829→    { empleadoId: empMap['BAR-602'].id, capacitacionId: capLiderazgo.id, estado: 'completado', progreso: 100, puntuacion: 90, fechaInicio: new Date('2022-01-10'), fechaCompletado: new Date('2022-03-01') },
+   830→    { empleadoId: empMap['BAR-602'].id, capacitacionId: capVinos.id, estado: 'completado', progreso: 100, puntuacion: 85, fechaInicio: new Date('2021-06-01'), fechaCompletado: new Date('2021-07-01') },
+   831→
+   832→    // Valentina Ríos - barista
+   833→    { empleadoId: empMap['BAR-603'].id, capacitacionId: capCoffee.id, estado: 'completado', progreso: 100, puntuacion: 92, fechaInicio: new Date('2022-04-15'), fechaCompletado: new Date('2022-06-01') },
+   834→    { empleadoId: empMap['BAR-603'].id, capacitacionId: capUpselling.id, estado: 'completado', progreso: 100, puntuacion: 85, fechaInicio: new Date('2023-03-01'), fechaCompletado: new Date('2023-03-20') },
+   835→
+   836→    // Camila Ortiz - nueva en onboarding
+   837→    { empleadoId: empMap['MES-406'].id, capacitacionId: capOnboarding.id, estado: 'en_progreso', progreso: 30, fechaInicio: new Date('2023-09-01') },
+   838→    { empleadoId: empMap['MES-406'].id, capacitacionId: capHospitalidad.id, estado: 'en_progreso', progreso: 10, fechaInicio: new Date('2023-09-15') },
+   839→    { empleadoId: empMap['MES-406'].id, capacitacionId: capCoffee.id, estado: 'no_iniciado', progreso: 0 },
+   840→
+   841→    // Fernando Castillo - capitán resort
+   842→    { empleadoId: empMap['MES-405'].id, capacitacionId: capLiderazgo.id, estado: 'completado', progreso: 100, puntuacion: 93, fechaInicio: new Date('2019-03-01'), fechaCompletado: new Date('2019-04-15') },
+   843→    { empleadoId: empMap['MES-405'].id, capacitacionId: capVinos.id, estado: 'completado', progreso: 100, puntuacion: 90, fechaInicio: new Date('2020-01-10'), fechaCompletado: new Date('2020-02-15') },
+   844→
+   845→    // Roberto Sánchez
+   846→    { empleadoId: empMap['MES-402'].id, capacitacionId: capHospitalidad.id, estado: 'completado', progreso: 100, puntuacion: 82, fechaInicio: new Date('2021-01-15'), fechaCompletado: new Date('2021-02-01') },
+   847→    { empleadoId: empMap['MES-402'].id, capacitacionId: capUpselling.id, estado: 'completado', progreso: 100, puntuacion: 78, fechaInicio: new Date('2021-06-01'), fechaCompletado: new Date('2021-06-20') },
+   848→    { empleadoId: empMap['MES-402'].id, capacitacionId: capVinos.id, estado: 'en_progreso', progreso: 55, fechaInicio: new Date('2024-01-10') },
+   849→
+   850→    // Carlos Mendoza - bellboy
+   851→    { empleadoId: empMap['BEL-101'].id, capacitacionId: capHospitalidad.id, estado: 'completado', progreso: 100, puntuacion: 90, fechaInicio: new Date('2021-04-01'), fechaCompletado: new Date('2021-04-20') },
+   852→    { empleadoId: empMap['BEL-101'].id, capacitacionId: capUpselling.id, estado: 'completado', progreso: 100, puntuacion: 75, fechaInicio: new Date('2022-02-01'), fechaCompletado: new Date('2022-02-20') },
+   853→    { empleadoId: empMap['BEL-101'].id, capacitacionId: capLiderazgo.id, estado: 'en_progreso', progreso: 20, fechaInicio: new Date('2024-02-01') },
+   854→
+   855→    // Patricia Ruiz
+   856→    { empleadoId: empMap['MES-403'].id, capacitacionId: capHospitalidad.id, estado: 'completado', progreso: 100, puntuacion: 88, fechaInicio: new Date('2022-10-01'), fechaCompletado: new Date('2022-10-20') },
+   857→    { empleadoId: empMap['MES-403'].id, capacitacionId: capUpselling.id, estado: 'completado', progreso: 100, puntuacion: 90, fechaInicio: new Date('2023-01-15'), fechaCompletado: new Date('2023-02-01') },
+   858→
+   859→    // Alejandro Díaz - bellboy en riesgo
+   860→    { empleadoId: empMap['BEL-102'].id, capacitacionId: capOnboarding.id, estado: 'completado', progreso: 100, puntuacion: 68, fechaInicio: new Date('2022-12-01'), fechaCompletado: new Date('2022-12-10') },
+   861→    { empleadoId: empMap['BEL-102'].id, capacitacionId: capHospitalidad.id, estado: 'completado', progreso: 100, puntuacion: 72, fechaInicio: new Date('2023-03-01'), fechaCompletado: new Date('2023-03-20') },
+   862→    { empleadoId: empMap['BEL-102'].id, capacitacionId: capUpselling.id, estado: 'en_progreso', progreso: 50, fechaInicio: new Date('2024-01-20') },
+   863→  ]
+   864→
+   865→  const inscripciones = await Promise.all(
+   866→    inscripcionesData.map(i => prisma.empleadoCapacitacion.create({ data: i }))
+   867→  )
+   868→  console.log(`  ✅ ${inscripciones.length} inscripciones a capacitaciones creadas`)
+   869→
+   870→  // =============================================
+   871→  // 6. VENTAS NPS (25 ventas con calificaciones)
+   872→  // =============================================
+   873→  console.log('💰 Creando ventas con NPS...')
+   874→  const ventasData = [
+   875→    // Hotel Grand Cancún - Ana García (MES-401) - estrella
+   876→    { empleadoId: empMap['MES-401'].id, propiedadId: hotelCancun.id, montoUpselling: 400, esUpselling: true, nombreServicio: 'Upgrade Suite Presidencial', cantidad: 1, precioUnitario: 1200, montoTotal: 1200, calificacionNPS: 10, esPromotor: true, comentario: '¡Increíble upgrade! Ana fue muy atenta.', fuenteNPS: 'qr', categoriaServicio: 'upgrade_habitacion' },
+   877→    { empleadoId: empMap['MES-401'].id, propiedadId: hotelCancun.id, montoUpselling: 100, esUpselling: true, nombreServicio: 'Maridaje Vinos Premium', cantidad: 2, precioUnitario: 85, montoTotal: 170, calificacionNPS: 9, esPromotor: true, comentario: 'Excelente sugerencia de maridaje.', fuenteNPS: 'sms', categoriaServicio: 'upselling' },
+   878→    { empleadoId: empMap['MES-401'].id, propiedadId: hotelCancun.id, montoUpselling: 0, esUpselling: false, nombreServicio: 'Desbuffet Internacional', cantidad: 2, precioUnitario: 35, montoTotal: 70, calificacionNPS: 9, esPromotor: true, fuenteNPS: 'qr', categoriaServicio: 'menu' },
+   879→    { empleadoId: empMap['MES-401'].id, propiedadId: hotelCancun.id, montoUpselling: 200, esUpselling: true, nombreServicio: 'Cena en la Playa', cantidad: 1, precioUnitario: 450, montoTotal: 450, calificacionNPS: 10, esPromotor: true, comentario: 'La mejor cena de mi vida. ¡Gracias Ana!', fuenteNPS: 'app', categoriaServicio: 'experiencia' },
+   880→    { empleadoId: empMap['MES-401'].id, propiedadId: hotelCancun.id, montoUpselling: 100, esUpselling: true, nombreServicio: 'Tour Isla Mujeres Premium', cantidad: 2, precioUnitario: 220, montoTotal: 440, calificacionNPS: 8, esPromotor: false, fuenteNPS: 'email', categoriaServicio: 'tour' },
+   881→
+   882→    // Hotel Grand Cancún - Roberto Sánchez (MES-402)
+   883→    { empleadoId: empMap['MES-402'].id, propiedadId: hotelCancun.id, montoUpselling: 0, esUpselling: false, nombreServicio: 'Desbuffet Internacional', cantidad: 3, precioUnitario: 35, montoTotal: 105, calificacionNPS: 8, esPromotor: false, fuenteNPS: 'qr', categoriaServicio: 'menu' },
+   884→    { empleadoId: empMap['MES-402'].id, propiedadId: hotelCancun.id, montoUpselling: 85, esUpselling: true, nombreServicio: 'Maridaje Vinos Premium', cantidad: 1, precioUnitario: 85, montoTotal: 85, calificacionNPS: 7, esPromotor: false, comentario: 'Buen maridaje pero demoró un poco.', fuenteNPS: 'sms', categoriaServicio: 'upselling' },
+   885→    { empleadoId: empMap['MES-402'].id, propiedadId: hotelCancun.id, montoUpselling: 0, esUpselling: false, nombreServicio: 'Tour Isla Mujeres', cantidad: 2, precioUnitario: 120, montoTotal: 240, calificacionNPS: 9, esPromotor: true, fuenteNPS: 'app', categoriaServicio: 'tour' },
+   886→
+   887→    // Hotel Grand Cancún - María Elena Torres (CAP-501)
+   888→    { empleadoId: empMap['CAP-501'].id, propiedadId: hotelCancun.id, montoUpselling: 800, esUpselling: true, nombreServicio: 'Cena en la Playa VIP', cantidad: 2, precioUnitario: 650, montoTotal: 1300, calificacionNPS: 10, esPromotor: true, comentario: '¡María Elena hizo que nuestra luna de miel fuera inolvidable!', fuenteNPS: 'app', categoriaServicio: 'experiencia' },
+   889→    { empleadoId: empMap['CAP-501'].id, propiedadId: hotelCancun.id, montoUpselling: 400, esUpselling: true, nombreServicio: 'Upgrade Suite Presidencial', cantidad: 1, precioUnitario: 1200, montoTotal: 1200, calificacionNPS: 10, esPromotor: true, fuenteNPS: 'qr', categoriaServicio: 'upgrade_habitacion' },
+   890→
+   891→    // Hotel Grand Cancún - Carlos Mendoza (BEL-101)
+   892→    { empleadoId: empMap['BEL-101'].id, propiedadId: hotelCancun.id, montoUpselling: 100, esUpselling: true, nombreServicio: 'Tour Isla Mujeres Premium', cantidad: 1, precioUnitario: 220, montoTotal: 220, calificacionNPS: 9, esPromotor: true, comentario: 'Carlos nos recomendó el tour premium, ¡gran decisión!', fuenteNPS: 'qr', categoriaServicio: 'tour' },
+   893→    { empleadoId: empMap['BEL-101'].id, propiedadId: hotelCancun.id, montoUpselling: 0, esUpselling: false, nombreServicio: 'Tour Isla Mujeres', cantidad: 1, precioUnitario: 120, montoTotal: 120, calificacionNPS: 8, esPromotor: false, fuenteNPS: 'sms', categoriaServicio: 'tour' },
+   894→
+   895→    // Hotel Grand Cancún - Luis Fernández (REC-701) - en riesgo
+   896→    { empleadoId: empMap['REC-701'].id, propiedadId: hotelCancun.id, montoUpselling: 0, esUpselling: false, nombreServicio: 'Habitación Deluxe Mar', cantidad: 1, precioUnitario: 350, montoTotal: 350, calificacionNPS: 7, esPromotor: false, comentario: 'El check-in fue lento.', fuenteNPS: 'email', categoriaServicio: 'menu' },
+   897→    { empleadoId: empMap['REC-701'].id, propiedadId: hotelCancun.id, montoUpselling: 0, esUpselling: false, nombreServicio: 'Habitación Deluxe Mar', cantidad: 1, precioUnitario: 350, montoTotal: 350, calificacionNPS: 6, esPromotor: false, comentario: 'No me ofrecieron opciones de upgrade.', fuenteNPS: 'qr', categoriaServicio: 'menu' },
+   898→
+   899→    // Restaurante La Terraza - Jorge Ramírez (BAR-601)
+   900→    { empleadoId: empMap['BAR-601'].id, propiedadId: restauranteTerraza.id, montoUpselling: 16, esUpselling: true, nombreServicio: 'Margarita Premium Don Julio', cantidad: 4, precioUnitario: 28, montoTotal: 112, calificacionNPS: 10, esPromotor: true, comentario: '¡Los mejores margaritas! Jorge es un artista.', fuenteNPS: 'qr', categoriaServicio: 'upselling' },
+   901→    { empleadoId: empMap['BAR-601'].id, propiedadId: restauranteTerraza.id, montoUpselling: 600, esUpselling: true, nombreServicio: 'Menú Degustación 7 Tiempos', cantidad: 2, precioUnitario: 1800, montoTotal: 3600, calificacionNPS: 9, esPromotor: true, fuenteNPS: 'app', categoriaServicio: 'experiencia' },
+   902→
+   903→    // Restaurante La Terraza - Patricia Ruiz (MES-403)
+   904→    { empleadoId: empMap['MES-403'].id, propiedadId: restauranteTerraza.id, montoUpselling: 300, esUpselling: true, nombreServicio: 'Maridaje Vinos Reserva', cantidad: 2, precioUnitario: 780, montoTotal: 1560, calificacionNPS: 9, esPromotor: true, comentario: 'Patricia tiene un paladar increíble para recomendar vinos.', fuenteNPS: 'qr', categoriaServicio: 'upselling' },
+   905→    { empleadoId: empMap['MES-403'].id, propiedadId: restauranteTerraza.id, montoUpselling: 0, esUpselling: false, nombreServicio: 'Filete Mignon', cantidad: 2, precioUnitario: 480, montoTotal: 960, calificacionNPS: 8, esPromotor: false, fuenteNPS: 'sms', categoriaServicio: 'menu' },
+   906→
+   907→    // Bar Mar Caribe - Miguel Ángel Cruz (BAR-602)
+   908→    { empleadoId: empMap['BAR-602'].id, propiedadId: barMarCaribe.id, montoUpselling: 14, esUpselling: true, nombreServicio: 'Margarita Premium Don Julio', cantidad: 3, precioUnitario: 28, montoTotal: 84, calificacionNPS: 10, esPromotor: true, comentario: '¡La mejor margarita de mi vida! Miguel es un master.', fuenteNPS: 'qr', categoriaServicio: 'upselling' },
+   909→    { empleadoId: empMap['BAR-602'].id, propiedadId: barMarCaribe.id, montoUpselling: 37, esUpselling: true, nombreServicio: 'Tabla de Mariscos Premium', cantidad: 1, precioUnitario: 55, montoTotal: 55, calificacionNPS: 9, esPromotor: true, fuenteNPS: 'app', categoriaServicio: 'upselling' },
+   910→
+   911→    // Spa Sentir - Isabella Vargas (TER-801)
+   912→    { empleadoId: empMap['TER-801'].id, propiedadId: spaSentir.id, montoUpselling: 130, esUpselling: true, nombreServicio: 'Masaje Hot Stones 90min', cantidad: 1, precioUnitario: 280, montoTotal: 280, calificacionNPS: 10, esPromotor: true, comentario: 'Isabella tiene manos mágicas. El mejor masaje de mi vida.', fuenteNPS: 'app', categoriaServicio: 'upselling' },
+   913→    { empleadoId: empMap['TER-801'].id, propiedadId: spaSentir.id, montoUpselling: 150, esUpselling: true, nombreServicio: 'Facial con Oro 24K', cantidad: 1, precioUnitario: 250, montoTotal: 250, calificacionNPS: 10, esPromotor: true, comentario: 'Mi piel se ve increíble. ¡Volveré por seguro!', fuenteNPS: 'qr', categoriaServicio: 'upselling' },
+   914→    { empleadoId: empMap['TER-801'].id, propiedadId: spaSentir.id, montoUpselling: 200, esUpselling: true, nombreServicio: 'Paquete Spa Day', cantidad: 1, precioUnitario: 550, montoTotal: 550, calificacionNPS: 9, esPromotor: true, fuenteNPS: 'email', categoriaServicio: 'experiencia' },
+   915→
+   916→    // Café Orígenes - Valentina Ríos (BAR-603)
+   917→    { empleadoId: empMap['BAR-603'].id, propiedadId: cafeOrigenes.id, montoUpselling: 65, esUpselling: true, nombreServicio: 'Café de Especialidad V60', cantidad: 2, precioUnitario: 120, montoTotal: 240, calificacionNPS: 9, esPromotor: true, comentario: 'Valentina explicó todo el proceso, fue una experiencia.', fuenteNPS: 'qr', categoriaServicio: 'upselling' },
+   918→    { empleadoId: empMap['BAR-603'].id, propiedadId: cafeOrigenes.id, montoUpselling: 85, esUpselling: true, nombreServicio: 'Repostería Artesanal 3 piezas', cantidad: 1, precioUnitario: 160, montoTotal: 160, calificacionNPS: 8, esPromotor: false, fuenteNPS: 'sms', categoriaServicio: 'upselling' },
+   919→  ]
+   920→
+   921→  const ventas = await Promise.all(
+   922→    ventasData.map(v => prisma.ventaNPS.create({ data: v }))
+   923→  )
+   924→  console.log(`  ✅ ${ventas.length} ventas creadas`)
+   925→
+   926→  // =============================================
+   927→  // 7. ALERTAS DE RIESGO
+   928→  // =============================================
+   929→  console.log('🚨 Creando alertas de riesgo...')
+   930→  const alertas = await Promise.all([
+   931→    prisma.alertaRiesgo.create({
+   932→      data: {
+   933→        empleadoId: empMap['REC-701'].id,
+   934→        propiedadId: hotelCancun.id,
+   935→        tipo: 'baja_felicidad',
+   936→        tipoEn: 'low_happiness',
+   937→        severidad: 'alto',
+   938→        mensaje: 'Luis Fernández muestra índice de felicidad de 60/100 y NPS promedio de 7.8. Riesgo significativo de abandono.',
+   939→        mensajeEn: 'Luis Fernández shows happiness index of 60/100 and average NPS of 7.8. Significant risk of abandonment.',
+   940→        probabilidad: 55,
+   941→        generadoPorIA: true,
+   942→        leida: false,
+   943→      }
+   944→    }),
+   945→    prisma.alertaRiesgo.create({
+   946→      data: {
+   947→        empleadoId: empMap['BEL-102'].id,
+   948→        propiedadId: resortPuebla.id,
+   949→        tipo: 'estancamiento',
+   950→        tipoEn: 'stagnation',
+   951→        severidad: 'alto',
+   952→        mensaje: 'Alejandro Díaz no ha mejorado sus métricas de upselling en los últimos 3 meses y su felicidad ha bajado a 62.',
+   953→        mensajeEn: 'Alejandro Díaz has not improved his upselling metrics in the last 3 months and his happiness dropped to 62.',
+   954→        probabilidad: 50,
+   955→        generadoPorIA: true,
+   956→        leida: false,
+   957→      }
+   958→    }),
+   959→    prisma.alertaRiesgo.create({
+   960→      data: {
+   961→        empleadoId: empMap['MES-406'].id,
+   962→        propiedadId: cafeOrigenes.id,
+   963→        tipo: 'estancamiento',
+   964→        tipoEn: 'stagnation',
+   965→        severidad: 'medio',
+   966→        mensaje: 'Camila Ortiz lleva 3 meses en onboarding con métricas muy bajas. Se sugiere mentoría inmediata.',
+   967→        mensajeEn: 'Camila Ortiz has been in onboarding for 3 months with very low metrics. Immediate mentoring suggested.',
+   968→        probabilidad: 60,
+   969→        generadoPorIA: true,
+   970→        leida: false,
+   971→      }
+   972→    }),
+   973→    prisma.alertaRiesgo.create({
+   974→      data: {
+   975→        empleadoId: empMap['REC-802'].id,
+   976→        propiedadId: spaSentir.id,
+   977→        tipo: 'nps_bajo',
+   978→        tipoEn: 'low_nps',
+   979→        severidad: 'medio',
+   980→        mensaje: 'Sofía Hernández tiene NPS promedio de 8.0, por debajo del promedio del spa (9.2). Se recomienda capacitación en ventas.',
+   981→        mensajeEn: 'Sofía Hernández has average NPS of 8.0, below the spa average (9.2). Sales training recommended.',
+   982→        probabilidad: 45,
+   983→        generadoPorIA: true,
+   984→        leida: true,
+   985→      }
+   986→    }),
+   987→    prisma.alertaRiesgo.create({
+   988→      data: {
+   989→        empleadoId: empMap['HST-201'].id,
+   990→        propiedadId: restauranteTerraza.id,
+   991→        tipo: 'inactividad',
+   992→        tipoEn: 'inactivity',
+   993→        severidad: 'medio',
+   994→        mensaje: 'Diana Morales no ha registrado actividad de capacitación en las últimas 2 semanas.',
+   995→        mensajeEn: 'Diana Morales has not registered training activity in the last 2 weeks.',
+   996→        probabilidad: 40,
+   997→        generadoPorIA: true,
+   998→        leida: false,
+   999→      }
+  1000→    }),
+  1001→    prisma.alertaRiesgo.create({
+  1002→      data: {
+  1003→        empleadoId: empMap['MES-402'].id,
+  1004→        propiedadId: hotelCancun.id,
+  1005→        tipo: 'nps_bajo',
+  1006→        tipoEn: 'low_nps',
+  1007→        severidad: 'bajo',
+  1008→        mensaje: 'Roberto Sánchez tiene NPS de 8.5, ligeramente por debajo del promedio del equipo A&B (9.0).',
+  1009→        mensajeEn: 'Roberto Sánchez has NPS of 8.5, slightly below the F&B team average (9.0).',
+  1010→        probabilidad: 35,
+  1011→        generadoPorIA: true,
+  1012→        leida: true,
+  1013→      }
+  1014→    }),
+  1015→    prisma.alertaRiesgo.create({
+  1016→      data: {
+  1017→        empleadoId: empMap['MES-402'].id,
+  1018→        propiedadId: hotelCancun.id,
+  1019→        tipo: 'baja_felicidad',
+  1020→        tipoEn: 'low_happiness',
+  1021→        severidad: 'medio',
+  1022→        mensaje: 'Roberto Sánchez muestra índice de felicidad de 70/100, tendencia decreciente en el último trimestre.',
+  1023→        mensajeEn: 'Roberto Sánchez shows happiness index of 70/100, decreasing trend in the last quarter.',
+  1024→        probabilidad: 35,
+  1025→        generadoPorIA: true,
+  1026→        leida: false,
+  1027→      }
+  1028→    }),
+  1029→    prisma.alertaRiesgo.create({
+  1030→      data: {
+  1031→        empleadoId: empMap['BEL-102'].id,
+  1032→        propiedadId: resortPuebla.id,
+  1033→        tipo: 'fin_contrato',
+  1034→        tipoEn: 'contract_end',
+  1035→        severidad: 'critico',
+  1036→        mensaje: 'Alejandro Díáz tiene contrato vencimiento próximo. Combinado con bajo rendimiento, se recomienda preparación de reemplazo.',
+  1037→        mensajeEn: 'Alejandro Díaz has upcoming contract expiration. Combined with low performance, replacement preparation recommended.',
+  1038→        probabilidad: 70,
+  1039→        generadoPorIA: true,
+  1040→        leida: false,
+  1041→      }
+  1042→    }),
+  1043→  ])
+  1044→
+  1045→  console.log(`  ✅ ${alertas.length} alertas creadas`)
+  1046→
+  1047→  // =============================================
+  1048→  // 8. CANDIDATOS
+  1049→  // =============================================
+  1050→  console.log('🤝 Creando candidatos...')
+  1051→  const candidatos = await Promise.all([
+  1052→    prisma.candidatoPool.create({
+  1053→      data: {
+  1054→        nombre: 'Gabriela Mendoza',
+  1055→        email: 'gabriela.m@email.com',
+  1056→        telefono: '+52 55 1234 5678',
+  1057→        posicion: 'Recepcionista',
+  1058→        posicionEn: 'Receptionist',
+  1059→        region: 'cancun',
+  1060→        experiencia: 3,
+  1061→        habilidades: JSON.stringify(['opera', 'salesforce', 'bilingue', 'upselling']),
+  1062→        estado: 'disponible',
+  1063→        fuente: 'portal',
+  1064→        puntuacionEntrevista: 85,
+  1065→        notas: 'Excelente actitud, experiencia en hoteles 5 estrellas. Candidata para reemplazo de Luis Fernández.',
+  1066→      }
+  1067→    }),
+  1068→    prisma.candidatoPool.create({
+  1069→      data: {
+  1070→        nombre: 'Pablo Herrera',
+  1071→        email: 'pablo.h@email.com',
+  1072→        telefono: '+52 55 8765 4321',
+  1073→        posicion: 'Mesero',
+  1074→        posicionEn: 'Waiter',
+  1075→        region: 'cdmx',
+  1076→        experiencia: 2,
+  1077→        habilidades: JSON.stringify(['servicio', 'bilingue', 'pos']),
+  1078→        estado: 'en_proceso',
+  1079→        fuente: 'referido',
+  1080→        puntuacionEntrevista: 78,
+  1081→        notas: 'Buen potencial, necesita capacitación en upselling. Referido por María Elena Torres.',
+  1082→      }
+  1083→    }),
+  1084→    prisma.candidatoPool.create({
+  1085→      data: {
+  1086→        nombre: 'Lucía Castillo',
+  1087→        email: 'lucia.c@email.com',
+  1088→        telefono: '+52 222 1111 2222',
+  1089→        posicion: 'Bellboy',
+  1090→        posicionEn: 'Bellboy',
+  1091→        region: 'puebla',
+  1092→        experiencia: 1,
+  1093→        habilidades: JSON.stringify(['cliente', 'bilingue']),
+  1094→        estado: 'disponible',
+  1095→        fuente: 'agencia',
+  1096→        puntuacionEntrevista: 72,
+  1097→        notas: 'Poca experiencia pero actitud excelente. Candidata para reemplazo de Alejandro Díaz.',
+  1098→        propiedadId: resortPuebla.id,
+  1099→      }
+  1100→    }),
+  1101→    prisma.candidatoPool.create({
+  1102→      data: {
+  1103→        nombre: 'Marco Rodríguez',
+  1104→        email: 'marco.r@email.com',
+  1105→        telefono: '+52 55 3333 4444',
+  1106→        posicion: 'Barista',
+  1107→        posicionEn: 'Barista',
+  1108→        region: 'cdmx',
+  1109→        experiencia: 4,
+  1110→        habilidades: JSON.stringify(['cafe_especialidad', 'latte_art', 'v60', 'bilingue']),
+  1111→        estado: 'disponible',
+  1112→        fuente: 'portal',
+  1113→        puntuacionEntrevista: 90,
+  1114→        notas: 'Barista certificado SCA. Excelente para Café Orígenes.',
+  1115→      }
+  1116→    }),
+  1117→    prisma.candidatoPool.create({
+  1118→      data: {
+  1119→        nombre: 'Andrea Jiménez',
+  1120→        email: 'andrea.j@email.com',
+  1121→        telefono: '+52 624 5555 6666',
+  1122→        posicion: 'Terapeuta Spa',
+  1123→        posicionEn: 'Spa Therapist',
+  1124→        region: 'los_cabos',
+  1125→        experiencia: 5,
+  1126→        habilidades: JSON.stringify(['masaje', 'faciales', 'aromaterapia', 'ventas']),
+  1127→        estado: 'contratado',
+  1128→        fuente: 'referido',
+  1129→        puntuacionEntrevista: 92,
+  1130→        notas: 'Contratada para reforzar el equipo del Spa Sentir. Inicia el próximo mes.',
+  1131→        propiedadId: spaSentir.id,
+  1132→        fechaContratacion: new Date('2024-03-01'),
+  1133→      }
+  1134→    }),
+  1135→  ])
+  1136→
+  1137→  console.log(`  ✅ ${candidatos.length} candidatos creados`)
+  1138→
+  1139→  // =============================================
+  1140→  // 9. INSTRUCTORES
+  1141→  // =============================================
+  1142→  console.log('👨‍🏫 Creando instructores...')
+  1143→  const instructores = await Promise.all([
+  1144→    prisma.instructor.create({
+  1145→      data: {
+  1146→        nombre: 'Sommelier Rafael Torres',
+  1147→        especialidad: 'Vinos y Maridaje',
+  1148→        ubicacion: 'CDMX',
+  1149→        region: 'cdmx',
+  1150→        calificacion: 4.9,
+  1151→        tarifaHora: 800,
+  1152→        disponible: true,
+  1153→      }
+  1154→    }),
+  1155→    prisma.instructor.create({
+  1156→      data: {
+  1157→        nombre: 'Chef Isabelle Monet',
+  1158→        especialidad: 'Gastronomía y Servicio Fine Dining',
+  1159→        ubicacion: 'Cancún',
+  1160→        region: 'cancun',
+  1161→        calificacion: 4.8,
+  1162→        tarifaHora: 1200,
+  1163→        disponible: true,
+  1164→      }
+  1165→    }),
+  1166→    prisma.instructor.create({
+  1167→      data: {
+  1168→        nombre: 'Mixologist Daniel Cruz',
+  1169→        especialidad: 'Coctelería Avanzada y Bar Management',
+  1170→        ubicacion: 'Playa del Carmen',
+  1171→        region: 'playa_carmen',
+  1172→        calificacion: 4.7,
+  1173→        tarifaHora: 600,
+  1174→        disponible: true,
+  1175→      }
+  1176→    }),
+  1177→  ])
+  1178→
+  1179→  console.log(`  ✅ ${instructores.length} instructores creados`)
+  1180→
+  1181→  // =============================================
+  1182→  // 10. SOLICITUDES DE CAPACITACIÓN
+  1183→  // =============================================
+  1184→  console.log('📝 Creando solicitudes de capacitación...')
+  1185→  const solicitudes = await Promise.all([
+  1186→    prisma.solicitudCapacitacion.create({
+  1187→      data: {
+  1188→        propiedadId: hotelCancun.id,
+  1189→        capacitacionId: capVinos.id,
+  1190→        modalidad: 'presencial',
+  1191→        fechaSolicitada: new Date('2024-03-15'),
+  1192→        participantes: 8,
+  1193→        instructorId: instructores[0].id,
+  1194→        nombreInstructor: 'Sommelier Rafael Torres',
+  1195→        estado: 'confirmada',
+  1196→        costo: 6400,
+  1197→        creadoPor: 'gerente',
+  1198→      }
+  1199→    }),
+  1200→    prisma.solicitudCapacitacion.create({
+  1201→      data: {
+  1202→        propiedadId: barMarCaribe.id,
+  1203→        capacitacionId: capCocteleria.id,
+  1204→        modalidad: 'presencial',
+  1205→        fechaSolicitada: new Date('2024-04-01'),
+  1206→        participantes: 4,
+  1207→        instructorId: instructores[2].id,
+  1208→        nombreInstructor: 'Mixologist Daniel Cruz',
+  1209→        estado: 'pendiente',
+  1210→        costo: 2400,
+  1211→        creadoPor: 'gerente',
+  1212→      }
+  1213→    }),
+  1214→    prisma.solicitudCapacitacion.create({
+  1215→      data: {
+  1216→        propiedadId: spaSentir.id,
+  1217→        modalidad: 'virtual',
+  1218→        tema: 'Técnicas avanzadas de venta consultiva para spa',
+  1219→        fechaSolicitada: new Date('2024-03-20'),
+  1220→        participantes: 3,
+  1221→        estado: 'pendiente',
+  1222→        costo: 1500,
+  1223→        creadoPor: 'gerente',
+  1224→      }
+  1225→    }),
+  1226→  ])
+  1227→
+  1228→  console.log(`  ✅ ${solicitudes.length} solicitudes de capacitación creadas`)
+  1229→
+  1230→  // =============================================
+  1231→  // 11. NOTIFICACIONES
+  1232→  // =============================================
+  1233→  console.log('🔔 Creando notificaciones...')
+  1234→  const notificaciones = await Promise.all([
+  1235→    prisma.notificacion.create({
+  1236→      data: {
+  1237→        tipo: 'alerta_ia',
+  1238→        titulo: 'Riesgo de abandono detectado',
+  1239→        tituloEn: 'Abandon risk detected',
+  1240→        mensaje: 'El agente de IA detectó riesgo alto en Luis Fernández (REC-701). Se recomienda acción inmediata.',
+  1241→        mensajeEn: 'AI agent detected high risk in Luis Fernández (REC-701). Immediate action recommended.',
+  1242→        leida: false,
+  1243→        propiedadId: hotelCancun.id,
+  1244→        prioridad: 'urgente',
+  1245→      }
+  1246→    }),
+  1247→    prisma.notificacion.create({
+  1248→      data: {
+  1249→        tipo: 'solicitud_capacitacion',
+  1250→        titulo: 'Nueva solicitud de capacitación',
+  1251→        tituloEn: 'New training request',
+  1252→        mensaje: 'Bar Mar Caribe solicitó capacitación de Coctelería Avanzada para 4 participantes.',
+  1253→        mensajeEn: 'Bar Mar Caribe requested Advanced Mixology training for 4 participants.',
+  1254→        leida: false,
+  1255→        propiedadId: barMarCaribe.id,
+  1256→        prioridad: 'normal',
+  1257→      }
+  1258→    }),
+  1259→    prisma.notificacion.create({
+  1260→      data: {
+  1261→        tipo: 'reemplazo_necesario',
+  1262→        titulo: 'Preparar reemplazo',
+  1263→        tituloEn: 'Prepare replacement',
+  1264→        mensaje: 'Se recomienda preparar reemplazo para Alejandro Díaz (BEL-102) debido a fin de contrato y bajo rendimiento.',
+  1265→        mensajeEn: 'Replacement preparation recommended for Alejandro Díaz (BEL-102) due to contract end and low performance.',
+  1266→        leida: false,
+  1267→        propiedadId: resortPuebla.id,
+  1268→        prioridad: 'alta',
+  1269→      }
+  1270→    }),
+  1271→  ])
+  1272→
+  1273→  console.log(`  ✅ ${notificaciones.length} notificaciones creadas`)
+  1274→
+  1275→  console.log(`
+  1276→  🎉 ¡Seed completado exitosamente!
+  1277→  ========================================
+  1278→  📊 Resumen:
+  1279→  - ${propiedades.length} propiedades
+  1280→  - ${empleados.length} empleados
+  1281→  - ${servicios.length} servicios
+  1282→  - ${capacitaciones.length} capacitaciones
+  1283→  - ${inscripciones.length} inscripciones a cursos
+  1284→  - ${ventas.length} ventas con NPS
+  1285→  - ${alertas.length} alertas de riesgo
+  1286→  - ${candidatos.length} candidatos
+  1287→  - ${instructores.length} instructores
+  1288→  - ${solicitudes.length} solicitudes de capacitación
+  1289→  - ${notificaciones.length} notificaciones
+  1290→  `)
+  1291→}
+  1292→
+  1293→main()
+  1294→  .then(async () => {
+  1295→    await prisma.$disconnect()
+  1296→  })
+  1297→  .catch(async (e) => {
+  1298→    console.error('❌ Error en seed:', e)
+  1299→    await prisma.$disconnect()
+  1300→    process.exit(1)
+  1301→  })
+  1302→

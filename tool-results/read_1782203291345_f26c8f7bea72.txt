@@ -1,0 +1,760 @@
+     1→'use client'
+     2→
+     3→import { useState, useEffect, useCallback } from 'react'
+     4→import { useAppStore } from '@/lib/store'
+     5→import { translations } from '@/lib/i18n'
+     6→import { formatCurrency } from '@/lib/currency'
+     7→import type { EmpleadoView } from '@/lib/store'
+     8→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+     9→import { Button } from '@/components/ui/button'
+    10→import { Badge } from '@/components/ui/badge'
+    11→import { Input } from '@/components/ui/input'
+    12→import { Label } from '@/components/ui/label'
+    13→import { Switch } from '@/components/ui/switch'
+    14→import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
+    15→import { Progress } from '@/components/ui/progress'
+    16→import { Separator } from '@/components/ui/separator'
+    17→import { ScrollArea } from '@/components/ui/scroll-area'
+    18→import { toast } from 'sonner'
+    19→import {
+    20→  ShoppingCart, Target, TrendingUp, Star, User, Building2,
+    21→  LogOut, ChevronRight, GraduationCap, Award, DollarSign,
+    22→  Package, BookOpen, BarChart3,
+    23→} from 'lucide-react'
+    24→
+    25→// ─── Types ──────────────────────────────────────────────────────
+    26→interface Servicio {
+    27→  id: string
+    28→  nombre: string
+    29→  nombreEn: string | null
+    30→  categoria: string
+    31→  categoriaEn: string | null
+    32→  esUpselling: boolean
+    33→  precioNormal: number
+    34→  precioUpselling: number | null
+    35→  objetivoUpselling: string | null
+    36→  disponible: boolean
+    37→  propiedadId: string
+    38→}
+    39→
+    40→interface VentaRegistrada {
+    41→  id: string
+    42→  servicioId: string
+    43→  servicioNombre: string
+    44→  cantidad: number
+    45→  precioUnitario: number
+    46→  montoTotal: number
+    47→  esUpselling: boolean
+    48→  calificacionNps: number | null
+    49→  hora: string
+    50→}
+    51→
+    52→interface UpsellingTarget {
+    53→  employeeId: string
+    54→  target: number
+    55→  current: number
+    56→  period: string
+    57→}
+    58→
+    59→interface CurrencyConfig {
+    60→  currency: string
+    61→  symbol: string
+    62→  exchangeRate: number
+    63→}
+    64→
+    65→interface CursoEmpleado {
+    66→  id: string
+    67→  nombre: string
+    68→  nombreEn: string | null
+    69→  progreso: number
+    70→  completado: boolean
+    71→}
+    72→
+    73→export function EmpleadoPOS() {
+    74→  const { userEmployeeId, userName, userPropertyId, locale, setLocale, empleadoView, setEmpleadoView, logout } = useAppStore()
+    75→  const t = translations[locale]
+    76→
+    77→  const [servicios, setServicios] = useState<Servicio[]>([])
+    78→  const [ventas, setVentas] = useState<VentaRegistrada[]>([])
+    79→  const [upsellingTarget, setUpsellingTarget] = useState<UpsellingTarget | null>(null)
+    80→  const [currencyConfig, setCurrencyConfig] = useState<CurrencyConfig>({ currency: 'MXN', symbol: '$', exchangeRate: 17.5 })
+    81→  const [propiedadNombre, setPropiedadNombre] = useState('')
+    82→  const [categoriaFiltro, setCategoriaFiltro] = useState('todos')
+    83→  const [loading, setLoading] = useState(true)
+    84→
+    85→  // Sale dialog
+    86→  const [showVentaDialog, setShowVentaDialog] = useState(false)
+    87→  const [selectedServicio, setSelectedServicio] = useState<Servicio | null>(null)
+    88→  const [ventaCantidad, setVentaCantidad] = useState(1)
+    89→  const [ventaEsUpselling, setVentaEsUpselling] = useState(false)
+    90→  const [ventaPrecio, setVentaPrecio] = useState(0)
+    91→  const [ventaCalificacion, setVentaCalificacion] = useState(8)
+    92→
+    93→  // Employee scores
+    94→  const [scoreConocimiento, setScoreConocimiento] = useState(72)
+    95→  const [scoreVentas, setScoreVentas] = useState(68)
+    96→  const [scoreHospitalidad, setScoreHospitalidad] = useState(82)
+    97→  const [npsPromedio, setNpsPromedio] = useState(8.3)
+    98→
+    99→  // Employee courses
+   100→  const [cursos, setCursos] = useState<CursoEmpleado[]>([])
+   101→
+   102→  const fc = (amount: number) => formatCurrency(amount, currencyConfig.currency, currencyConfig.symbol)
+   103→
+   104→  const fetchData = useCallback(async () => {
+   105→    if (!userPropertyId) return
+   106→    setLoading(true)
+   107→    try {
+   108→      const [servRes, configRes, propRes] = await Promise.all([
+   109→        fetch(`/api/servicios?propiedadId=${userPropertyId}`).catch(() => ({ json: () => [] })),
+   110→        fetch(`/api/config?propertyId=${userPropertyId}`).catch(() => ({ json: () => null })),
+   111→        fetch(`/api/propiedades`).catch(() => ({ json: () => [] })),
+   112→      ])
+   113→
+   114→      const [servData, configData, propData] = await Promise.all([
+   115→        servRes.json(), configRes.json(), propRes.json(),
+   116→      ])
+   117→
+   118→      setServicios(Array.isArray(servData) ? servData.filter((s: Servicio) => s.disponible) : [])
+   119→
+   120→      if (configData?.currency) {
+   121→        setCurrencyConfig(configData.currency)
+   122→      }
+   123→
+   124→      if (Array.isArray(propData)) {
+   125→        const prop = propData.find((p: { id: string; nombre: string }) => p.id === userPropertyId)
+   126→        if (prop) setPropiedadNombre(prop.nombre)
+   127→      }
+   128→
+   129→      // Mock upselling targets
+   130→      const targets: UpsellingTarget[] = [
+   131→        { employeeId: 'MES-401', target: 500, current: 380, period: 'enero' },
+   132→        { employeeId: 'MES-402', target: 200, current: 82, period: 'enero' },
+   133→        { employeeId: 'BEL-101', target: 300, current: 245, period: 'enero' },
+   134→        { employeeId: 'BAR-601', target: 400, current: 265, period: 'enero' },
+   135→        { employeeId: 'REC-201', target: 350, current: 190, period: 'enero' },
+   136→      ]
+   137→      const myTarget = targets.find(t => t.employeeId === userEmployeeId)
+   138→      setUpsellingTarget(myTarget || null)
+   139→
+   140→      // Mock employee scores based on employee ID
+   141→      const scores: Record<string, { conocimiento: number; ventas: number; hospitalidad: number; nps: number }> = {
+   142→        'MES-401': { conocimiento: 85, ventas: 78, hospitalidad: 92, nps: 9.1 },
+   143→        'MES-402': { conocimiento: 65, ventas: 55, hospitalidad: 78, nps: 7.8 },
+   144→        'BEL-101': { conocimiento: 72, ventas: 82, hospitalidad: 88, nps: 8.5 },
+   145→        'BAR-601': { conocimiento: 78, ventas: 68, hospitalidad: 85, nps: 8.2 },
+   146→        'REC-201': { conocimiento: 80, ventas: 60, hospitalidad: 90, nps: 8.8 },
+   147→      }
+   148→      const myScores = scores[userEmployeeId || ''] || { conocimiento: 72, ventas: 68, hospitalidad: 82, nps: 8.3 }
+   149→      setScoreConocimiento(myScores.conocimiento)
+   150→      setScoreVentas(myScores.ventas)
+   151→      setScoreHospitalidad(myScores.hospitalidad)
+   152→      setNpsPromedio(myScores.nps)
+   153→
+   154→      // Mock courses
+   155→      setCursos([
+   156→        { id: 'c1', nombre: 'Upselling Avanzado', nombreEn: 'Advanced Upselling', progreso: 75, completado: false },
+   157→        { id: 'c2', nombre: 'Hospitalidad 5 Estrellas', nombreEn: '5-Star Hospitality', progreso: 100, completado: true },
+   158→        { id: 'c3', nombre: 'Conocimiento de Producto', nombreEn: 'Product Knowledge', progreso: 40, completado: false },
+   159→      ])
+   160→    } catch {
+   161→      // Fallback
+   162→    } finally {
+   163→      setLoading(false)
+   164→    }
+   165→  }, [userPropertyId, userEmployeeId])
+   166→
+   167→  useEffect(() => { fetchData() }, [fetchData])
+   168→
+   169→  // ─── Computed ───────────────────────────────────────────────
+   170→  const totalScore = ((scoreConocimiento + scoreVentas + scoreHospitalidad) / 3).toFixed(0)
+   171→
+   172→  const ventasNormalesHoy = ventas.filter(v => !v.esUpselling)
+   173→  const ventasUpsellingHoy = ventas.filter(v => v.esUpselling)
+   174→  const montoNormal = ventasNormalesHoy.reduce((a, v) => a + v.montoTotal, 0)
+   175→  const montoUpselling = ventasUpsellingHoy.reduce((a, v) => a + v.montoTotal, 0)
+   176→  const totalVentasHoy = ventas.length
+   177→  const montoTotalHoy = montoNormal + montoUpselling
+   178→  const calificacionPromedio = ventas.length > 0 && ventas.some(v => v.calificacionNps)
+   179→    ? ventas.filter(v => v.calificacionNps).reduce((a, v) => a + (v.calificacionNps || 0), 0) / ventas.filter(v => v.calificacionNps).length
+   180→    : npsPromedio
+   181→
+   182→  // Categorías disponibles
+   183→  const categorias = ['todos', ...new Set(servicios.map(s => s.categoria))]
+   184→  const serviciosFiltrados = categoriaFiltro === 'todos' ? servicios : servicios.filter(s => s.categoria === categoriaFiltro)
+   185→
+   186→  // ─── Handlers ───────────────────────────────────────────────
+   187→  const openVentaDialog = (servicio: Servicio) => {
+   188→    setSelectedServicio(servicio)
+   189→    setVentaCantidad(1)
+   190→    setVentaEsUpselling(servicio.esUpselling)
+   191→    setVentaPrecio(servicio.esUpselling && servicio.precioUpselling ? servicio.precioUpselling : servicio.precioNormal)
+   192→    setVentaCalificacion(8)
+   193→    setShowVentaDialog(true)
+   194→  }
+   195→
+   196→  const confirmarVenta = () => {
+   197→    if (!selectedServicio) return
+   198→
+   199→    const nuevaVenta: VentaRegistrada = {
+   200→      id: `venta-${Date.now()}`,
+   201→      servicioId: selectedServicio.id,
+   202→      servicioNombre: selectedServicio.nombre,
+   203→      cantidad: ventaCantidad,
+   204→      precioUnitario: ventaPrecio,
+   205→      montoTotal: ventaPrecio * ventaCantidad,
+   206→      esUpselling: ventaEsUpselling,
+   207→      calificacionNps: ventaCalificacion,
+   208→      hora: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
+   209→    }
+   210→
+   211→    setVentas(prev => [nuevaVenta, ...prev])
+   212→    setShowVentaDialog(false)
+   213→    toast.success(
+   214→      locale === 'es'
+   215→        ? `Venta de ${fc(nuevaVenta.montoTotal)} registrada`
+   216→        : `Sale of ${fc(nuevaVenta.montoTotal)} registered`
+   217→    )
+   218→  }
+   219→
+   220→  const categoriaLabel = (cat: string): string => {
+   221→    const labels: Record<string, Record<string, string>> = {
+   222→      todos: { es: 'Todos', en: 'All' },
+   223→      platillo: { es: 'Platillos', en: 'Dishes' },
+   224→      bebida: { es: 'Bebidas', en: 'Drinks' },
+   225→      tour: { es: 'Tours', en: 'Tours' },
+   226→      masaje: { es: 'Masajes', en: 'Massages' },
+   227→      habitacion: { es: 'Habitaciones', en: 'Rooms' },
+   228→      experiencia: { es: 'Experiencias', en: 'Experiences' },
+   229→      paquete: { es: 'Paquetes', en: 'Packages' },
+   230→      menu: { es: 'Menú', en: 'Menu' },
+   231→      upselling: { es: 'Upselling', en: 'Upselling' },
+   232→      room_upgrade: { es: 'Upgrade', en: 'Upgrade' },
+   233→    }
+   234→    return labels[cat]?.[locale] || cat
+   235→  }
+   236→
+   237→  if (loading) {
+   238→    return (
+   239→      <div className="flex items-center justify-center min-h-screen">
+   240→        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600" />
+   241→      </div>
+   242→    )
+   243→  }
+   244→
+   245→  return (
+   246→    <div className="min-h-screen bg-gray-50/50">
+   247→      {/* ─── Header ──────────────────────────────────────────── */}
+   248→      <header className="sticky top-0 z-50 bg-white border-b shadow-sm">
+   249→        <div className="px-4 py-3 flex items-center justify-between">
+   250→          <div className="flex items-center gap-3">
+   251→            <div className="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center">
+   252→              <User className="w-5 h-5 text-white" />
+   253→            </div>
+   254→            <div>
+   255→              <h1 className="font-bold text-gray-900 text-sm">{userName}</h1>
+   256→              <p className="text-xs text-gray-500 font-mono">{userEmployeeId} · {propiedadNombre}</p>
+   257→            </div>
+   258→          </div>
+   259→          <div className="flex items-center gap-2">
+   260→            <div className="flex rounded-md border overflow-hidden">
+   261→              <button
+   262→                onClick={() => setLocale('es')}
+   263→                className={`px-2 py-1 text-xs font-medium ${locale === 'es' ? 'bg-amber-500 text-white' : 'bg-white text-gray-600'}`}
+   264→              >
+   265→                ES
+   266→              </button>
+   267→              <button
+   268→                onClick={() => setLocale('en')}
+   269→                className={`px-2 py-1 text-xs font-medium ${locale === 'en' ? 'bg-amber-500 text-white' : 'bg-white text-gray-600'}`}
+   270→              >
+   271→                EN
+   272→              </button>
+   273→            </div>
+   274→            <Button variant="ghost" size="sm" onClick={logout} className="text-gray-500 hover:text-red-600">
+   275→              <LogOut className="w-4 h-4" />
+   276→            </Button>
+   277→          </div>
+   278→        </div>
+   279→      </header>
+   280→
+   281→      {/* ─── Main layout: sidebar + content ──────────────────── */}
+   282→      <div className="flex flex-col lg:flex-row">
+   283→        {/* ─── Main content area ─────────────────────────────── */}
+   284→        <div className="flex-1 p-4">
+   285→          {/* Mobile tab navigation */}
+   286→          <div className="flex gap-1 mb-4 overflow-x-auto pb-1 lg:hidden">
+   287→            {[
+   288→              { key: 'menu' as EmpleadoView, icon: Package, label: locale === 'es' ? 'Menú' : 'Menu' },
+   289→              { key: 'ventas' as EmpleadoView, icon: ShoppingCart, label: locale === 'es' ? 'Ventas' : 'Sales' },
+   290→              { key: 'objetivos' as EmpleadoView, icon: Target, label: locale === 'es' ? 'Objetivos' : 'Goals' },
+   291→              { key: 'capacitacion' as EmpleadoView, icon: GraduationCap, label: locale === 'es' ? 'Cursos' : 'Courses' },
+   292→              { key: 'score' as EmpleadoView, icon: Award, label: 'Score' },
+   293→            ].map(tab => {
+   294→              const Icon = tab.icon
+   295→              return (
+   296→                <button
+   297→                  key={tab.key}
+   298→                  onClick={() => setEmpleadoView(tab.key)}
+   299→                  className={`flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+   300→                    empleadoView === tab.key
+   301→                      ? 'bg-amber-500 text-white'
+   302→                      : 'bg-white text-gray-600 border hover:bg-gray-50'
+   303→                  }`}
+   304→                >
+   305→                  <Icon className="w-3.5 h-3.5" />
+   306→                  {tab.label}
+   307→                </button>
+   308→              )
+   309→            })}
+   310→          </div>
+   311→
+   312→          {/* Content for different views */}
+   313→          {(empleadoView === 'menu' || typeof window !== 'undefined') && (
+   314→            <div className={empleadoView !== 'menu' ? 'hidden lg:block' : ''}>
+   315→              {/* Category filter */}
+   316→              <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+   317→                {categorias.map(cat => (
+   318→                  <button
+   319→                    key={cat}
+   320→                    onClick={() => setCategoriaFiltro(cat)}
+   321→                    className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+   322→                      categoriaFiltro === cat
+   323→                        ? 'bg-amber-500 text-white'
+   324→                        : 'bg-white text-gray-600 border hover:bg-gray-50'
+   325→                    }`}
+   326→                  >
+   327→                    {categoriaLabel(cat)}
+   328→                  </button>
+   329→                ))}
+   330→              </div>
+   331→
+   332→              {/* Services grid */}
+   333→              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+   334→                {serviciosFiltrados.map((srv) => (
+   335→                  <Card key={srv.id} className="relative overflow-hidden hover:shadow-md transition-shadow">
+   336→                    {srv.esUpselling && (
+   337→                      <div className="absolute top-0 right-0 bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-lg">
+   338→                        🎯 UPS
+   339→                      </div>
+   340→                    )}
+   341→                    <CardContent className="p-4">
+   342→                      <div className="space-y-2">
+   343→                        <div>
+   344→                          <p className="font-semibold text-sm">{srv.nombre}</p>
+   345→                          <p className="text-xs text-gray-500">{categoriaLabel(srv.categoria)}</p>
+   346→                        </div>
+   347→                        {srv.esUpselling && srv.objetivoUpselling && (
+   348→                          <div className="flex items-center gap-1 text-xs text-amber-600">
+   349→                            <Target className="w-3 h-3" />
+   350→                            {locale === 'es' ? 'Objetivo:' : 'Target:'} {srv.objetivoUpselling}
+   351→                          </div>
+   352→                        )}
+   353→                        <div className="flex items-center justify-between">
+   354→                          <div>
+   355→                            <p className="text-lg font-bold text-amber-600">{fc(srv.precioNormal)}</p>
+   356→                            {srv.esUpselling && srv.precioUpselling && (
+   357→                              <p className="text-xs text-amber-500">
+   358→                                {locale === 'es' ? 'Upsell:' : 'Upsell:'} {fc(srv.precioUpselling)}
+   359→                              </p>
+   360→                            )}
+   361→                          </div>
+   362→                          <Button
+   363→                            onClick={() => openVentaDialog(srv)}
+   364→                            className="bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm px-4 h-10"
+   365→                          >
+   366→                            <ShoppingCart className="w-4 h-4 mr-1" />
+   367→                            {locale === 'es' ? 'VENDER' : 'SELL'}
+   368→                          </Button>
+   369→                        </div>
+   370→                      </div>
+   371→                    </CardContent>
+   372→                  </Card>
+   373→                ))}
+   374→                {serviciosFiltrados.length === 0 && (
+   375→                  <div className="col-span-full text-center py-12 text-gray-400">
+   376→                    <Package className="w-12 h-12 mx-auto mb-2 opacity-50" />
+   377→                    <p>{locale === 'es' ? 'No hay servicios disponibles' : 'No services available'}</p>
+   378→                  </div>
+   379→                )}
+   380→              </div>
+   381→            </div>
+   382→          )}
+   383→
+   384→          {/* Ventas view */}
+   385→          <div className={empleadoView !== 'ventas' ? 'hidden' : ''}>
+   386→            <h2 className="text-lg font-semibold mb-4">{locale === 'es' ? 'Mis Ventas del Día' : 'My Sales Today'}</h2>
+   387→            <div className="grid grid-cols-3 gap-3 mb-4">
+   388→              <Card className="border-l-4 border-l-amber-500">
+   389→                <CardContent className="p-3 text-center">
+   390→                  <p className="text-xs text-gray-500">{locale === 'es' ? 'Total' : 'Total'}</p>
+   391→                  <p className="text-lg font-bold">{fc(montoTotalHoy)}</p>
+   392→                </CardContent>
+   393→              </Card>
+   394→              <Card className="border-l-4 border-l-emerald-500">
+   395→                <CardContent className="p-3 text-center">
+   396→                  <p className="text-xs text-gray-500">{locale === 'es' ? 'Normales' : 'Normal'}</p>
+   397→                  <p className="text-lg font-bold">{fc(montoNormal)}</p>
+   398→                </CardContent>
+   399→              </Card>
+   400→              <Card className="border-l-4 border-l-amber-500">
+   401→                <CardContent className="p-3 text-center">
+   402→                  <p className="text-xs text-gray-500">{locale === 'es' ? 'Upselling' : 'Upselling'}</p>
+   403→                  <p className="text-lg font-bold text-amber-600">{fc(montoUpselling)}</p>
+   404→                </CardContent>
+   405→              </Card>
+   406→            </div>
+   407→            <Card>
+   408→              <CardContent className="p-0">
+   409→                <ScrollArea className="max-h-[500px]">
+   410→                  <div className="divide-y">
+   411→                    {ventas.map((v) => (
+   412→                      <div key={v.id} className="flex items-center justify-between p-3 hover:bg-gray-50">
+   413→                        <div className="flex items-center gap-3">
+   414→                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+   415→                            v.esUpselling ? 'bg-amber-100' : 'bg-emerald-100'
+   416→                          }`}>
+   417→                            {v.esUpselling ? <Target className="w-4 h-4 text-amber-600" /> : <ShoppingCart className="w-4 h-4 text-emerald-600" />}
+   418→                          </div>
+   419→                          <div>
+   420→                            <p className="text-sm font-medium">{v.servicioNombre}</p>
+   421→                            <p className="text-xs text-gray-500">x{v.cantidad} · {v.hora}</p>
+   422→                          </div>
+   423→                        </div>
+   424→                        <div className="text-right">
+   425→                          <p className="text-sm font-semibold">{fc(v.montoTotal)}</p>
+   426→                          {v.calificacionNps && (
+   427→                            <p className="text-xs text-gray-500">NPS: {v.calificacionNps}</p>
+   428→                          )}
+   429→                        </div>
+   430→                      </div>
+   431→                    ))}
+   432→                    {ventas.length === 0 && (
+   433→                      <div className="text-center py-12 text-gray-400">
+   434→                        <ShoppingCart className="w-12 h-12 mx-auto mb-2 opacity-50" />
+   435→                        <p>{locale === 'es' ? 'No hay ventas hoy' : 'No sales today'}</p>
+   436→                      </div>
+   437→                    )}
+   438→                  </div>
+   439→                </ScrollArea>
+   440→              </CardContent>
+   441→            </Card>
+   442→          </div>
+   443→
+   444→          {/* Objetivos view */}
+   445→          <div className={empleadoView !== 'objetivos' ? 'hidden' : ''}>
+   446→            <h2 className="text-lg font-semibold mb-4">{locale === 'es' ? 'Mis Objetivos de Upselling' : 'My Upselling Goals'}</h2>
+   447→            {upsellingTarget ? (
+   448→              <div className="space-y-4">
+   449→                <Card>
+   450→                  <CardContent className="p-6">
+   451→                    <div className="text-center space-y-4">
+   452→                      <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-amber-100">
+   453→                        <Target className="w-10 h-10 text-amber-600" />
+   454→                      </div>
+   455→                      <div>
+   456→                        <p className="text-3xl font-bold text-gray-900">{fc(upsellingTarget.current)}</p>
+   457→                        <p className="text-sm text-gray-500">
+   458→                          {locale === 'es' ? 'de' : 'of'} {fc(upsellingTarget.target)} {locale === 'es' ? 'objetivo' : 'target'}
+   459→                        </p>
+   460→                      </div>
+   461→                      <div className="max-w-xs mx-auto">
+   462→                        <Progress value={(upsellingTarget.current / upsellingTarget.target) * 100} className="h-3" />
+   463→                        <p className="text-xs text-gray-500 mt-1">
+   464→                          {((upsellingTarget.current / upsellingTarget.target) * 100).toFixed(0)}% · {locale === 'es' ? 'Período:' : 'Period:'} {upsellingTarget.period}
+   465→                        </p>
+   466→                      </div>
+   467→                    </div>
+   468→                  </CardContent>
+   469→                </Card>
+   470→                <div className="grid grid-cols-2 gap-3">
+   471→                  <Card>
+   472→                    <CardContent className="p-4 text-center">
+   473→                      <p className="text-xs text-gray-500">{locale === 'es' ? 'Faltan' : 'Remaining'}</p>
+   474→                      <p className="text-xl font-bold text-amber-600">{fc(upsellingTarget.target - upsellingTarget.current)}</p>
+   475→                    </CardContent>
+   476→                  </Card>
+   477→                  <Card>
+   478→                    <CardContent className="p-4 text-center">
+   479→                      <p className="text-xs text-gray-500">{locale === 'es' ? 'Hoy llevas' : 'Today you have'}</p>
+   480→                      <p className="text-xl font-bold text-emerald-600">{fc(montoUpselling)}</p>
+   481→                    </CardContent>
+   482→                  </Card>
+   483→                </div>
+   484→              </div>
+   485→            ) : (
+   486→              <Card>
+   487→                <CardContent className="p-8 text-center text-gray-400">
+   488→                  <Target className="w-12 h-12 mx-auto mb-2 opacity-50" />
+   489→                  <p>{locale === 'es' ? 'No hay objetivos asignados' : 'No goals assigned'}</p>
+   490→                </CardContent>
+   491→              </Card>
+   492→            )}
+   493→          </div>
+   494→
+   495→          {/* Capacitación view */}
+   496→          <div className={empleadoView !== 'capacitacion' ? 'hidden' : ''}>
+   497→            <h2 className="text-lg font-semibold mb-4">{locale === 'es' ? 'Mi Capacitación' : 'My Training'}</h2>
+   498→            <div className="space-y-3">
+   499→              {cursos.map((curso) => (
+   500→                <Card key={curso.id}>
+   501→                  <CardContent className="p-4">
+   502→                    <div className="flex items-center justify-between mb-2">
+   503→                      <div>
+   504→                        <p className="font-medium text-sm">{locale === 'es' ? curso.nombre : (curso.nombreEn || curso.nombre)}</p>
+   505→                      </div>
+   506→                      <Badge className={curso.completado ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}>
+   507→                        {curso.completado ? (locale === 'es' ? 'Completado' : 'Completed') : (locale === 'es' ? 'En progreso' : 'In progress')}
+   508→                      </Badge>
+   509→                    </div>
+   510→                    <Progress value={curso.progreso} className="h-2" />
+   511→                    <p className="text-xs text-gray-500 mt-1 text-right">{curso.progreso}%</p>
+   512→                  </CardContent>
+   513→                </Card>
+   514→              ))}
+   515→            </div>
+   516→          </div>
+   517→
+   518→          {/* Score view */}
+   519→          <div className={empleadoView !== 'score' ? 'hidden' : ''}>
+   520→            <h2 className="text-lg font-semibold mb-4">{locale === 'es' ? 'Mi Score' : 'My Score'}</h2>
+   521→            <Card>
+   522→              <CardContent className="p-6">
+   523→                <div className="text-center mb-6">
+   524→                  <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-amber-100 mb-3">
+   525→                    <span className="text-4xl font-bold text-amber-600">{totalScore}</span>
+   526→                  </div>
+   527→                  <p className="text-sm text-gray-500">{locale === 'es' ? 'Puntuación Total' : 'Total Score'}</p>
+   528→                </div>
+   529→                <div className="grid grid-cols-3 gap-4">
+   530→                  <div className="text-center">
+   531→                    <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-2">
+   532→                      <BookOpen className="w-6 h-6 text-blue-600" />
+   533→                    </div>
+   534→                    <p className="text-xs text-gray-500">{locale === 'es' ? 'Conocimiento' : 'Knowledge'}</p>
+   535→                    <p className="text-xl font-bold text-blue-600">{scoreConocimiento}</p>
+   536→                  </div>
+   537→                  <div className="text-center">
+   538→                    <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-2">
+   539→                      <DollarSign className="w-6 h-6 text-emerald-600" />
+   540→                    </div>
+   541→                    <p className="text-xs text-gray-500">{locale === 'es' ? 'Ventas' : 'Sales'}</p>
+   542→                    <p className="text-xl font-bold text-emerald-600">{scoreVentas}</p>
+   543→                  </div>
+   544→                  <div className="text-center">
+   545→                    <div className="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-2">
+   546→                      <Star className="w-6 h-6 text-amber-600" />
+   547→                    </div>
+   548→                    <p className="text-xs text-gray-500">{locale === 'es' ? 'Hospitalidad' : 'Hospitality'}</p>
+   549→                    <p className="text-xl font-bold text-amber-600">{scoreHospitalidad}</p>
+   550→                  </div>
+   551→                </div>
+   552→                <Separator className="my-4" />
+   553→                <div className="flex justify-between text-sm">
+   554→                  <span className="text-gray-600">{locale === 'es' ? 'NPS Promedio' : 'Avg NPS'}</span>
+   555→                  <span className="font-semibold">{calificacionPromedio.toFixed(1)}</span>
+   556→                </div>
+   557→                <div className="flex justify-between text-sm mt-2">
+   558→                  <span className="text-gray-600">{locale === 'es' ? 'Ventas hoy' : 'Sales today'}</span>
+   559→                  <span className="font-semibold">{totalVentasHoy}</span>
+   560→                </div>
+   561→                <div className="flex justify-between text-sm mt-2">
+   562→                  <span className="text-gray-600">{locale === 'es' ? 'Monto total hoy' : 'Total amount today'}</span>
+   563→                  <span className="font-semibold">{fc(montoTotalHoy)}</span>
+   564→                </div>
+   565→                <div className="flex justify-between text-sm mt-2">
+   566→                  <span className="text-gray-600">{locale === 'es' ? 'Cursos completados' : 'Courses completed'}</span>
+   567→                  <span className="font-semibold">{cursos.filter(c => c.completado).length}/{cursos.length}</span>
+   568→                </div>
+   569→              </CardContent>
+   570→            </Card>
+   571→          </div>
+   572→        </div>
+   573→
+   574→        {/* ─── Desktop sidebar ──────────────────────────────── */}
+   575→        <div className="hidden lg:block w-80 border-l bg-white p-4 space-y-4">
+   576→          {/* My sales today */}
+   577→          <Card>
+   578→            <CardHeader className="pb-2">
+   579→              <CardTitle className="text-sm flex items-center gap-2">
+   580→                <ShoppingCart className="w-4 h-4 text-amber-500" />
+   581→                {locale === 'es' ? 'Mis Ventas del Día' : 'My Sales Today'}
+   582→              </CardTitle>
+   583→            </CardHeader>
+   584→            <CardContent className="space-y-2">
+   585→              <div className="flex justify-between text-sm">
+   586→                <span className="text-gray-600">{locale === 'es' ? 'Normales' : 'Normal'}</span>
+   587→                <span className="font-medium">{ventasNormalesHoy.length} · {fc(montoNormal)}</span>
+   588→              </div>
+   589→              <div className="flex justify-between text-sm">
+   590→                <span className="text-gray-600">{locale === 'es' ? 'Upselling' : 'Upselling'}</span>
+   591→                <span className="font-medium text-amber-600">{ventasUpsellingHoy.length} · {fc(montoUpselling)}</span>
+   592→              </div>
+   593→              <Separator />
+   594→              <div className="flex justify-between text-sm font-semibold">
+   595→                <span>{locale === 'es' ? 'Total' : 'Total'}</span>
+   596→                <span>{fc(montoTotalHoy)}</span>
+   597→              </div>
+   598→            </CardContent>
+   599→          </Card>
+   600→
+   601→          {/* Upselling target */}
+   602→          {upsellingTarget && (
+   603→            <Card>
+   604→              <CardHeader className="pb-2">
+   605→                <CardTitle className="text-sm flex items-center gap-2">
+   606→                  <Target className="w-4 h-4 text-amber-500" />
+   607→                  {locale === 'es' ? 'Objetivo Upselling' : 'Upselling Goal'}
+   608→                </CardTitle>
+   609→              </CardHeader>
+   610→              <CardContent>
+   611→                <div className="space-y-2">
+   612→                  <div className="flex justify-between text-xs text-gray-500">
+   613→                    <span>{fc(upsellingTarget.current)}</span>
+   614→                    <span>{fc(upsellingTarget.target)}</span>
+   615→                  </div>
+   616→                  <Progress value={(upsellingTarget.current / upsellingTarget.target) * 100} className="h-2" />
+   617→                  <p className="text-xs text-center text-gray-500">
+   618→                    {((upsellingTarget.current / upsellingTarget.target) * 100).toFixed(0)}% · {upsellingTarget.period}
+   619→                  </p>
+   620→                </div>
+   621→              </CardContent>
+   622→            </Card>
+   623→          )}
+   624→
+   625→          {/* NPS */}
+   626→          <Card>
+   627→            <CardHeader className="pb-2">
+   628→              <CardTitle className="text-sm flex items-center gap-2">
+   629→                <Star className="w-4 h-4 text-amber-500" />
+   630→                {locale === 'es' ? 'NPS Promedio' : 'Avg NPS'}
+   631→              </CardTitle>
+   632→            </CardHeader>
+   633→            <CardContent>
+   634→              <p className="text-2xl font-bold text-center">{calificacionPromedio.toFixed(1)}</p>
+   635→            </CardContent>
+   636→          </Card>
+   637→
+   638→          {/* Training progress */}
+   639→          <Card>
+   640→            <CardHeader className="pb-2">
+   641→              <CardTitle className="text-sm flex items-center gap-2">
+   642→                <GraduationCap className="w-4 h-4 text-amber-500" />
+   643→                {locale === 'es' ? 'Capacitación' : 'Training'}
+   644→              </CardTitle>
+   645→            </CardHeader>
+   646→            <CardContent className="space-y-2">
+   647→              {cursos.map(curso => (
+   648→                <div key={curso.id} className="space-y-1">
+   649→                  <div className="flex justify-between text-xs">
+   650→                    <span className="truncate mr-2">{locale === 'es' ? curso.nombre : (curso.nombreEn || curso.nombre)}</span>
+   651→                    <Badge className={curso.completado ? 'bg-emerald-100 text-emerald-700 text-[10px]' : 'bg-amber-100 text-amber-700 text-[10px]'}>
+   652→                      {curso.completado ? '✓' : `${curso.progreso}%`}
+   653→                    </Badge>
+   654→                  </div>
+   655→                  <Progress value={curso.progreso} className="h-1" />
+   656→                </div>
+   657→              ))}
+   658→            </CardContent>
+   659→          </Card>
+   660→
+   661→          {/* Total score */}
+   662→          <Card className="border-amber-200 bg-amber-50/50">
+   663→            <CardContent className="p-4">
+   664→              <div className="text-center">
+   665→                <p className="text-xs text-amber-600 font-medium">{locale === 'es' ? 'Mi Score Total' : 'My Total Score'}</p>
+   666→                <p className="text-3xl font-bold text-amber-600">{totalScore}</p>
+   667→                <div className="grid grid-cols-3 gap-2 mt-2">
+   668→                  <div>
+   669→                    <p className="text-[10px] text-gray-500">{locale === 'es' ? 'Conoc.' : 'Know.'}</p>
+   670→                    <p className="text-xs font-semibold text-blue-600">{scoreConocimiento}</p>
+   671→                  </div>
+   672→                  <div>
+   673→                    <p className="text-[10px] text-gray-500">{locale === 'es' ? 'Ventas' : 'Sales'}</p>
+   674→                    <p className="text-xs font-semibold text-emerald-600">{scoreVentas}</p>
+   675→                  </div>
+   676→                  <div>
+   677→                    <p className="text-[10px] text-gray-500">{locale === 'es' ? 'Hosp.' : 'Hosp.'}</p>
+   678→                    <p className="text-xs font-semibold text-amber-600">{scoreHospitalidad}</p>
+   679→                  </div>
+   680→                </div>
+   681→              </div>
+   682→            </CardContent>
+   683→          </Card>
+   684→        </div>
+   685→      </div>
+   686→
+   687→      {/* ─── Venta Dialog ──────────────────────────────────────── */}
+   688→      <Dialog open={showVentaDialog} onOpenChange={setShowVentaDialog}>
+   689→        <DialogContent className="max-w-sm">
+   690→          <DialogHeader>
+   691→            <DialogTitle className="flex items-center gap-2">
+   692→              <ShoppingCart className="w-5 h-5 text-amber-500" />
+   693→              {locale === 'es' ? 'Registrar Venta' : 'Register Sale'}
+   694→            </DialogTitle>
+   695→            <DialogDescription>
+   696→              {selectedServicio?.nombre}
+   697→            </DialogDescription>
+   698→          </DialogHeader>
+   699→          <div className="space-y-4">
+   700→            <div className="space-y-2">
+   701→              <Label>{locale === 'es' ? 'Cantidad' : 'Quantity'}</Label>
+   702→              <div className="flex items-center gap-3">
+   703→                <Button variant="outline" size="icon" onClick={() => setVentaCantidad(Math.max(1, ventaCantidad - 1))}>−</Button>
+   704→                <Input type="number" value={ventaCantidad} onChange={(e) => setVentaCantidad(Math.max(1, Number(e.target.value)))} className="text-center w-20" />
+   705→                <Button variant="outline" size="icon" onClick={() => setVentaCantidad(ventaCantidad + 1)}>+</Button>
+   706→              </div>
+   707→            </div>
+   708→
+   709→            <div className="flex items-center gap-3">
+   710→              <Switch checked={ventaEsUpselling} onCheckedChange={(checked) => {
+   711→                setVentaEsUpselling(checked)
+   712→                if (checked && selectedServicio?.precioUpselling) {
+   713→                  setVentaPrecio(selectedServicio.precioUpselling)
+   714→                } else if (selectedServicio) {
+   715→                  setVentaPrecio(selectedServicio.precioNormal)
+   716→                }
+   717→              }} />
+   718→              <Label>{locale === 'es' ? '¿Es venta upselling?' : 'Is upselling sale?'}</Label>
+   719→            </div>
+   720→
+   721→            <div className="space-y-2">
+   722→              <Label>{locale === 'es' ? 'Precio Unitario' : 'Unit Price'}</Label>
+   723→              <Input type="number" value={ventaPrecio} onChange={(e) => setVentaPrecio(Number(e.target.value))} />
+   724→            </div>
+   725→
+   726→            <div className="rounded-lg bg-gray-50 p-3 text-center">
+   727→              <p className="text-xs text-gray-500">{locale === 'es' ? 'Total' : 'Total'}</p>
+   728→              <p className="text-2xl font-bold text-amber-600">{fc(ventaPrecio * ventaCantidad)}</p>
+   729→            </div>
+   730→
+   731→            <div className="space-y-2">
+   732→              <Label>{locale === 'es' ? 'Calificación del Cliente (1-10)' : 'Customer Rating (1-10)'}</Label>
+   733→              <div className="flex items-center gap-2">
+   734→                <Input type="range" min={1} max={10} value={ventaCalificacion} onChange={(e) => setVentaCalificacion(Number(e.target.value))} className="flex-1" />
+   735→                <Badge className="bg-amber-100 text-amber-700 min-w-[2rem] justify-center">{ventaCalificacion}</Badge>
+   736→              </div>
+   737→            </div>
+   738→          </div>
+   739→          <DialogFooter>
+   740→            <Button variant="outline" onClick={() => setShowVentaDialog(false)}>
+   741→              {locale === 'es' ? 'Cancelar' : 'Cancel'}
+   742→            </Button>
+   743→            <Button onClick={confirmarVenta} className="bg-amber-500 hover:bg-amber-600">
+   744→              {locale === 'es' ? 'Confirmar Venta' : 'Confirm Sale'}
+   745→            </Button>
+   746→          </DialogFooter>
+   747→        </DialogContent>
+   748→      </Dialog>
+   749→
+   750→      {/* Footer */}
+   751→      <footer className="mt-auto border-t bg-white px-4 py-3">
+   752→        <div className="flex items-center justify-between text-xs text-gray-500">
+   753→          <span>© 2025 HospitalityUP · {locale === 'es' ? 'Vista Empleado' : 'Employee View'}</span>
+   754→          <span>{userEmployeeId} · {currencyConfig.currency}</span>
+   755→        </div>
+   756→      </footer>
+   757→    </div>
+   758→  )
+   759→}
+   760→
