@@ -32,6 +32,8 @@ const ConfiguracionModule = dynamic(() => import('@/components/configuracion/con
 const PropiedadesModule = dynamic(() => import('@/components/propiedades/propiedades-module').then(m => ({ default: m.PropiedadesModule })), { loading: () => <Loading /> })
 const EmpresasAccesos = dynamic(() => import('@/components/admin/empresas-accesos').then(m => ({ default: m.EmpresasAccesos })), { loading: () => <Loading /> })
 const LoginScreen = dynamic(() => import('@/components/auth/login-screen').then(m => ({ default: m.LoginScreen })), { loading: () => <Loading /> })
+const NpsSurvey = dynamic(() => import('@/components/empleado/nps-survey').then(m => ({ default: m.NpsSurvey })), { loading: () => <Loading /> })
+const ClimaOrganizacional = dynamic(() => import('@/components/empleado/clima-organizacional').then(m => ({ default: m.ClimaOrganizacional })), { loading: () => <Loading /> })
 
 function Loading() {
   return (
@@ -53,6 +55,8 @@ const viewLabels: Record<Locale, Record<ViewMode, string>> = {
     capacitacion: 'Capacitación',
     bolsa: 'Bolsa de Trabajo',
     configuracion: 'Configuración',
+    'nps-survey': 'Encuesta NPS',
+    clima: 'Clima Organizacional',
   },
   en: {
     dashboard: 'Dashboard',
@@ -65,14 +69,16 @@ const viewLabels: Record<Locale, Record<ViewMode, string>> = {
     capacitacion: 'Training',
     bolsa: 'Job Pool',
     configuracion: 'Settings',
+    'nps-survey': 'NPS Survey',
+    clima: 'Organizational Climate',
   },
 }
 
 export default function Home() {
-  const { currentView, locale, isAuthenticated } = useAppStore()
+  const { currentView, locale, isLoggedIn } = useAppStore()
 
   // If not authenticated, show the login screen (full-page, no sidebar)
-  if (!isAuthenticated) {
+  if (!isLoggedIn) {
     return <LoginScreen />
   }
 
@@ -134,6 +140,8 @@ function ContentArea({ currentView }: { currentView: ViewMode }) {
     case 'capacitacion': return <CapacitacionModule />
     case 'bolsa': return <BolsaTrabajo />
     case 'configuracion': return <ConfiguracionModule />
+    case 'nps-survey': return <NpsSurvey />
+    case 'clima': return <ClimaOrganizacional />
     default: return <DashboardGerencial />
   }
 }
