@@ -52,8 +52,23 @@ interface AppState {
   setUserPropiedadId: (id: string | null) => void
   userEmpleadoId: string | null
   setUserEmpleadoId: (id: string | null) => void
+  userEmpleadoCodigo: string | null
+  setUserEmpleadoCodigo: (code: string | null) => void
+  userPropiedadNombre: string | null
+  setUserPropiedadNombre: (nombre: string | null) => void
+  userEmail: string | null
+  setUserEmail: (email: string | null) => void
   isLoggedIn: boolean
   setIsLoggedIn: (val: boolean) => void
+  login: (params: {
+    role: UserRole
+    nombre: string
+    email?: string
+    propiedadId?: string
+    propiedadNombre?: string
+    empleadoId?: string
+    empleadoCodigo?: string
+  }) => void
   logout: () => void
 }
 
@@ -97,13 +112,33 @@ export const useAppStore = create<AppState>((set) => ({
   setUserPropiedadId: (id) => set({ userPropiedadId: id }),
   userEmpleadoId: null,
   setUserEmpleadoId: (id) => set({ userEmpleadoId: id }),
+  userEmpleadoCodigo: null,
+  setUserEmpleadoCodigo: (code) => set({ userEmpleadoCodigo: code }),
+  userPropiedadNombre: null,
+  setUserPropiedadNombre: (nombre) => set({ userPropiedadNombre: nombre }),
+  userEmail: null,
+  setUserEmail: (email) => set({ userEmail: email }),
   isLoggedIn: false,
   setIsLoggedIn: (val) => set({ isLoggedIn: val }),
+  login: (params) => set({
+    userRole: params.role,
+    userName: params.nombre,
+    userEmail: params.email || null,
+    userPropiedadId: params.propiedadId || null,
+    userPropiedadNombre: params.propiedadNombre || null,
+    userEmpleadoId: params.empleadoId || null,
+    userEmpleadoCodigo: params.empleadoCodigo || null,
+    isLoggedIn: true,
+    currentView: 'dashboard',
+  }),
   logout: () => set({
     userRole: null,
     userName: '',
     userPropiedadId: null,
+    userPropiedadNombre: null,
     userEmpleadoId: null,
+    userEmpleadoCodigo: null,
+    userEmail: null,
     isLoggedIn: false,
     currentView: 'dashboard',
     selectedProperty: 'all',
