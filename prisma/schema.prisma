@@ -14,6 +14,25 @@ datasource db {
 
 // Enums simulados via String con restricciones a nivel app
 
+model Empresa {
+  id              String   @id @default(cuid())
+  nombre          String
+  nombreEn        String?
+  tipo            String   // grupo_restaurantero, cadena_hotelera, grupo_spa, etc.
+  rfc             String?
+  contactoNombre  String?
+  contactoEmail   String?
+  contactoTelefono String?
+  plan            String   @default("boutique") // boutique, growth, enterprise
+  maxPropiedades  Int      @default(1) // Según plan: boutique=1, growth=5, enterprise=20
+  password        String   @default("empresa123")
+  activo          Boolean  @default(true)
+  logo            String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  propiedades     Propiedad[]
+}
+
 model Propiedad {
   id              String   @id @default(cuid())
   nombre          String
@@ -29,6 +48,9 @@ model Propiedad {
   contactoNombre  String?  // Nombre del contacto principal de la empresa
   contactoEmail   String?  // Email del contacto
   contactoTelefono String? // Teléfono del contacto
+  // Relación con empresa (grupo)
+  empresaId       String?
+  empresa         Empresa? @relation(fields: [empresaId], references: [id])
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   empleados       Empleado[]

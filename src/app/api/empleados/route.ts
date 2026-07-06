@@ -109,6 +109,24 @@ export async function POST(request: Request) {
       },
     })
 
+    // Crear notificación de nuevo empleado
+    try {
+      await db.notificacion.create({
+        data: {
+          tipo: 'nuevo_empleado',
+          titulo: 'Nuevo empleado registrado',
+          tituloEn: 'New employee registered',
+          mensaje: `${empleado.nombre} (${empleado.empleadoId}) - ${empleado.posicion}`,
+          mensajeEn: `${empleado.nombre} (${empleado.empleadoId}) - ${empleado.posicion}`,
+          leida: false,
+          propiedadId: empleado.propiedadId,
+          prioridad: 'normal',
+        },
+      })
+    } catch (notifErr) {
+      console.error('Error creating employee notification:', notifErr)
+    }
+
     return NextResponse.json(empleado, { status: 201 })
   } catch (error) {
     console.error('Empleados POST error:', error)

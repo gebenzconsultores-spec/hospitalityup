@@ -173,7 +173,25 @@ export async function POST(request: Request) {
       },
     })
 
-    // ── 3. Trigger AI Agent Asynchronously ──
+    // ── 3. Create notification for new sale ──
+    try {
+      await db.notificacion.create({
+        data: {
+          tipo: 'nueva_venta',
+          titulo: 'Nueva venta registrada',
+          tituloEn: 'New sale registered',
+          mensaje: `${empleado.nombre} registró una venta de $${body.montoTotal} ${body.esUpselling ? '(Upselling)' : ''}`,
+          mensajeEn: `${empleado.nombre} registered a sale of $${body.montoTotal} ${body.esUpselling ? '(Upselling)' : ''}`,
+          leida: false,
+          propiedadId: body.propiedadId,
+          prioridad: body.esUpselling ? 'alta' : 'normal',
+        },
+      })
+    } catch (notifErr) {
+      console.error('Error creating sale notification:', notifErr)
+    }
+
+    // ── 4. Trigger AI Agent Asynchronously ──
     const baseUrl = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
       : process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
@@ -189,7 +207,7 @@ export async function POST(request: Request) {
       console.error('Error triggering AI agent asynchronously:', err)
     })
 
-    // ── 4. Return the created venta ──
+    // ── 5. Return the created venta ──
     return NextResponse.json(venta, { status: 201 })
   } catch (error) {
     console.error('Ventas POST error:', error)
