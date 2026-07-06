@@ -78,15 +78,23 @@ export function LoginScreen() {
   }
 
   const handleAdminLogin = () => {
+    console.log('Admin login attempt:', { email, password })
     // Hardcoded admin
     if (email.trim().toLowerCase() === 'admin@hospitalityup.com' && password === 'admin123') {
+      console.log('Admin login successful, calling login()')
       login({
         role: 'admin',
         nombre: 'Admin',
         email: 'admin@hospitalityup.com',
       })
       toast.success(locale === 'es' ? 'Bienvenido, Admin' : 'Welcome, Admin')
+      console.log('Login called, isLoggedIn should be true now. Redirecting...')
+      // Force navigation to home
+      setTimeout(() => {
+        window.location.href = '/'
+      }, 100)
     } else {
+      console.log('Admin login failed - wrong credentials')
       toast.error(t.invalidCredentials)
     }
   }
@@ -102,12 +110,14 @@ export function LoginScreen() {
     }
     setSubmitting(true)
     try {
+      console.log('Empresa login attempt:', { propiedadId, password })
       const res = await fetch('/api/auth/empresa', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ propiedadId, password }),
       })
       const data = await res.json()
+      console.log('Empresa API response:', data)
       if (data.success) {
         const prop = data.propiedad
         login({
@@ -118,10 +128,15 @@ export function LoginScreen() {
           propiedadNombre: prop.nombre,
         })
         toast.success(locale === 'es' ? `Bienvenido, ${prop.nombre}` : `Welcome, ${prop.nombre}`)
+        console.log('Empresa login successful, redirecting...')
+        setTimeout(() => {
+          window.location.href = '/'
+        }, 100)
       } else {
         toast.error(data.error || t.invalidCredentials)
       }
-    } catch {
+    } catch (err) {
+      console.error('Empresa login error:', err)
       toast.error(t.invalidCredentials)
     } finally {
       setSubmitting(false)
@@ -139,12 +154,14 @@ export function LoginScreen() {
     }
     setSubmitting(true)
     try {
+      console.log('Empleado login attempt:', { empleadoId: empleadoId.trim(), password })
       const res = await fetch('/api/auth/empleado', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ empleadoId: empleadoId.trim(), password }),
       })
       const data = await res.json()
+      console.log('Empleado API response:', data)
       if (data.success) {
         const emp = data.empleado
         login({
@@ -156,10 +173,15 @@ export function LoginScreen() {
           propiedadNombre: data.propiedad?.nombre,
         })
         toast.success(locale === 'es' ? `Bienvenido, ${emp.nombre}` : `Welcome, ${emp.nombre}`)
+        console.log('Empleado login successful, redirecting...')
+        setTimeout(() => {
+          window.location.href = '/'
+        }, 100)
       } else {
         toast.error(data.error || t.invalidCredentials)
       }
-    } catch {
+    } catch (err) {
+      console.error('Empleado login error:', err)
       toast.error(t.invalidCredentials)
     } finally {
       setSubmitting(false)
