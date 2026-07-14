@@ -31,6 +31,9 @@ export async function GET(request: Request) {
     const propiedades = await db.propiedad.findMany({
       where,
       include: {
+        empresa: {
+          select: { id: true, nombre: true, nombreEn: true, tipo: true, plan: true },
+        },
         _count: {
           select: {
             empleados: { where: { estado: { in: ['activo', 'onboarding'] } } },
@@ -56,6 +59,8 @@ export async function GET(request: Request) {
       contactoNombre: p.contactoNombre,
       contactoEmail: p.contactoEmail,
       contactoTelefono: p.contactoTelefono,
+      empresaId: p.empresaId,
+      empresa: p.empresa,
       createdAt: p.createdAt,
       updatedAt: p.updatedAt,
       empleadosActivos: p._count.empleados,
@@ -101,6 +106,8 @@ export async function POST(request: Request) {
         contactoNombre: body.contactoNombre || null,
         contactoEmail: body.contactoEmail || null,
         contactoTelefono: body.contactoTelefono || null,
+        // Link to empresa (grupo) if provided
+        empresaId: body.empresaId || null,
       },
     })
 

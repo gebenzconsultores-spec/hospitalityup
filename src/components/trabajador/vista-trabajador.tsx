@@ -25,6 +25,9 @@ import {
   User,
   Building2,
   ChevronRight,
+  MapPin,
+  Layers,
+  Filter,
 } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────
@@ -52,7 +55,24 @@ interface Empleado {
   nombre: string
   posicion: string
   propiedadId: string
-  propiedad: { id: string; nombre: string; nombreEn: string | null; region: string }
+  propiedad: { id: string; nombre: string; nombreEn: string | null; region: string; tipo?: string; empresaId?: string | null; empresa?: { id: string; nombre: string } | null }
+}
+
+interface Empresa {
+  id: string
+  nombre: string
+  nombreEn: string | null
+  tipo: string
+}
+
+interface PropiedadWithEmpresa {
+  id: string
+  nombre: string
+  nombreEn: string | null
+  region: string
+  tipo: string
+  empresaId: string | null
+  empresa: { id: string; nombre: string } | null
 }
 
 interface VentaDia {
@@ -85,6 +105,11 @@ export function VistaTrabajador() {
 
   // State
   const [empleados, setEmpleados] = useState<Empleado[]>([])
+  const [empresas, setEmpresas] = useState<Empresa[]>([])
+  const [propiedades, setPropiedades] = useState<PropiedadWithEmpresa[]>([])
+  const [empresaFiltro, setEmpresaFiltro] = useState<string>('all') // all, sin_grupo, or empresa.id
+  const [regionFiltro, setRegionFiltro] = useState<string>('all')
+  const [propiedadFiltro, setPropiedadFiltro] = useState<string>('all')
   const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState<Empleado | null>(null)
   const [servicios, setServicios] = useState<Servicio[]>([])
   const [ventasDia, setVentasDia] = useState<VentaDia[]>([])
@@ -108,6 +133,50 @@ export function VistaTrabajador() {
       .then(data => setEmpleados(Array.isArray(data) ? data : []))
       .catch(() => {})
   }, [])
+
+  // Load empresas (grupos)
+  useEffect(() => {
+    fetch('/api/empresas')
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) setEmpresas(data)
+      })
+      .catch(() => {})
+  }, [])
+
+  // Load propiedades with empresa info
+  useEffect(() => {
+    fetch('/api/propiedades')
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) setPropiedades(data)
+      })
+      .catch(() => {})
+  }, [])
+
+  // Regiones disponibles (from propiedades)
+  const regionesDisponibles = Array.from(new Set(propiedades.map(p => p.region).filter(Boolean))).sort()
+
+  // Propiedades filtradas según empresa y región seleccionadas
+  const propiedadesFiltradas = propiedades.filter(p => {
+    // Filtro por empresa
+    if (empresaFiltro === 'sin_grupo' && p.empresaId) return false
+    if (empresaFiltro !== 'all' && empresaFiltro !== 'sin_grupo' && p.empresaId !== empresaFiltro) return false
+    // Filtro por región
+    if (regionFiltro !== 'all' && p.region !== regionFiltro) return false
+    return true
+  })
+
+  // Empleados filtrados según propiedad seleccionada (o empresa/región)
+  const empleadosFiltrados = empleados.filter(emp => {
+    // Si hay propiedad específica seleccionada
+    if (propiedadFiltro !== 'all') {
+      return emp.propiedadId === propiedadFiltro
+    }
+    // Si no, filtrar por las propiedades filtradas
+    const propIds = propiedadesFiltradas.map(p => p.id)
+    return propIds.includes(emp.propiedadId)
+  })
 
   // When employee is selected, load their property's services and today's sales
   const propiedadId = empleadoSeleccionado?.propiedadId || (selectedProperty !== 'all' ? selectedProperty : null)
@@ -232,6 +301,102 @@ export function VistaTrabajador() {
 
   return (
     <div className="space-y-4">
+      {/* ── Filtros: Empresa (Grupo) → Región → Propiedad ── */}
+      <Card className="border-teal-200 bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-teal-950/30 dark:to-emerald-950/30">
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center gap-2 text-sm font-medium text-teal-700 dark:text-teal-300">
+            <Filter className="size-4" />
+            {locale === 'es' ? 'Filtrar por:' : 'Filter by:'}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Filtro 1: Empresa (Grupo) */}
+            <div className="space-y-1.5">
+              <Label className="text-xs flex items-center gap-1.5 text-muted-foreground">
+                <Layers className="size-3" />
+                {locale === 'es' ? 'Grupo / Empresa' : 'Group / Company'}
+              </Label>
+              <Select value={empresaFiltro} onValueChange={(v) => { setEmpresaFiltro(v); setPropiedadFiltro('all'); setEmpleadoSeleccionado(null) }}>
+                <SelectTrigger className="bg-white dark:bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{locale === 'es' ? 'Todos los grupos' : 'All groups'}</SelectItem>
+                  <SelectItem value="sin_grupo">{locale === 'es' ? 'Sin grupo (Independientes)' : 'No group (Independent)'}</SelectItem>
+                  {empresas.map(emp => (
+                    <SelectItem key={emp.id} value={emp.id}>
+                      {emp.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Filtro 2: Región */}
+            <div className="space-y-1.5">
+              <Label className="text-xs flex items-center gap-1.5 text-muted-foreground">
+                <MapPin className="size-3" />
+                {locale === 'es' ? 'Región / Ciudad' : 'Region / City'}
+              </Label>
+              <Select value={regionFiltro} onValueChange={(v) => { setRegionFiltro(v); setPropiedadFiltro('all'); setEmpleadoSeleccionado(null) }}>
+                <SelectTrigger className="bg-white dark:bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{locale === 'es' ? 'Todas las regiones' : 'All regions'}</SelectItem>
+                  {regionesDisponibles.map(r => (
+                    <SelectItem key={r} value={r}>
+                      {r === 'cancun' ? 'Cancún' :
+                       r === 'cdmx' ? 'CDMX' :
+                       r === 'puebla' ? 'Puebla' :
+                       r === 'playa_carmen' ? 'Playa del Carmen' :
+                       r === 'los_cabos' ? 'Los Cabos' :
+                       r === 'veracruz' ? 'Veracruz' :
+                       r.charAt(0).toUpperCase() + r.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Filtro 3: Propiedad (Sucursal) */}
+            <div className="space-y-1.5">
+              <Label className="text-xs flex items-center gap-1.5 text-muted-foreground">
+                <Building2 className="size-3" />
+                {locale === 'es' ? 'Propiedad / Sucursal' : 'Property / Branch'}
+              </Label>
+              <Select
+                value={propiedadFiltro}
+                onValueChange={(v) => { setPropiedadFiltro(v); setEmpleadoSeleccionado(null) }}
+                disabled={propiedadesFiltradas.length === 0}
+              >
+                <SelectTrigger className="bg-white dark:bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">
+                    {locale === 'es' ? `Todas (${propiedadesFiltradas.length})` : `All (${propiedadesFiltradas.length})`}
+                  </SelectItem>
+                  {propiedadesFiltradas.map(p => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {locale === 'en' && p.nombreEn ? p.nombreEn : p.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {propiedadesFiltradas.length === 0 && (
+            <p className="text-xs text-muted-foreground text-center py-2">
+              {locale === 'es'
+                ? 'No hay propiedades que coincidan con los filtros seleccionados'
+                : 'No properties match the selected filters'}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
       {/* ── Header: Employee Selector + Property + Scores ── */}
       <Card className="border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30">
         <CardContent className="p-4">
@@ -243,15 +408,15 @@ export function VistaTrabajador() {
                 <Select
                   value={empleadoSeleccionado?.id || ''}
                   onValueChange={(val) => {
-                    const emp = empleados.find(e => e.id === val) || null
+                    const emp = empleadosFiltrados.find(e => e.id === val) || null
                     setEmpleadoSeleccionado(emp)
                   }}
                 >
                   <SelectTrigger className="w-[260px] bg-white dark:bg-background">
-                    <SelectValue placeholder={t.seleccionarEmpleado} />
+                    <SelectValue placeholder={empleadosFiltrados.length === 0 ? (locale === 'es' ? 'Sin empleados' : 'No employees') : t.seleccionarEmpleado} />
                   </SelectTrigger>
                   <SelectContent>
-                    {empleados.map(e => (
+                    {empleadosFiltrados.map(e => (
                       <SelectItem key={e.id} value={e.id}>
                         {e.nombre} - {e.empleadoId}
                       </SelectItem>
@@ -270,6 +435,13 @@ export function VistaTrabajador() {
                 </div>
               )}
             </div>
+
+            {/* Empleados count badge */}
+            {empleadosFiltrados.length > 0 && !empleadoSeleccionado && (
+              <Badge variant="secondary" className="self-start">
+                {empleadosFiltrados.length} {locale === 'es' ? 'empleados disponibles' : 'employees available'}
+              </Badge>
+            )}
 
             {/* Today's scores */}
             {empleadoSeleccionado && (

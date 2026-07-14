@@ -36,7 +36,17 @@ export async function GET(request: Request) {
       where,
       include: {
         propiedad: {
-          select: { id: true, nombre: true, nombreEn: true, region: true },
+          select: {
+            id: true,
+            nombre: true,
+            nombreEn: true,
+            region: true,
+            tipo: true,
+            empresaId: true,
+            empresa: {
+              select: { id: true, nombre: true, nombreEn: true },
+            },
+          },
         },
         _count: {
           select: { cursos: true, alertas: true, ventas: true },
