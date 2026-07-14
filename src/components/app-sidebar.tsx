@@ -63,6 +63,7 @@ const allNavItems: { key: ViewMode; icon: React.ElementType; roles: UserRole[] }
   { key: 'trabajador', icon: ShoppingCart, roles: ['admin', 'empresa', 'empleado'] },
   { key: 'servicios', icon: Package, roles: ['admin', 'empresa'] },
   { key: 'propiedades', icon: Building2, roles: ['admin', 'empresa'] },
+  { key: 'empresas-grupos', icon: Building2, roles: ['admin'] },
   { key: 'empresas-accesos', icon: KeyRound, roles: ['admin'] },
   { key: 'empleados', icon: Users, roles: ['admin', 'empresa'] },
   { key: 'ventas', icon: DollarSign, roles: ['admin', 'empresa'] },

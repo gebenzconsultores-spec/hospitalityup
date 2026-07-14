@@ -192,7 +192,8 @@ export function ServiciosAdmin() {
   const abrirNuevo = () => {
     setEditingId(null)
     setForm(emptyForm)
-    setShowFormDialog(true)
+    setActiveTab('agregar')
+    toast.info(locale === 'es' ? 'Completa el formulario de abajo' : 'Fill the form below')
   }
 
   // Open form for editing
@@ -211,7 +212,8 @@ export function ServiciosAdmin() {
       objetivoUpsellingEn: servicio.objetivoUpsellingEn || '',
       disponible: servicio.disponible,
     })
-    setShowFormDialog(true)
+    setActiveTab('agregar')
+    toast.info(locale === 'es' ? 'Edita el formulario de abajo' : 'Edit the form below')
   }
 
   // Save service (create or update)

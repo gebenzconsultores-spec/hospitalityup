@@ -31,6 +31,7 @@ const BolsaTrabajo = dynamic(() => import('@/components/bolsa-trabajo/bolsa-trab
 const ConfiguracionModule = dynamic(() => import('@/components/configuracion/configuracion').then(m => ({ default: m.ConfiguracionModule })), { loading: () => <Loading /> })
 const PropiedadesModule = dynamic(() => import('@/components/propiedades/propiedades-module').then(m => ({ default: m.PropiedadesModule })), { loading: () => <Loading /> })
 const EmpresasAccesos = dynamic(() => import('@/components/admin/empresas-accesos').then(m => ({ default: m.EmpresasAccesos })), { loading: () => <Loading /> })
+const EmpresasGrupos = dynamic(() => import('@/components/admin/empresas-grupos').then(m => ({ default: m.EmpresasGruposModule })), { loading: () => <Loading /> })
 const LoginScreen = dynamic(() => import('@/components/auth/login-screen').then(m => ({ default: m.LoginScreen })), { loading: () => <Loading /> })
 const NpsSurvey = dynamic(() => import('@/components/empleado/nps-survey').then(m => ({ default: m.NpsSurvey })), { loading: () => <Loading /> })
 const ClimaOrganizacional = dynamic(() => import('@/components/empleado/clima-organizacional').then(m => ({ default: m.ClimaOrganizacional })), { loading: () => <Loading /> })
@@ -135,6 +136,7 @@ function ContentArea({ currentView }: { currentView: ViewMode }) {
     case 'servicios': return <ServiciosAdmin />
     case 'propiedades': return <PropiedadesModule />
     case 'empresas-accesos': return <EmpresasAccesos />
+    case 'empresas-grupos': return <EmpresasGrupos />
     case 'empleados': return <EmpleadosModule />
     case 'ventas': return <VentasModule />
     case 'capacitacion': return <CapacitacionModule />

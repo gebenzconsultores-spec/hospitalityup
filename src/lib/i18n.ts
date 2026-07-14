@@ -18,6 +18,7 @@ export const translations = {
       servicios: 'Menú & Servicios',
       propiedades: 'Propiedades',
       'empresas-accesos': 'Empresas y Accesos',
+      'empresas-grupos': 'Empresas y Grupos',
     },
 
     // Login screen
@@ -549,6 +550,7 @@ export const translations = {
       servicios: 'Menu & Services',
       propiedades: 'Properties',
       'empresas-accesos': 'Companies & Access',
+      'empresas-grupos': 'Companies & Groups',
     },
 
     // Login screen

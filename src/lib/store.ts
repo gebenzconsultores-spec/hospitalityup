@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Locale } from './i18n'
 
-export type ViewMode = 'dashboard' | 'empleados' | 'ventas' | 'capacitacion' | 'bolsa' | 'configuracion' | 'trabajador' | 'servicios' | 'propiedades' | 'nps-survey' | 'clima'
+export type ViewMode = 'dashboard' | 'empleados' | 'ventas' | 'capacitacion' | 'bolsa' | 'configuracion' | 'trabajador' | 'servicios' | 'propiedades' | 'nps-survey' | 'clima' | 'empresas-accesos' | 'empresas-grupos'
 
 export type UserRole = 'admin' | 'empresa' | 'empleado' | null
 
