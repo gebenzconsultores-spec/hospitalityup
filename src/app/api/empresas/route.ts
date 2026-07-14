@@ -23,6 +23,23 @@ export async function GET(request: Request) {
 
     const empresas = await db.empresa.findMany({
       include: {
+        propiedades: {
+          select: {
+            id: true,
+            nombre: true,
+            nombreEn: true,
+            tipo: true,
+            region: true,
+            ubicacion: true,
+            activo: true,
+            _count: {
+              select: {
+                empleados: { where: { estado: { in: ['activo', 'onboarding'] } } },
+              },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+        },
         _count: {
           select: { propiedades: true },
         },
@@ -69,6 +86,17 @@ export async function POST(request: Request) {
         activo: body.activo !== undefined ? body.activo : true,
       },
       include: {
+        propiedades: {
+          select: {
+            id: true,
+            nombre: true,
+            tipo: true,
+            region: true,
+            ubicacion: true,
+            activo: true,
+            _count: { select: { empleados: true } },
+          },
+        },
         _count: { select: { propiedades: true } },
       },
     })
