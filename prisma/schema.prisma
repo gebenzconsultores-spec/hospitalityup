@@ -321,3 +321,55 @@ model LogAgenteIA {
   error           String?
   createdAt       DateTime @default(now())
 }
+
+// ============================================================
+// PROVEEDORES - Empresas que venden productos/servicios a las sucursales
+// ============================================================
+
+model Proveedor {
+  id              String   @id @default(cuid())
+  nombre          String
+  nombreEn        String?
+  tipo            String   // pasteleria, repostera, carniceria, verduleria, bebidas, limpieza, otro
+  rfc             String?
+  contactoNombre  String?
+  contactoEmail   String?
+  contactoTelefono String?
+  direccion       String?
+  region          String?  // Región donde opera: cancun, cdmx, puebla, etc.
+  ciudad          String?
+  paginaWeb       String?
+  logo            String?
+  activo          Boolean  @default(true)
+  calificacion    Float    @default(0) // 0-5, calificación promedio
+  notas           String?
+  // Relación con empresa (si el proveedor es exclusivo de un grupo)
+  empresaId       String?
+  empresa         Empresa? @relation(fields: [empresaId], references: [id])
+  productos       ProductoProveedor[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model ProductoProveedor {
+  id              String   @id @default(cuid())
+  proveedorId     String
+  proveedor       Proveedor @relation(fields: [proveedorId], references: [id])
+  nombre          String
+  nombreEn        String?
+  descripcion     String?
+  descripcionEn   String?
+  categoria       String   // pastel, postre, pan, carne, verdura, bebida, insumo, limpieza, otro
+  categoriaEn     String?
+  unidad          String?  // pieza, kg, litro, caja, paquete
+  precio          Float
+  precioMayoreo   Float?   // Precio por mayoreo (si aplica)
+  cantidadMinima  Int      @default(1) // Cantidad mínima de compra
+  imagen          String?
+  disponible      Boolean  @default(true)
+  // Para vincular a propiedades específicas que usan este producto
+  propiedadesIds  String?  // JSON array de propiedad IDs
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+

@@ -19,6 +19,7 @@ export const translations = {
       propiedades: 'Propiedades',
       'empresas-accesos': 'Empresas y Accesos',
       'empresas-grupos': 'Empresas y Grupos',
+      'proveedores': 'Proveedores',
     },
 
     // Login screen
@@ -551,6 +552,7 @@ export const translations = {
       propiedades: 'Properties',
       'empresas-accesos': 'Companies & Access',
       'empresas-grupos': 'Companies & Groups',
+      'proveedores': 'Suppliers',
     },
 
     // Login screen

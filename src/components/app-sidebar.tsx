@@ -20,6 +20,7 @@ import {
   Check,
   AlertCircle,
   Info,
+  Truck,
 } from 'lucide-react'
 
 import {
@@ -65,6 +66,7 @@ const allNavItems: { key: ViewMode; icon: React.ElementType; roles: UserRole[] }
   { key: 'propiedades', icon: Building2, roles: ['admin', 'empresa'] },
   { key: 'empresas-grupos', icon: Building2, roles: ['admin'] },
   { key: 'empresas-accesos', icon: KeyRound, roles: ['admin'] },
+  { key: 'proveedores', icon: Truck, roles: ['admin', 'empresa'] },
   { key: 'empleados', icon: Users, roles: ['admin', 'empresa'] },
   { key: 'ventas', icon: DollarSign, roles: ['admin', 'empresa'] },
   { key: 'capacitacion', icon: GraduationCap, roles: ['admin', 'empresa'] },
