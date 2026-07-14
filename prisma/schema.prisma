@@ -59,6 +59,7 @@ model Propiedad {
   candidatos      CandidatoPool[]
   alertas         AlertaRiesgo[]
   solicitudesCap  SolicitudCapacitacion[]
+  solicitudesPedido SolicitudPedido[]
   servicios       Servicio[]
 }
 
@@ -369,7 +370,42 @@ model ProductoProveedor {
   disponible      Boolean  @default(true)
   // Para vincular a propiedades específicas que usan este producto
   propiedadesIds  String?  // JSON array de propiedad IDs
+  // Relación con solicitudes de pedido
+  solicitudes     SolicitudPedido[]
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
+
+// ============================================================
+// SOLICITUDES DE PEDIDO - Empresas solicitan cotizaciones a proveedores
+// ============================================================
+
+model SolicitudPedido {
+  id              String   @id @default(cuid())
+  // Quién solicita
+  propiedadId     String   // Sucursal que solicita
+  propiedad       Propiedad @relation(fields: [propiedadId], references: [id])
+  solicitadoPor   String?  // Nombre del usuario que solicita
+  // A quién se solicita
+  proveedorId     String
+  proveedor       Proveedor @relation(fields: [proveedorId], references: [id])
+  // Producto solicitado
+  productoId      String?
+  producto        ProductoProveedor? @relation(fields: [productoId], references: [id])
+  // Detalles del pedido
+  cantidad        Int      @default(1)
+  unidad          String?  // pieza, kg, litro, etc.
+  precioEstimado  Float?   // Precio estimado según proveedor
+  totalEstimado   Float?   // cantidad * precioEstimado
+  notas           String?  // Notas o especificaciones del pedido
+  // Estado
+  estado          String   @default("pendiente") // pendiente, cotizada, aprobada, rechazada, entregada, cancelada
+  fechaSolicitud  DateTime @default(now())
+  fechaRespuesta  DateTime?
+  fechaEntrega    DateTime? // Fecha esperada de entrega
+  respuestaProveedor String? // Respuesta o cotización del proveedor
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
 

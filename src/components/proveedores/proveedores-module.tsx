@@ -17,6 +17,11 @@ import {
   Globe,
   Search,
   Filter,
+  ShoppingCart,
+  Clock,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -49,6 +54,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs'
 import { useAppStore } from '@/lib/store'
 import { translations } from '@/lib/i18n'
 import { toast } from 'sonner'
@@ -86,6 +97,27 @@ interface ProductoProveedor {
   cantidadMinima: number
   imagen: string | null
   disponible: boolean
+}
+
+interface SolicitudPedido {
+  id: string
+  propiedadId: string
+  propiedad: { id: string; nombre: string; region: string }
+  proveedorId: string
+  proveedor: { id: string; nombre: string; tipo: string; contactoEmail: string | null; contactoTelefono: string | null }
+  productoId: string | null
+  producto: { id: string; nombre: string; categoria: string; unidad: string | null; precio: number } | null
+  cantidad: number
+  unidad: string | null
+  precioEstimado: number | null
+  totalEstimado: number | null
+  notas: string | null
+  estado: string
+  fechaSolicitud: string
+  fechaRespuesta: string | null
+  fechaEntrega: string | null
+  respuestaProveedor: string | null
+  solicitadoPor: string | null
 }
 
 const tipoLabels: Record<string, { es: string; en: string; icon: string }> = {
@@ -236,6 +268,24 @@ export function ProveedoresModule() {
   const [editingProducto, setEditingProducto] = useState<ProductoProveedor | null>(null)
   const [deleteProductoTarget, setDeleteProductoTarget] = useState<{ proveedorId: string; producto: ProductoProveedor } | null>(null)
 
+  // Solicitud de pedido state
+  const [solicitudes, setSolicitudes] = useState<SolicitudPedido[]>([])
+  const [showSolicitudDialog, setShowSolicitudDialog] = useState(false)
+  const [solicitudProveedorId, setSolicitudProveedorId] = useState<string | null>(null)
+  const [solicitudProductoId, setSolicitudProductoId] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState('proveedores')
+
+  // Solicitud form
+  const [solicitudForm, setSolicitudForm] = useState({
+    productoId: '',
+    cantidad: '1',
+    notas: '',
+    fechaEntrega: '',
+  })
+
+  // Get user info from store
+  const { userRole, userPropiedadId, userPropiedadNombre, userName } = useAppStore()
+
   // Form state
   const [form, setForm] = useState({
     nombre: '',
@@ -309,7 +359,7 @@ export function ProveedoresModule() {
       contactoEmail: '',
       contactoTelefono: '',
       direccion: '',
-      region: '',
+      region: 'puebla',
       ciudad: '',
       paginaWeb: '',
       calificacion: 0,
@@ -504,6 +554,133 @@ export function ProveedoresModule() {
     }
   }
 
+  // Solicitud de pedido functions
+  const fetchSolicitudes = useCallback(async () => {
+    try {
+      const params = new URLSearchParams()
+      if (userRole === 'empresa' && userPropiedadId) {
+        params.set('propiedadId', userPropiedadId)
+      }
+      const res = await fetch(`/api/solicitudes-pedido?${params.toString()}`)
+      const data = await res.json()
+      if (Array.isArray(data)) {
+        setSolicitudes(data)
+      }
+    } catch {}
+  }, [userRole, userPropiedadId])
+
+  useEffect(() => {
+    if (activeTab === 'solicitudes') {
+      fetchSolicitudes()
+    }
+  }, [activeTab, fetchSolicitudes])
+
+  const abrirSolicitud = (proveedorId: string, productoId?: string) => {
+    if (!userPropiedadId) {
+      toast.error(locale === 'es' ? 'No tienes una propiedad asignada' : 'No property assigned')
+      return
+    }
+    setSolicitudProveedorId(proveedorId)
+    setSolicitudForm({
+      productoId: productoId || '',
+      cantidad: '1',
+      notas: '',
+      fechaEntrega: '',
+    })
+    setShowSolicitudDialog(true)
+  }
+
+  const enviarSolicitud = async () => {
+    if (!solicitudProveedorId || !userPropiedadId) {
+      toast.error(locale === 'es' ? 'Error: faltan datos' : 'Error: missing data')
+      return
+    }
+    if (!solicitudForm.cantidad || parseInt(solicitudForm.cantidad) < 1) {
+      toast.error(locale === 'es' ? 'Cantidad inválida' : 'Invalid quantity')
+      return
+    }
+
+    try {
+      // Obtener el producto para su precio y unidad
+      const proveedor = proveedores.find(p => p.id === solicitudProveedorId)
+      const producto = proveedor?.productos?.find(p => p.id === solicitudForm.productoId)
+
+      const res = await fetch('/api/solicitudes-pedido', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          propiedadId: userPropiedadId,
+          solicitadoPor: userName,
+          proveedorId: solicitudProveedorId,
+          productoId: solicitudForm.productoId || null,
+          cantidad: solicitudForm.cantidad,
+          unidad: producto?.unidad || 'pieza',
+          precioEstimado: producto?.precio || null,
+          notas: solicitudForm.notas || null,
+          fechaEntrega: solicitudForm.fechaEntrega || null,
+        }),
+      })
+
+      if (!res.ok) throw new Error('Error')
+
+      toast.success(locale === 'es' ? 'Solicitud enviada correctamente' : 'Request sent successfully')
+      setShowSolicitudDialog(false)
+      fetchSolicitudes()
+    } catch {
+      toast.error(locale === 'es' ? 'Error al enviar solicitud' : 'Error sending request')
+    }
+  }
+
+  const actualizarEstadoSolicitud = async (id: string, estado: string) => {
+    try {
+      await fetch(`/api/solicitudes-pedido/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado }),
+      })
+      toast.success(locale === 'es' ? `Estado actualizado a: ${estado}` : `Status updated to: ${estado}`)
+      fetchSolicitudes()
+    } catch {
+      toast.error(locale === 'es' ? 'Error al actualizar' : 'Error updating')
+    }
+  }
+
+  const getEstadoColor = (estado: string) => {
+    switch (estado) {
+      case 'pendiente': return 'bg-yellow-100 text-yellow-700 border-yellow-200'
+      case 'cotizada': return 'bg-blue-100 text-blue-700 border-blue-200'
+      case 'aprobada': return 'bg-green-100 text-green-700 border-green-200'
+      case 'rechazada': return 'bg-red-100 text-red-700 border-red-200'
+      case 'entregada': return 'bg-teal-100 text-teal-700 border-teal-200'
+      case 'cancelada': return 'bg-gray-100 text-gray-700 border-gray-200'
+      default: return 'bg-gray-100 text-gray-700 border-gray-200'
+    }
+  }
+
+  const getEstadoIcon = (estado: string) => {
+    switch (estado) {
+      case 'pendiente': return <Clock className="size-3" />
+      case 'cotizada': return <AlertCircle className="size-3" />
+      case 'aprobada': return <CheckCircle className="size-3" />
+      case 'rechazada': return <XCircle className="size-3" />
+      case 'entregada': return <CheckCircle className="size-3" />
+      case 'cancelada': return <XCircle className="size-3" />
+      default: return <Clock className="size-3" />
+    }
+  }
+
+  const getEstadoLabel = (estado: string) => {
+    const labels: Record<string, { es: string; en: string }> = {
+      pendiente: { es: 'Pendiente', en: 'Pending' },
+      cotizada: { es: 'Cotizada', en: 'Quoted' },
+      aprobada: { es: 'Aprobada', en: 'Approved' },
+      rechazada: { es: 'Rechazada', en: 'Rejected' },
+      entregada: { es: 'Entregada', en: 'Delivered' },
+      cancelada: { es: 'Cancelada', en: 'Cancelled' },
+    }
+    return labels[estado]?.[locale] || estado
+  }
+
   // Filtered proveedores
   const proveedoresFiltrados = proveedores.filter(p => {
     if (tipoFiltro !== 'todos' && p.tipo !== tipoFiltro) return false
@@ -537,14 +714,36 @@ export function ProveedoresModule() {
           </h1>
           <p className="text-sm text-muted-foreground">{tt.subtitle}</p>
         </div>
-        <Button
-          className="bg-teal-600 hover:bg-teal-700 text-white gap-1.5 shrink-0"
-          onClick={abrirNuevo}
-        >
-          <Plus className="size-4" />
-          {tt.agregarProveedor}
-        </Button>
+        {userRole === 'admin' && (
+          <Button
+            className="bg-teal-600 hover:bg-teal-700 text-white gap-1.5 shrink-0"
+            onClick={abrirNuevo}
+          >
+            <Plus className="size-4" />
+            {tt.agregarProveedor}
+          </Button>
+        )}
       </div>
+
+      {/* Tabs: Proveedores / Mis Solicitudes */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="proveedores" className="gap-1.5">
+            <Truck className="size-4" />
+            {locale === 'es' ? 'Proveedores' : 'Suppliers'}
+          </TabsTrigger>
+          <TabsTrigger value="solicitudes" className="gap-1.5">
+            <ShoppingCart className="size-4" />
+            {locale === 'es' ? 'Solicitudes de Pedido' : 'Purchase Requests'}
+            {solicitudes.filter(s => s.estado === 'pendiente').length > 0 && (
+              <Badge variant="destructive" className="ml-1 text-[10px] px-1.5 py-0">
+                {solicitudes.filter(s => s.estado === 'pendiente').length}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="proveedores" className="mt-4 space-y-4">
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -657,17 +856,21 @@ export function ProveedoresModule() {
                       </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                      <Button variant="ghost" size="icon" className="size-8" onClick={() => abrirEditar(proveedor)}>
-                        <Pencil className="size-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-8 text-destructive hover:text-destructive"
-                        onClick={() => setDeleteTarget(proveedor)}
-                      >
-                        <Trash2 className="size-3.5" />
-                      </Button>
+                      {userRole === 'admin' && (
+                        <>
+                          <Button variant="ghost" size="icon" className="size-8" onClick={() => abrirEditar(proveedor)}>
+                            <Pencil className="size-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8 text-destructive hover:text-destructive"
+                            onClick={() => setDeleteTarget(proveedor)}
+                          >
+                            <Trash2 className="size-3.5" />
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </CardHeader>
@@ -715,15 +918,28 @@ export function ProveedoresModule() {
                       <Badge variant={productosCount > 0 ? 'default' : 'secondary'}>
                         {productosCount}
                       </Badge>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 ml-2"
-                        onClick={() => abrirNuevoProducto(proveedor.id)}
-                      >
-                        <Plus className="size-3 mr-1" />
-                        {tt.agregarProducto}
-                      </Button>
+                      {userRole === 'admin' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 ml-2"
+                          onClick={() => abrirNuevoProducto(proveedor.id)}
+                        >
+                          <Plus className="size-3 mr-1" />
+                          {tt.agregarProducto}
+                        </Button>
+                      )}
+                      {userRole === 'empresa' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 ml-2 bg-teal-50 border-teal-200 text-teal-700 hover:bg-teal-100"
+                          onClick={() => abrirSolicitud(proveedor.id)}
+                        >
+                          <ShoppingCart className="size-3 mr-1" />
+                          {locale === 'es' ? 'Solicitar Pedido' : 'Request Order'}
+                        </Button>
+                      )}
                     </div>
                   </div>
 
@@ -799,6 +1015,111 @@ export function ProveedoresModule() {
           })}
         </div>
       )}
+        </TabsContent>
+
+        {/* Tab: Solicitudes de Pedido */}
+        <TabsContent value="solicitudes" className="mt-4 space-y-4">
+          {solicitudes.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <ShoppingCart className="size-12 mx-auto mb-3 text-muted-foreground/30" />
+                <p className="font-medium text-muted-foreground">
+                  {locale === 'es' ? 'No hay solicitudes de pedido' : 'No purchase requests'}
+                </p>
+                <p className="text-sm text-muted-foreground/70 mt-1">
+                  {locale === 'es'
+                    ? 'Ve a la pestaña Proveedores y solicita un producto'
+                    : 'Go to Suppliers tab and request a product'}
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {solicitudes.map((sol) => (
+                <Card key={sol.id}>
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-sm">
+                            {sol.producto?.nombre || (locale === 'es' ? 'Producto general' : 'General product')}
+                          </span>
+                          <Badge variant="outline" className={`text-[10px] gap-1 ${getEstadoColor(sol.estado)}`}>
+                            {getEstadoIcon(sol.estado)}
+                            {getEstadoLabel(sol.estado)}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {locale === 'es' ? 'Proveedor:' : 'Supplier:'} <span className="font-medium">{sol.proveedor.nombre}</span>
+                          {' · '}
+                          {locale === 'es' ? 'Sucursal:' : 'Branch:'} <span className="font-medium">{sol.propiedad.nombre}</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {locale === 'es' ? 'Cantidad:' : 'Quantity:'} <span className="font-medium">{sol.cantidad} {sol.unidad || 'piezas'}</span>
+                          {sol.totalEstimado && (
+                            <>
+                              {' · '}
+                              {locale === 'es' ? 'Total estimado:' : 'Estimated total:'} <span className="font-bold text-teal-700">${sol.totalEstimado.toLocaleString('es-MX')}</span>
+                            </>
+                          )}
+                        </p>
+                        {sol.notas && (
+                          <p className="text-xs text-muted-foreground mt-1 italic">"{sol.notas}"</p>
+                        )}
+                        {sol.respuestaProveedor && (
+                          <div className="mt-2 p-2 bg-muted rounded text-xs">
+                            <span className="font-medium">{locale === 'es' ? 'Respuesta del proveedor:' : 'Supplier response:'}</span>
+                            <p className="mt-0.5">{sol.respuestaProveedor}</p>
+                          </div>
+                        )}
+                        <p className="text-[10px] text-muted-foreground mt-2">
+                          {locale === 'es' ? 'Solicitado:' : 'Requested:'} {new Date(sol.fechaSolicitud).toLocaleString(locale === 'es' ? 'es-MX' : 'en-US', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                          {sol.solicitadoPor && ` · ${sol.solicitadoPor}`}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Action buttons */}
+                    {sol.estado === 'pendiente' && (
+                      <div className="flex gap-2 flex-wrap">
+                        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => actualizarEstadoSolicitud(sol.id, 'cotizada')}>
+                          {locale === 'es' ? 'Marcar Cotizada' : 'Mark Quoted'}
+                        </Button>
+                        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => actualizarEstadoSolicitud(sol.id, 'aprobada')}>
+                          <CheckCircle className="size-3 mr-1" />
+                          {locale === 'es' ? 'Aprobar' : 'Approve'}
+                        </Button>
+                        <Button size="sm" variant="outline" className="h-7 text-xs text-destructive" onClick={() => actualizarEstadoSolicitud(sol.id, 'cancelada')}>
+                          <XCircle className="size-3 mr-1" />
+                          {locale === 'es' ? 'Cancelar' : 'Cancel'}
+                        </Button>
+                      </div>
+                    )}
+                    {sol.estado === 'cotizada' && (
+                      <div className="flex gap-2 flex-wrap">
+                        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => actualizarEstadoSolicitud(sol.id, 'aprobada')}>
+                          <CheckCircle className="size-3 mr-1" />
+                          {locale === 'es' ? 'Aprobar' : 'Approve'}
+                        </Button>
+                        <Button size="sm" variant="outline" className="h-7 text-xs text-destructive" onClick={() => actualizarEstadoSolicitud(sol.id, 'rechazada')}>
+                          <XCircle className="size-3 mr-1" />
+                          {locale === 'es' ? 'Rechazar' : 'Reject'}
+                        </Button>
+                      </div>
+                    )}
+                    {sol.estado === 'aprobada' && (
+                      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => actualizarEstadoSolicitud(sol.id, 'entregada')}>
+                        <CheckCircle className="size-3 mr-1" />
+                        {locale === 'es' ? 'Marcar Entregada' : 'Mark Delivered'}
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* Dialog: Crear/Editar Proveedor */}
       <Dialog open={showFormDialog} onOpenChange={setShowFormDialog}>
@@ -873,10 +1194,9 @@ export function ProveedoresModule() {
                   </div>
                   <div className="space-y-1.5">
                     <Label>{tt.region}</Label>
-                    <Select value={form.region} onValueChange={v => setForm(prev => ({ ...prev, region: v }))}>
+                    <Select value={form.region || 'puebla'} onValueChange={v => setForm(prev => ({ ...prev, region: v }))}>
                       <SelectTrigger><SelectValue placeholder={locale === 'es' ? 'Seleccionar...' : 'Select...'} /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">{locale === 'es' ? 'Sin región' : 'No region'}</SelectItem>
                         <SelectItem value="cdmx">CDMX</SelectItem>
                         <SelectItem value="puebla">Puebla</SelectItem>
                         <SelectItem value="cancun">Cancún</SelectItem>
@@ -1038,6 +1358,100 @@ export function ProveedoresModule() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dialog: Solicitar Pedido */}
+      <Dialog open={showSolicitudDialog} onOpenChange={setShowSolicitudDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShoppingCart className="size-5 text-teal-600" />
+              {locale === 'es' ? 'Solicitar Pedido' : 'Request Order'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            {/* Info de la sucursal */}
+            <div className="p-3 bg-teal-50 rounded-lg text-sm">
+              <p className="font-medium text-teal-700">
+                {locale === 'es' ? 'Sucursal:' : 'Branch:'} {userPropiedadNombre || '—'}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {locale === 'es' ? 'La solicitud se enviará al proveedor' : 'Request will be sent to supplier'}
+              </p>
+            </div>
+
+            {/* Producto */}
+            <div className="space-y-1.5">
+              <Label>{locale === 'es' ? 'Producto' : 'Product'}</Label>
+              <Select
+                value={solicitudForm.productoId}
+                onValueChange={v => setSolicitudForm(prev => ({ ...prev, productoId: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={locale === 'es' ? 'Seleccionar producto...' : 'Select product...'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {solicitudProveedorId && proveedores.find(p => p.id === solicitudProveedorId)?.productos?.map(producto => (
+                    <SelectItem key={producto.id} value={producto.id}>
+                      {producto.nombre} - ${producto.precio}/{producto.unidad || 'pieza'}
+                    </SelectItem>
+                  )) || (
+                    <SelectItem value="_none" disabled>
+                      {locale === 'es' ? 'Sin productos disponibles' : 'No products available'}
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground">
+                {locale === 'es'
+                  ? 'Si no seleccionas producto, será una cotización general'
+                  : 'If no product selected, it will be a general quote'}
+              </p>
+            </div>
+
+            {/* Cantidad */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>{locale === 'es' ? 'Cantidad' : 'Quantity'} *</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={solicitudForm.cantidad}
+                  onChange={e => setSolicitudForm(prev => ({ ...prev, cantidad: e.target.value }))}
+                  placeholder="10"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>{locale === 'es' ? 'Fecha de entrega' : 'Delivery date'}</Label>
+                <Input
+                  type="date"
+                  value={solicitudForm.fechaEntrega}
+                  onChange={e => setSolicitudForm(prev => ({ ...prev, fechaEntrega: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            {/* Notas */}
+            <div className="space-y-1.5">
+              <Label>{locale === 'es' ? 'Notas / Especificaciones' : 'Notes / Specifications'}</Label>
+              <Textarea
+                value={solicitudForm.notas}
+                onChange={e => setSolicitudForm(prev => ({ ...prev, notas: e.target.value }))}
+                placeholder={locale === 'es' ? 'Ej: Pastel de chocolate para 20 personas, entrega antes de las 3pm' : 'Ej: Chocolate cake for 20 people, deliver before 3pm'}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSolicitudDialog(false)}>
+              {tt.cancelar}
+            </Button>
+            <Button className="bg-teal-600 hover:bg-teal-700" onClick={enviarSolicitud}>
+              <ShoppingCart className="size-4 mr-1.5" />
+              {locale === 'es' ? 'Enviar Solicitud' : 'Send Request'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
