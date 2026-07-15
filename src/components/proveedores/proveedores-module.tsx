@@ -348,6 +348,15 @@ export function ProveedoresModule() {
     } catch {}
   }
 
+  // Stable form update handlers to prevent re-renders
+  const updateForm = useCallback((field: string, value: string | number | boolean) => {
+    setForm(prev => ({ ...prev, [field]: value }))
+  }, [])
+
+  const updateProductoForm = useCallback((field: string, value: string | boolean) => {
+    setProductoForm(prev => ({ ...prev, [field]: value }))
+  }, [])
+
   const abrirNuevo = () => {
     setEditingProveedor(null)
     setForm({
@@ -1134,11 +1143,11 @@ export function ProveedoresModule() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>{tt.nombre} *</Label>
-                <Input value={form.nombre} onChange={e => setForm(prev => ({ ...prev, nombre: e.target.value }))} placeholder="Pastelería La Esperanza" />
+                <Input value={form.nombre} onChange={e => updateForm('nombre', e.target.value)} placeholder="Pastelería La Esperanza" />
               </div>
               <div className="space-y-1.5">
                 <Label>{tt.nombreEn}</Label>
-                <Input value={form.nombreEn} onChange={e => setForm(prev => ({ ...prev, nombreEn: e.target.value }))} placeholder="La Esperanza Bakery" />
+                <Input value={form.nombreEn} onChange={e => updateForm('nombreEn', e.target.value)} placeholder="La Esperanza Bakery" />
               </div>
             </div>
 
@@ -1156,7 +1165,7 @@ export function ProveedoresModule() {
               </div>
               <div className="space-y-1.5">
                 <Label>{tt.rfc}</Label>
-                <Input value={form.rfc} onChange={e => setForm(prev => ({ ...prev, rfc: e.target.value }))} placeholder="PLE010101AB1" />
+                <Input value={form.rfc} onChange={e => updateForm('rfc', e.target.value)} placeholder="PLE010101AB1" />
               </div>
             </div>
 
@@ -1165,16 +1174,16 @@ export function ProveedoresModule() {
               <div className="space-y-3">
                 <div className="space-y-1.5">
                   <Label>{tt.contactoNombre}</Label>
-                  <Input value={form.contactoNombre} onChange={e => setForm(prev => ({ ...prev, contactoNombre: e.target.value }))} placeholder="María González" />
+                  <Input value={form.contactoNombre} onChange={e => updateForm('contactoNombre', e.target.value)} placeholder="María González" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label>{tt.contactoEmail}</Label>
-                    <Input type="email" value={form.contactoEmail} onChange={e => setForm(prev => ({ ...prev, contactoEmail: e.target.value }))} placeholder="maria@pasteleria.com" />
+                    <Input type="email" value={form.contactoEmail} onChange={e => updateForm('contactoEmail', e.target.value)} placeholder="maria@pasteleria.com" />
                   </div>
                   <div className="space-y-1.5">
                     <Label>{tt.contactoTelefono}</Label>
-                    <Input value={form.contactoTelefono} onChange={e => setForm(prev => ({ ...prev, contactoTelefono: e.target.value }))} placeholder="+52 222 123 4567" />
+                    <Input value={form.contactoTelefono} onChange={e => updateForm('contactoTelefono', e.target.value)} placeholder="+52 222 123 4567" />
                   </div>
                 </div>
               </div>
@@ -1185,12 +1194,12 @@ export function ProveedoresModule() {
               <div className="space-y-3">
                 <div className="space-y-1.5">
                   <Label>{tt.direccion}</Label>
-                  <Input value={form.direccion} onChange={e => setForm(prev => ({ ...prev, direccion: e.target.value }))} placeholder="Calle 5 #123, Col. Centro" />
+                  <Input value={form.direccion} onChange={e => updateForm('direccion', e.target.value)} placeholder="Calle 5 #123, Col. Centro" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label>{tt.ciudad}</Label>
-                    <Input value={form.ciudad} onChange={e => setForm(prev => ({ ...prev, ciudad: e.target.value }))} placeholder="Puebla" />
+                    <Input value={form.ciudad} onChange={e => updateForm('ciudad', e.target.value)} placeholder="Puebla" />
                   </div>
                   <div className="space-y-1.5">
                     <Label>{tt.region}</Label>
@@ -1209,7 +1218,7 @@ export function ProveedoresModule() {
                 </div>
                 <div className="space-y-1.5">
                   <Label>{tt.paginaWeb}</Label>
-                  <Input value={form.paginaWeb} onChange={e => setForm(prev => ({ ...prev, paginaWeb: e.target.value }))} placeholder="www.pasteleria.com" />
+                  <Input value={form.paginaWeb} onChange={e => updateForm('paginaWeb', e.target.value)} placeholder="www.pasteleria.com" />
                 </div>
               </div>
             </div>
@@ -1237,7 +1246,7 @@ export function ProveedoresModule() {
 
             <div className="space-y-1.5">
               <Label>{tt.notas}</Label>
-              <Textarea value={form.notas} onChange={e => setForm(prev => ({ ...prev, notas: e.target.value }))} placeholder={locale === 'es' ? 'Notas internas sobre el proveedor...' : 'Internal notes about supplier...'} rows={2} />
+              <Textarea value={form.notas} onChange={e => updateForm('notas', e.target.value)} placeholder={locale === 'es' ? 'Notas internas sobre el proveedor...' : 'Internal notes about supplier...'} rows={2} />
             </div>
           </div>
           <DialogFooter>
@@ -1261,7 +1270,7 @@ export function ProveedoresModule() {
           <div className="space-y-3 py-2">
             <div className="space-y-1.5">
               <Label>{tt.nombreProducto} *</Label>
-              <Input value={productoForm.nombre} onChange={e => setProductoForm(prev => ({ ...prev, nombre: e.target.value }))} placeholder="Pastel de Chocolate" />
+              <Input value={productoForm.nombre} onChange={e => updateProductoForm('nombre', e.target.value)} placeholder="Pastel de Chocolate" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -1292,20 +1301,20 @@ export function ProveedoresModule() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>{tt.precio} *</Label>
-                <Input type="number" value={productoForm.precio} onChange={e => setProductoForm(prev => ({ ...prev, precio: e.target.value }))} placeholder="150.00" />
+                <Input type="number" value={productoForm.precio} onChange={e => updateProductoForm('precio', e.target.value)} placeholder="150.00" />
               </div>
               <div className="space-y-1.5">
                 <Label>{tt.precioMayoreo}</Label>
-                <Input type="number" value={productoForm.precioMayoreo} onChange={e => setProductoForm(prev => ({ ...prev, precioMayoreo: e.target.value }))} placeholder="120.00" />
+                <Input type="number" value={productoForm.precioMayoreo} onChange={e => updateProductoForm('precioMayoreo', e.target.value)} placeholder="120.00" />
               </div>
             </div>
             <div className="space-y-1.5">
               <Label>{tt.cantidadMinima}</Label>
-              <Input type="number" value={productoForm.cantidadMinima} onChange={e => setProductoForm(prev => ({ ...prev, cantidadMinima: e.target.value }))} placeholder="1" />
+              <Input type="number" value={productoForm.cantidadMinima} onChange={e => updateProductoForm('cantidadMinima', e.target.value)} placeholder="1" />
             </div>
             <div className="space-y-1.5">
               <Label>{tt.descripcion}</Label>
-              <Textarea value={productoForm.descripcion} onChange={e => setProductoForm(prev => ({ ...prev, descripcion: e.target.value }))} placeholder={locale === 'es' ? 'Descripción del producto...' : 'Product description...'} rows={2} />
+              <Textarea value={productoForm.descripcion} onChange={e => updateProductoForm('descripcion', e.target.value)} placeholder={locale === 'es' ? 'Descripción del producto...' : 'Product description...'} rows={2} />
             </div>
             <div className="flex items-center gap-2">
               <Switch checked={productoForm.disponible} onCheckedChange={checked => setProductoForm(prev => ({ ...prev, disponible: checked }))} />
