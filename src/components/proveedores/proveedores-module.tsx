@@ -405,6 +405,7 @@ export function ProveedoresModule() {
       return
     }
 
+    console.log('Guardando proveedor...', form)
     try {
       const payload = {
         nombre: form.nombre,
@@ -423,6 +424,8 @@ export function ProveedoresModule() {
         activo: form.activo,
       }
 
+      console.log('Payload:', payload)
+
       let res: Response
       if (editingProveedor) {
         res = await fetch(`/api/proveedores/${editingProveedor.id}`, {
@@ -438,13 +441,23 @@ export function ProveedoresModule() {
         })
       }
 
-      if (!res.ok) throw new Error('Error')
+      console.log('Response status:', res.status)
+      
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        console.error('Error response:', errData)
+        throw new Error(errData.error || `Error ${res.status}`)
+      }
+
+      const saved = await res.json()
+      console.log('Saved:', saved)
 
       toast.success(editingProveedor ? tt.actualizado : tt.creado)
       setShowFormDialog(false)
       fetchProveedores()
-    } catch {
-      toast.error(tt.error)
+    } catch (error) {
+      console.error('Error completo:', error)
+      toast.error(String(error) || tt.error)
     }
   }
 
