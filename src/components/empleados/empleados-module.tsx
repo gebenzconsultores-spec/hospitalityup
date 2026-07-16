@@ -53,6 +53,7 @@ import { Label } from '@/components/ui/label'
 import { useAppStore } from '@/lib/store'
 import { translations } from '@/lib/i18n'
 import { toast } from 'sonner'
+import { EmpleadoCursos } from './empleado-cursos'
 
 // ─── Types ───────────────────────────────────────────────────
 interface Empleado {
@@ -718,6 +719,9 @@ export function EmpleadosModule() {
             </div>
           </div>
         </div>
+
+        {/* Cursos y Capacitaciones */}
+        <EmpleadoCursos empleadoId={empleadoDetalle.id} locale={locale} />
 
         {/* AI Result Dialog */}
         <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
