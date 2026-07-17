@@ -218,9 +218,13 @@ const topPerformersChartConfig: ChartConfig = {
 
 // ─── Main Component ──────────────────────────────────────────
 export function DashboardGerencial() {
-  const { locale, selectedProperty } = useAppStore()
+  const { locale, selectedProperty, userRole, userPropiedadId } = useAppStore()
   const t = translations[locale].dashboard
   const tc = translations[locale].common
+
+  // For empresa role, lock to their propiedad
+  const isEmpresa = userRole === 'empresa' && userPropiedadId
+  const effectivePropiedadId = isEmpresa ? userPropiedadId : (selectedProperty !== 'all' ? selectedProperty : null)
 
   const [data, setData] = useState<DashboardData | null>(null)
   const [alertas, setAlertas] = useState<AlertaRiesgo[]>([])
@@ -245,11 +249,12 @@ export function DashboardGerencial() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const propParam = selectedProperty !== 'all' ? `?propiedadId=${selectedProperty}` : ''
+      // For empresa, always filter by their propiedad
+      const propParam = effectivePropiedadId ? `?propiedadId=${effectivePropiedadId}` : ''
       const [dashRes, alertasRes, capRes, propRes] = await Promise.all([
         fetch(`/api/dashboard${propParam}`),
         fetch(`/api/alertas${propParam ? propParam + '&' : '?'}resuelta=false&limit=10`),
-        fetch(`/api/capacitaciones`),
+        fetch(`/api/capacitaciones${propParam}`),
         fetch(`/api/propiedades`),
       ])
       const dashData = await dashRes.json()
@@ -260,13 +265,16 @@ export function DashboardGerencial() {
       setData(dashData)
       setAlertas(alertasData.alertas || [])
       setCapacitaciones(Array.isArray(capData) ? capData : [])
-      setPropiedades(Array.isArray(propData) ? propData.map((p: { id: string; nombre: string }) => ({ id: p.id, nombre: p.nombre })) : [])
+      // For empresa, filter propiedades to only their own
+      const props = Array.isArray(propData) ? propData : []
+      const filteredProps = isEmpresa ? props.filter(p => p.id === userPropiedadId) : props
+      setPropiedades(filteredProps.map((p: { id: string; nombre: string }) => ({ id: p.id, nombre: p.nombre })))
     } catch (err) {
       console.error('Error fetching dashboard data:', err)
     } finally {
       setLoading(false)
     }
-  }, [selectedProperty])
+  }, [selectedProperty, isEmpresa, userPropiedadId, effectivePropiedadId])
 
   useEffect(() => {
     fetchData()
@@ -317,7 +325,8 @@ export function DashboardGerencial() {
 
   const handleSolicitarCapacitacion = async () => {
     try {
-      const propId = capForm.propiedadId || (selectedProperty !== 'all' ? selectedProperty : propiedades[0]?.id)
+      // For empresa, always use their propiedad
+      const propId = isEmpresa ? userPropiedadId : (capForm.propiedadId || (selectedProperty !== 'all' ? selectedProperty : propiedades[0]?.id))
       if (!propId) {
         toast.error(locale === 'es' ? 'Selecciona una propiedad' : 'Select a property')
         return
@@ -769,7 +778,8 @@ export function DashboardGerencial() {
               </Select>
             </div>
 
-            {/* Propiedad */}
+            {/* Propiedad - hidden for empresa */}
+            {!isEmpresa && (
             <div className="space-y-2">
               <Label>{t.propiedad}</Label>
               <Select value={capForm.propiedadId || selectedProperty} onValueChange={v => setCapForm(p => ({ ...p, propiedadId: v }))}>
@@ -783,6 +793,7 @@ export function DashboardGerencial() {
                 </SelectContent>
               </Select>
             </div>
+            )}
 
             {/* Fecha */}
             <div className="space-y-2">
