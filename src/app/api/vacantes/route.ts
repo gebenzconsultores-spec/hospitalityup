@@ -37,10 +37,40 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     if (!isDatabaseAvailable()) {
-      return NextResponse.json({ success: true, demo: true }, { status: 201 })
+      return NextResponse.json(
+        { error: 'Base de datos no disponible' },
+        { status: 500 }
+      )
     }
 
     const body = await request.json()
+
+    // Validar campos requeridos
+    if (!body.propiedadId) {
+      return NextResponse.json(
+        { error: 'propiedadId es requerido' },
+        { status: 400 }
+      )
+    }
+    if (!body.posicion) {
+      return NextResponse.json(
+        { error: 'posicion es requerido' },
+        { status: 400 }
+      )
+    }
+
+    // Verificar que la propiedad existe
+    const propiedad = await db.propiedad.findUnique({
+      where: { id: body.propiedadId },
+      select: { id: true, nombre: true },
+    })
+
+    if (!propiedad) {
+      return NextResponse.json(
+        { error: 'La propiedad no existe' },
+        { status: 404 }
+      )
+    }
 
     const vacante = await db.vacante.create({
       data: {
@@ -65,23 +95,29 @@ export async function POST(request: Request) {
       },
     })
 
-    // Crear notificación
+    // Crear notificación para el admin
     try {
       await db.notificacion.create({
         data: {
           tipo: 'nueva_vacante',
           titulo: 'Nueva vacante abierta',
-          mensaje: `${vacante.propiedad.nombre} abrió vacante para: ${vacante.posicion}`,
+          mensaje: `${propiedad.nombre} abrió vacante para: ${vacante.posicion}${vacante.prioridad === 'urgente' ? ' (URGENTE)' : ''}`,
           leida: false,
           propiedadId: body.propiedadId,
-          prioridad: body.prioridad === 'urgente' ? 'urgente' : 'normal',
+          prioridad: body.prioridad === 'urgente' ? 'urgente' : 'alta',
         },
       })
-    } catch {}
+    } catch (notifErr) {
+      console.error('Error creating notification:', notifErr)
+    }
 
     return NextResponse.json(vacante, { status: 201 })
   } catch (error) {
     console.error('Vacantes POST error:', error)
-    return NextResponse.json({ error: 'Error al crear vacante' }, { status: 500 })
+    const errorMessage = error instanceof Error ? error.message : 'Error al crear vacante'
+    return NextResponse.json(
+      { error: errorMessage, details: String(error) },
+      { status: 500 }
+    )
   }
 }

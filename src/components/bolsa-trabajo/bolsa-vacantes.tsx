@@ -174,6 +174,7 @@ export function BolsaVacantes({ userRole, userPropiedadId, selectedProperty, loc
       return
     }
 
+    console.log('Guardando vacante...', { propId, form })
     try {
       const payload = {
         propiedadId: propId,
@@ -190,6 +191,8 @@ export function BolsaVacantes({ userRole, userPropiedadId, selectedProperty, loc
         notas: form.notas || null,
       }
 
+      console.log('Payload:', payload)
+
       let res: Response
       if (editingVacante) {
         res = await fetch(`/api/vacantes/${editingVacante.id}`, {
@@ -205,15 +208,25 @@ export function BolsaVacantes({ userRole, userPropiedadId, selectedProperty, loc
         })
       }
 
-      if (!res.ok) throw new Error('Error')
+      console.log('Response status:', res.status)
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        console.error('Error response:', errData)
+        throw new Error(errData.error || `Error ${res.status}`)
+      }
+
+      const saved = await res.json()
+      console.log('Saved:', saved)
 
       toast.success(editingVacante
         ? (locale === 'es' ? 'Vacante actualizada' : 'Vacancy updated')
         : (locale === 'es' ? 'Vacante creada' : 'Vacancy created'))
       setShowFormDialog(false)
       fetchVacantes()
-    } catch {
-      toast.error(locale === 'es' ? 'Error al guardar' : 'Error saving')
+    } catch (error) {
+      console.error('Error completo:', error)
+      toast.error(String(error) || (locale === 'es' ? 'Error al guardar' : 'Error saving'))
     }
   }
 
