@@ -61,6 +61,7 @@ model Propiedad {
   alertas         AlertaRiesgo[]
   solicitudesCap  SolicitudCapacitacion[]
   solicitudesPedido SolicitudPedido[]
+  vacantes        Vacante[]
   servicios       Servicio[]
 }
 
@@ -410,5 +411,39 @@ model SolicitudPedido {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
+
+// ============================================================
+// VACANTES - Empresas habilitan vacantes para buscar candidatos
+// ============================================================
+
+model Vacante {
+  id              String   @id @default(cuid())
+  propiedadId     String   // Sucursal que tiene la vacante
+  propiedad       Propiedad @relation(fields: [propiedadId], references: [id])
+  posicion        String   // Puesto: Mesero, Bartender, etc.
+  departamento    String?  // A&B, Conserjería, etc.
+  descripcion     String?  // Descripción del puesto
+  tipoContrato    String?  // indefinido, temporal, eventual
+  tipoJornada     String?  // fijo, mixto, variable
+  horario         String?  // Ej: "08:00-16:00"
+  salario         Float?   // Salario ofrecido
+  region          String?  // Región de la vacante
+  // Estado
+  estado          String   @default("abierta") // abierta, cubierta, cancelada
+  prioridad       String   @default("normal") // baja, normal, alta, urgente
+  // Fechas
+  fechaApertura   DateTime @default(now())
+  fechaCierre     DateTime? // Cuando se cubre o cancela
+  // Si es reemplazo
+  esReemplazo     Boolean  @default(false)
+  empleadoReemplazaId String? // ID del empleado que reemplaza (si es reemplazo)
+  // Candidatos asignados a esta vacante
+  candidatosAsignados String? // JSON array de candidato IDs
+  notas           String?
+  creadoPor       String?  // Nombre del usuario que creó
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
 
 

@@ -43,6 +43,7 @@ import { Separator } from '@/components/ui/separator'
 import { useAppStore } from '@/lib/store'
 import { translations } from '@/lib/i18n'
 import { toast } from 'sonner'
+import { BolsaVacantes } from './bolsa-vacantes'
 
 // ─── Types ───────────────────────────────────────────────────
 interface Candidato {
@@ -378,8 +379,12 @@ export function BolsaTrabajo() {
         </Select>
       </div>
 
-      <Tabs defaultValue="pool">
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs defaultValue="vacantes">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="vacantes" className="gap-1.5">
+            <Briefcase className="size-4 hidden sm:inline-block" />
+            {locale === 'es' ? 'Vacantes' : 'Vacancies'}
+          </TabsTrigger>
           <TabsTrigger value="pool" className="gap-1.5">
             <Users className="size-4 hidden sm:inline-block" />
             {t.poolCandidatos}
@@ -393,6 +398,11 @@ export function BolsaTrabajo() {
             {t.ternaReemplazos}
           </TabsTrigger>
         </TabsList>
+
+        {/* ─── Vacantes ──────────────────────────────────── */}
+        <TabsContent value="vacantes" className="mt-4">
+          <BolsaVacantes userRole={userRole} userPropiedadId={userPropiedadId} selectedProperty={selectedProperty} locale={locale} candidatos={candidatos} />
+        </TabsContent>
 
         {/* ─── Pool de Candidatos ──────────────────────────── */}
         <TabsContent value="pool" className="mt-4">
