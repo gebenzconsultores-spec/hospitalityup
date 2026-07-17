@@ -61,8 +61,8 @@ import { toast } from 'sonner'
 // All nav items (admin sees everything)
 const allNavItems: { key: ViewMode; icon: React.ElementType; roles: UserRole[] }[] = [
   { key: 'dashboard', icon: LayoutDashboard, roles: ['admin', 'empresa'] },
-  { key: 'trabajador', icon: ShoppingCart, roles: ['admin', 'empresa', 'empleado'] },
-  { key: 'servicios', icon: Package, roles: ['admin', 'empresa'] },
+  { key: 'trabajador', icon: ShoppingCart, roles: ['admin', 'empresa'] },
+  { key: 'servicios', icon: Package, roles: ['admin', 'empresa', 'empleado'] },
   { key: 'propiedades', icon: Building2, roles: ['admin', 'empresa'] },
   { key: 'empresas-grupos', icon: Building2, roles: ['admin'] },
   { key: 'empresas-accesos', icon: KeyRound, roles: ['admin'] },

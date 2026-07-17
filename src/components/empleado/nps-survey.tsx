@@ -11,6 +11,7 @@ import {
   ThumbsUp,
   Minus,
   ThumbsDown,
+  QrCode,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -84,6 +85,21 @@ export function NpsSurvey() {
   const [submitted, setSubmitted] = useState(false)
   const [historial, setHistorial] = useState<EncuestaHistorial[]>([])
   const [showHistorial, setShowHistorial] = useState(false)
+  const [showQR, setShowQR] = useState(false)
+  const [qrUrl, setQrUrl] = useState('')
+
+  const generateQRLink = () => {
+    // Generar link único para la encuesta NPS del cliente
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://hospitalityup.vercel.app'
+    const params = new URLSearchParams()
+    if (userEmpleadoId) params.set('emp', userEmpleadoId)
+    if (userPropiedadId) params.set('prop', userPropiedadId)
+    params.set('type', 'nps')
+    params.set('ts', Date.now().toString())
+    const url = `${baseUrl}/encuesta?${params.toString()}`
+    setQrUrl(url)
+    setShowQR(true)
+  }
 
   const fetchServicios = useCallback(async () => {
     try {
@@ -197,10 +213,76 @@ export function NpsSurvey() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{tn.title}</h1>
-        <p className="text-sm text-muted-foreground">{tn.subtitle}</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{tn.title}</h1>
+          <p className="text-sm text-muted-foreground">{tn.subtitle}</p>
+        </div>
+        <Button
+          variant="outline"
+          className="gap-2 border-teal-200 text-teal-700 hover:bg-teal-50"
+          onClick={generateQRLink}
+        >
+          <QrCode className="size-4" />
+          {locale === 'es' ? 'Generar QR para Cliente' : 'Generate QR for Customer'}
+        </Button>
       </div>
+
+      {/* QR Dialog */}
+      {showQR && (
+        <Card className="border-teal-200 bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-950/30 dark:to-emerald-950/30">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <QrCode className="size-5 text-teal-600" />
+                {locale === 'es' ? 'Código QR - Encuesta NPS' : 'QR Code - NPS Survey'}
+              </CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => setShowQR(false)}>✕</Button>
+            </div>
+          </CardHeader>
+          <CardContent className="text-center space-y-3">
+            <p className="text-sm text-muted-foreground">
+              {locale === 'es'
+                ? 'Muestra este código QR al cliente para que conteste la encuesta'
+                : 'Show this QR code to the customer so they can answer the survey'}
+            </p>
+            {/* QR Code generado con API pública */}
+            <div className="flex justify-center bg-white p-4 rounded-lg mx-auto w-fit">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrUrl)}`}
+                alt="QR Code"
+                width={250}
+                height={250}
+              />
+            </div>
+            <div className="bg-white dark:bg-background p-3 rounded-lg">
+              <p className="text-xs text-muted-foreground mb-1">{locale === 'es' ? 'Link directo:' : 'Direct link:'}</p>
+              <a href={qrUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline break-all">
+                {qrUrl}
+              </a>
+            </div>
+            <div className="flex gap-2 justify-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  navigator.clipboard.writeText(qrUrl)
+                  toast.success(locale === 'es' ? 'Link copiado' : 'Link copied')
+                }}
+              >
+                {locale === 'es' ? 'Copiar link' : 'Copy link'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrUrl)}`, '_blank')}
+              >
+                {locale === 'es' ? 'Abrir QR' : 'Open QR'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Main survey form */}

@@ -120,6 +120,37 @@ export async function POST(request: Request) {
       },
     })
 
+    // Obtener info del empleado para la notificación
+    try {
+      const empleado = await db.empleado.findUnique({
+        where: { id: body.empleadoId },
+        select: { id: true, nombre: true, propiedadId: true },
+      })
+
+      if (empleado) {
+        // Crear notificación para admin y empresa
+        const prioridad = body.promedio < 3 ? 'alta' : 'normal'
+        const mensaje = body.promedio >= 4
+          ? `${empleado.nombre} completó evaluación de clima con ${body.promedio.toFixed(1)}/5 ⭐`
+          : body.promedio >= 3
+          ? `${empleado.nombre} completó evaluación de clima con ${body.promedio.toFixed(1)}/5`
+          : `⚠️ ${empleado.nombre} completó evaluación de clima con ${body.promedio.toFixed(1)}/5 - Requiere atención`
+
+        await db.notificacion.create({
+          data: {
+            tipo: 'clima_organizacional',
+            titulo: 'Nueva evaluación de clima organizacional',
+            mensaje,
+            leida: false,
+            propiedadId: empleado.propiedadId,
+            prioridad,
+          },
+        })
+      }
+    } catch (notifErr) {
+      console.error('Error creating clima notification:', notifErr)
+    }
+
     return NextResponse.json({
       id: respuesta.id,
       empleadoId: respuesta.empleadoId,
