@@ -254,9 +254,10 @@ model SolicitudCapacitacion {
   participantes   Int      @default(1)
   instructorId    String?
   nombreInstructor String?
-  estado          String   @default("pendiente") // pendiente, confirmada, completada, cancelada
+  estado          String   @default("pendiente") // pendiente, programada, confirmada, completada, cancelada, rechazada
   costo           Float?
   notas           String?
+  linkZoom        String?  // Link de Zoom para sesiones virtuales
   creadoPor       String?  // ID del gerente que solicitó
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

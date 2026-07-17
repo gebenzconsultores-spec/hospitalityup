@@ -46,6 +46,10 @@ export async function POST(request: Request) {
 
     const body = await request.json()
 
+    // Cuando una empresa crea la solicitud, el estado inicial es "programada"
+    // El admin la verá como "pendiente" hasta que la acepte
+    const estadoInicial = body.estado || 'programada'
+
     const solicitud = await db.solicitudCapacitacion.create({
       data: {
         propiedadId: body.propiedadId,
@@ -57,9 +61,10 @@ export async function POST(request: Request) {
         participantes: body.participantes || 1,
         instructorId: body.instructorId || null,
         nombreInstructor: body.nombreInstructor || null,
-        estado: body.estado || 'pendiente',
+        estado: estadoInicial,
         costo: body.costo || null,
         notas: body.notas || null,
+        linkZoom: body.linkZoom || null,
         creadoPor: body.creadoPor || null,
       },
       include: {
@@ -67,10 +72,24 @@ export async function POST(request: Request) {
           select: { id: true, nombre: true, nombreEn: true, region: true },
         },
         capacitacion: {
-          select: { id: true, titulo: true, tituloEn: true, categoria: true },
+          select: { id: true, titulo: true, tituloEn: true, categoria: true, modalidad: true },
         },
       },
     })
+
+    // Crear notificación para el admin
+    try {
+      await db.notificacion.create({
+        data: {
+          tipo: 'solicitud_capacitacion',
+          titulo: 'Nueva solicitud de capacitación',
+          mensaje: `${solicitud.propiedad.nombre} solicitó: ${solicitud.capacitacion?.titulo || solicitud.tema || 'Capacitación'}`,
+          leida: false,
+          propiedadId: body.propiedadId,
+          prioridad: 'normal',
+        },
+      })
+    } catch {}
 
     return NextResponse.json(solicitud, { status: 201 })
   } catch (error) {

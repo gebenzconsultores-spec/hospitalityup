@@ -7,11 +7,13 @@ import {
   GraduationCap,
   Users,
   Calendar,
+  CheckCircle,
   CheckCircle2,
   PlayCircle,
   Clock,
   Monitor,
   MapPin,
+  XCircle,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -73,8 +75,9 @@ interface Solicitud {
   participantes: number
   estado: string
   notas: string | null
+  linkZoom: string | null
   propiedad: { nombre: string; region: string }
-  capacitacion: { titulo: string; categoria: string } | null
+  capacitacion: { titulo: string; categoria: string; modalidad: string } | null
   createdAt: string
 }
 
@@ -122,8 +125,10 @@ function getEstadoSolicitudColor(estado: string): string {
 
 // ─── Main Component ──────────────────────────────────────────
 export function CapacitacionModule() {
-  const { locale, selectedProperty } = useAppStore()
+  const { locale, selectedProperty, userRole, userPropiedadId } = useAppStore()
   const t = translations[locale].capacitacion
+
+  const isEmpresa = userRole === 'empresa' && userPropiedadId
 
   const [capacitaciones, setCapacitaciones] = useState<Capacitacion[]>([])
   const [solicitudes, setSolicitudes] = useState<Solicitud[]>([])
@@ -132,6 +137,8 @@ export function CapacitacionModule() {
   const [filtroModalidad, setFiltroModalidad] = useState('todas')
   const [propiedades, setPropiedades] = useState<{ id: string; nombre: string }[]>([])
   const [showSolicitarDialog, setShowSolicitarDialog] = useState(false)
+  const [acceptDialogSol, setAcceptDialogSol] = useState<Solicitud | null>(null)
+  const [zoomLink, setZoomLink] = useState('')
 
   const [form, setForm] = useState({
     modalidad: 'presencial',
@@ -148,7 +155,11 @@ export function CapacitacionModule() {
     try {
       const capParams = new URLSearchParams()
       const solParams = new URLSearchParams()
-      if (selectedProperty !== 'all') {
+      // For empresa, always filter by their propiedad
+      if (isEmpresa) {
+        capParams.set('propiedadId', userPropiedadId!)
+        solParams.set('propiedadId', userPropiedadId!)
+      } else if (selectedProperty !== 'all') {
         capParams.set('propiedadId', selectedProperty)
         solParams.set('propiedadId', selectedProperty)
       }
@@ -166,13 +177,16 @@ export function CapacitacionModule() {
 
       setCapacitaciones(Array.isArray(capData) ? capData : [])
       setSolicitudes(Array.isArray(solData) ? solData : [])
-      setPropiedades(Array.isArray(propData) ? propData.map((p: { id: string; nombre: string }) => ({ id: p.id, nombre: p.nombre })) : [])
+      // For empresa, filter propiedades to only their own
+      const props = Array.isArray(propData) ? propData : []
+      const filteredProps = isEmpresa ? props.filter(p => p.id === userPropiedadId) : props
+      setPropiedades(filteredProps.map((p: { id: string; nombre: string }) => ({ id: p.id, nombre: p.nombre })))
     } catch (err) {
       console.error('Error fetching capacitaciones:', err)
     } finally {
       setLoading(false)
     }
-  }, [selectedProperty, filtroCategoria, filtroModalidad])
+  }, [selectedProperty, filtroCategoria, filtroModalidad, isEmpresa, userPropiedadId])
 
   useEffect(() => {
     fetchData()
@@ -180,7 +194,8 @@ export function CapacitacionModule() {
 
   const handleSolicitar = async () => {
     try {
-      const propId = form.propiedadId || (selectedProperty !== 'all' ? selectedProperty : propiedades[0]?.id)
+      // For empresa, use their propiedad; for admin, use selected or form
+      const propId = isEmpresa ? userPropiedadId : (form.propiedadId || (selectedProperty !== 'all' ? selectedProperty : propiedades[0]?.id))
       if (!propId || !form.fechaSolicitada) {
         toast.error(locale === 'es' ? 'Completa los campos requeridos' : 'Fill required fields')
         return
@@ -196,7 +211,7 @@ export function CapacitacionModule() {
           fechaSolicitada: form.fechaSolicitada,
           participantes: parseInt(form.participantes),
           notas: form.notas || null,
-          estado: 'pendiente',
+          estado: 'programada', // En el portal de empresa queda como "programada"
         }),
       })
       if (res.ok) {
@@ -211,6 +226,66 @@ export function CapacitacionModule() {
   }
 
   const categorias = [...new Set(capacitaciones.map(c => c.categoria))]
+
+  // Aceptar solicitud (admin)
+  const aceptarSolicitud = async () => {
+    if (!acceptDialogSol) return
+    try {
+      await fetch(`/api/solicitudes/${acceptDialogSol.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          estado: 'confirmada',
+          linkZoom: acceptDialogSol.modalidad === 'virtual' ? zoomLink : null,
+        }),
+      })
+      toast.success(locale === 'es' ? 'Solicitud aceptada' : 'Request accepted')
+      setAcceptDialogSol(null)
+      setZoomLink('')
+      fetchData()
+    } catch {
+      toast.error(locale === 'es' ? 'Error' : 'Error')
+    }
+  }
+
+  // Rechazar solicitud (admin)
+  const rechazarSolicitud = async (id: string) => {
+    try {
+      await fetch(`/api/solicitudes/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado: 'rechazada' }),
+      })
+      toast.success(locale === 'es' ? 'Solicitud rechazada' : 'Request rejected')
+      fetchData()
+    } catch {
+      toast.error(locale === 'es' ? 'Error' : 'Error')
+    }
+  }
+
+  const getEstadoColor = (estado: string) => {
+    switch (estado) {
+      case 'programada': return 'bg-blue-100 text-blue-700'
+      case 'pendiente': return 'bg-yellow-100 text-yellow-700'
+      case 'confirmada': return 'bg-green-100 text-green-700'
+      case 'completada': return 'bg-teal-100 text-teal-700'
+      case 'rechazada': return 'bg-red-100 text-red-700'
+      case 'cancelada': return 'bg-gray-100 text-gray-700'
+      default: return 'bg-gray-100 text-gray-700'
+    }
+  }
+
+  const getEstadoLabel = (estado: string) => {
+    const labels: Record<string, string> = {
+      programada: locale === 'es' ? 'Programada' : 'Scheduled',
+      pendiente: locale === 'es' ? 'Pendiente' : 'Pending',
+      confirmada: locale === 'es' ? 'Aceptada' : 'Accepted',
+      completada: locale === 'es' ? 'Completada' : 'Completed',
+      rechazada: locale === 'es' ? 'Rechazada' : 'Rejected',
+      cancelada: locale === 'es' ? 'Cancelada' : 'Cancelled',
+    }
+    return labels[estado] || estado
+  }
 
   return (
     <div className="space-y-6">
@@ -364,31 +439,64 @@ export function CapacitacionModule() {
           {solicitudes.length === 0 ? (
             <div className="text-center py-12">
               <Calendar className="size-12 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground">{locale === 'es' ? 'No hay solicitudes pendientes' : 'No pending requests'}</p>
+              <p className="text-muted-foreground">
+                {locale === 'es' ? 'No hay solicitudes' : 'No requests'}
+              </p>
             </div>
           ) : (
             <div className="grid gap-3">
               {solicitudes.map(sol => (
                 <Card key={sol.id}>
                   <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <span className="font-semibold text-sm">
                             {sol.capacitacion?.titulo || sol.tema || (locale === 'es' ? 'Solicitud abierta' : 'Open request')}
                           </span>
-                          <Badge className={`text-[10px] ${getEstadoSolicitudColor(sol.estado)}`}>
-                            {t[sol.estado as keyof typeof t] || sol.estado}
+                          <Badge className={`text-[10px] ${getEstadoColor(sol.estado)}`}>
+                            {getEstadoLabel(sol.estado)}
+                          </Badge>
+                          <Badge variant="outline" className="text-[10px]">
+                            {sol.modalidad === 'virtual' ? '💻 Virtual' : '📍 Presencial'}
                           </Badge>
                         </div>
                         <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                          <span>{sol.propiedad.nombre}</span>
-                          <span className="flex items-center gap-1"><MapPin className="size-3" />{sol.modalidad}</span>
+                          {!isEmpresa && <span>{sol.propiedad.nombre}</span>}
                           <span className="flex items-center gap-1"><Users className="size-3" />{sol.participantes}</span>
                           <span className="flex items-center gap-1"><Calendar className="size-3" />{new Date(sol.fechaSolicitada).toLocaleDateString(locale === 'es' ? 'es-MX' : 'en-US')}</span>
                         </div>
-                        {sol.notas && <p className="text-xs text-muted-foreground mt-1">{sol.notas}</p>}
+                        {sol.notas && <p className="text-xs text-muted-foreground mt-1">"{sol.notas}"</p>}
+                        {sol.linkZoom && (
+                          <a href={sol.linkZoom} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 mt-2 text-xs text-blue-600 hover:underline">
+                            💻 {locale === 'es' ? 'Link de Zoom' : 'Zoom link'}
+                          </a>
+                        )}
                       </div>
+
+                      {/* Admin actions */}
+                      {!isEmpresa && userRole === 'admin' && sol.estado === 'programada' && (
+                        <div className="flex gap-1 shrink-0">
+                          <Button
+                            size="sm"
+                            className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white"
+                            onClick={() => {
+                              setAcceptDialogSol(sol)
+                              setZoomLink('')
+                            }}
+                          >
+                            {locale === 'es' ? 'Aceptar' : 'Accept'}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs text-destructive"
+                            onClick={() => rechazarSolicitud(sol.id)}
+                          >
+                            {locale === 'es' ? 'Rechazar' : 'Reject'}
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -433,6 +541,7 @@ export function CapacitacionModule() {
                 </SelectContent>
               </Select>
             </div>
+            {!isEmpresa && (
             <div className="space-y-2">
               <Label>{locale === 'es' ? 'Propiedad' : 'Property'}</Label>
               <Select value={form.propiedadId || selectedProperty} onValueChange={v => setForm(p => ({ ...p, propiedadId: v }))}>
@@ -442,6 +551,7 @@ export function CapacitacionModule() {
                 </SelectContent>
               </Select>
             </div>
+            )}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>{locale === 'es' ? 'Fecha' : 'Date'}</Label>
@@ -462,6 +572,56 @@ export function CapacitacionModule() {
             <Button className="bg-teal-600 hover:bg-teal-700 text-white gap-1.5" onClick={handleSolicitar}>
               <Calendar className="size-4" />
               {locale === 'es' ? 'Confirmar Solicitud' : 'Confirm Request'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Dialog: Aceptar Solicitud (Admin) ─────────────── */}
+      <Dialog open={!!acceptDialogSol} onOpenChange={(open) => !open && setAcceptDialogSol(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="size-5 text-green-600" />
+              {locale === 'es' ? 'Aceptar Solicitud' : 'Accept Request'}
+            </DialogTitle>
+            <DialogDescription>
+              {acceptDialogSol?.capacitacion?.titulo || acceptDialogSol?.tema || (locale === 'es' ? 'Solicitud' : 'Request')}
+              {' - '}
+              {acceptDialogSol?.modalidad === 'virtual' ? (locale === 'es' ? 'Virtual' : 'Virtual') : (locale === 'es' ? 'Presencial' : 'In-person')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {acceptDialogSol?.modalidad === 'virtual' && (
+              <div className="space-y-2">
+                <Label>{locale === 'es' ? 'Link de Zoom / Meet' : 'Zoom / Meet Link'}</Label>
+                <Input
+                  value={zoomLink}
+                  onChange={e => setZoomLink(e.target.value)}
+                  placeholder="https://zoom.us/j/123456789"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {locale === 'es'
+                    ? 'Pega el link de la reunión virtual. Se enviará a la empresa.'
+                    : 'Paste the virtual meeting link. It will be sent to the company.'}
+                </p>
+              </div>
+            )}
+            {acceptDialogSol?.modalidad === 'presencial' && (
+              <div className="p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
+                {locale === 'es'
+                  ? '✅ Al aceptar, no se generará link de Zoom por ser presencial. La empresa será notificada.'
+                  : '✅ No Zoom link will be generated for in-person sessions. The company will be notified.'}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAcceptDialogSol(null)}>
+              {locale === 'es' ? 'Cancelar' : 'Cancel'}
+            </Button>
+            <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={aceptarSolicitud}>
+              <CheckCircle className="size-4 mr-1.5" />
+              {locale === 'es' ? 'Aceptar Solicitud' : 'Accept Request'}
             </Button>
           </DialogFooter>
         </DialogContent>
