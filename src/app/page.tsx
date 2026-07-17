@@ -36,6 +36,7 @@ const ProveedoresModule = dynamic(() => import('@/components/proveedores/proveed
 const LoginScreen = dynamic(() => import('@/components/auth/login-screen').then(m => ({ default: m.LoginScreen })), { loading: () => <Loading /> })
 const NpsSurvey = dynamic(() => import('@/components/empleado/nps-survey').then(m => ({ default: m.NpsSurvey })), { loading: () => <Loading /> })
 const ClimaOrganizacional = dynamic(() => import('@/components/empleado/clima-organizacional').then(m => ({ default: m.ClimaOrganizacional })), { loading: () => <Loading /> })
+const EmpleadoServicios = dynamic(() => import('@/components/empleado/empleado-servicios').then(m => ({ default: m.EmpleadoServicios })), { loading: () => <Loading /> })
 
 function Loading() {
   return (
@@ -77,7 +78,7 @@ const viewLabels: Record<Locale, Record<ViewMode, string>> = {
 }
 
 export default function Home() {
-  const { currentView, locale, isLoggedIn } = useAppStore()
+  const { currentView, locale, isLoggedIn, userRole } = useAppStore()
 
   // If not authenticated, show the login screen (full-page, no sidebar)
   if (!isLoggedIn) {
@@ -113,7 +114,7 @@ export default function Home() {
           </header>
 
           <main className="flex-1 p-4 md:p-6">
-            <ContentArea currentView={currentView} />
+            <ContentArea currentView={currentView} userRole={userRole} />
           </main>
 
           <footer className="mt-auto border-t bg-background px-4 py-3">
@@ -130,7 +131,12 @@ export default function Home() {
   )
 }
 
-function ContentArea({ currentView }: { currentView: ViewMode }) {
+function ContentArea({ currentView, userRole }: { currentView: ViewMode; userRole: string | null }) {
+  // For empleado role, use simplified servicios
+  if (userRole === 'empleado' && currentView === 'servicios') {
+    return <EmpleadoServicios />
+  }
+
   switch (currentView) {
     case 'dashboard': return <DashboardGerencial />
     case 'trabajador': return <VistaTrabajador />

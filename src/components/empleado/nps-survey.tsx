@@ -77,6 +77,9 @@ export function NpsSurvey() {
   const tn = t.npsSurvey
   const tc = t.common
 
+  // Debug info
+  console.log('NpsSurvey state:', { userPropiedadId, userEmpleadoId })
+
   const [servicios, setServicios] = useState<Servicio[]>([])
   const [selectedServicio, setSelectedServicio] = useState('')
   const [calificacion, setCalificacion] = useState<number | null>(null)
