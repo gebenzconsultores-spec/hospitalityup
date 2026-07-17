@@ -108,13 +108,17 @@ const emptyForm: ServicioForm = {
 }
 
 export function ServiciosAdmin() {
-  const { locale, selectedProperty } = useAppStore()
+  const { locale, selectedProperty, userRole, userPropiedadId } = useAppStore()
   const t = translations[locale].serviciosAdmin
   const tc = translations[locale].common
 
   // State
   const [propiedades, setPropiedades] = useState<Propiedad[]>([])
-  const [propiedadSeleccionada, setPropiedadSeleccionada] = useState<string>(selectedProperty !== 'all' ? selectedProperty : '')
+  // For empresa role, lock to their propiedad
+  const isEmpresa = userRole === 'empresa' && userPropiedadId
+  const [propiedadSeleccionada, setPropiedadSeleccionada] = useState<string>(
+    isEmpresa ? userPropiedadId : (selectedProperty !== 'all' ? selectedProperty : '')
+  )
   const [servicios, setServicios] = useState<Servicio[]>([])
   const [ventasHoy, setVentasHoy] = useState<Venta[]>([])
   const [loading, setLoading] = useState(false)
@@ -131,19 +135,21 @@ export function ServiciosAdmin() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  // Load propiedades
+  // Load propiedades - empresa only sees their own
   useEffect(() => {
     fetch('/api/propiedades')
       .then(r => r.json())
       .then(data => {
         const props = Array.isArray(data) ? data : []
-        setPropiedades(props)
-        if (!propiedadSeleccionada && props.length > 0) {
-          setPropiedadSeleccionada(selectedProperty !== 'all' ? selectedProperty : props[0].id)
+        // For empresa, filter to only their propiedad
+        const filteredProps = isEmpresa ? props.filter(p => p.id === userPropiedadId) : props
+        setPropiedades(filteredProps)
+        if (!propiedadSeleccionada && filteredProps.length > 0) {
+          setPropiedadSeleccionada(isEmpresa ? userPropiedadId : (selectedProperty !== 'all' ? selectedProperty : filteredProps[0].id))
         }
       })
       .catch(() => {})
-  }, [selectedProperty, propiedadSeleccionada])
+  }, [selectedProperty, propiedadSeleccionada, isEmpresa, userPropiedadId])
 
   // Load servicios when propiedad changes
   useEffect(() => {
@@ -331,7 +337,7 @@ export function ServiciosAdmin() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <Label className="text-sm font-medium">{t.propiedad}</Label>
-              <Select value={propiedadSeleccionada} onValueChange={setPropiedadSeleccionada}>
+              <Select value={propiedadSeleccionada} onValueChange={setPropiedadSeleccionada} disabled={isEmpresa as boolean}>
                 <SelectTrigger className="w-[260px]">
                   <SelectValue placeholder={t.propiedad} />
                 </SelectTrigger>

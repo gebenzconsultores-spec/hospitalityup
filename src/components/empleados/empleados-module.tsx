@@ -200,7 +200,7 @@ function formatDiaName(dia: string, locale: string): string {
 
 // ─── Main Component ──────────────────────────────────────────
 export function EmpleadosModule() {
-  const { locale, selectedProperty, selectedEmployee, setSelectedEmployee } = useAppStore()
+  const { locale, selectedProperty, selectedEmployee, setSelectedEmployee, userRole, userPropiedadId } = useAppStore()
   const t = translations[locale].employees
   const tc = translations[locale].common
 
@@ -238,11 +238,18 @@ export function EmpleadosModule() {
   const [formFechaFinContrato, setFormFechaFinContrato] = useState('')
   const [formEstado, setFormEstado] = useState('onboarding')
 
+  const isEmpresa = userRole === 'empresa' && userPropiedadId
+
   const fetchEmpleados = useCallback(async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams()
-      if (selectedProperty !== 'all') params.set('propiedadId', selectedProperty)
+      // For empresa, always filter by their propiedad
+      if (isEmpresa) {
+        params.set('propiedadId', userPropiedadId!)
+      } else if (selectedProperty !== 'all') {
+        params.set('propiedadId', selectedProperty)
+      }
       if (search) params.set('search', search)
       if (filterDepto !== 'todos') params.set('departamento', filterDepto)
       if (filterRiesgo !== 'todos') params.set('nivelRiesgoBaja', filterRiesgo)
@@ -254,17 +261,20 @@ export function EmpleadosModule() {
     } finally {
       setLoading(false)
     }
-  }, [selectedProperty, search, filterDepto, filterRiesgo])
+  }, [selectedProperty, search, filterDepto, filterRiesgo, isEmpresa, userPropiedadId])
 
   const fetchPropiedades = useCallback(async () => {
     try {
       const res = await fetch('/api/propiedades')
       const data = await res.json()
-      setPropiedades(Array.isArray(data) ? data.map((p: { id: string; nombre: string; nombreEn: string | null }) => ({ id: p.id, nombre: p.nombre, nombreEn: p.nombreEn })) : [])
+      const props = Array.isArray(data) ? data : []
+      // For empresa, filter to only their propiedad
+      const filtered = isEmpresa ? props.filter(p => p.id === userPropiedadId) : props
+      setPropiedades(filtered.map((p: { id: string; nombre: string; nombreEn: string | null }) => ({ id: p.id, nombre: p.nombre, nombreEn: p.nombreEn })))
     } catch {
       // ignore
     }
-  }, [])
+  }, [isEmpresa, userPropiedadId])
 
   useEffect(() => {
     fetchEmpleados()

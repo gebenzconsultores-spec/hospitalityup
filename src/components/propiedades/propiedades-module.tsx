@@ -161,7 +161,7 @@ function getPlanBadge(plan: string) {
 
 // ─── Main Component ──────────────────────────────────────────
 export function PropiedadesModule() {
-  const { locale } = useAppStore()
+  const { locale, userRole, userPropiedadId } = useAppStore()
   const t = translations[locale].propiedades
   const tc = translations[locale].common
 
@@ -180,6 +180,8 @@ export function PropiedadesModule() {
   // Delete confirmation state
   const [deleteTarget, setDeleteTarget] = useState<Propiedad | null>(null)
 
+  const isEmpresa = userRole === 'empresa' && userPropiedadId
+
   const fetchPropiedades = useCallback(async () => {
     setLoading(true)
     try {
@@ -188,13 +190,18 @@ export function PropiedadesModule() {
       if (filterTipo !== 'all') params.set('tipo', filterTipo)
       const res = await fetch(`/api/propiedades?${params}`)
       const data = await res.json()
-      setPropiedades(Array.isArray(data) ? data : [])
+      let propsData = Array.isArray(data) ? data : []
+      // For empresa, filter to only their propiedad
+      if (isEmpresa) {
+        propsData = propsData.filter(p => p.id === userPropiedadId)
+      }
+      setPropiedades(propsData)
     } catch (err) {
       console.error('Error fetching propiedades:', err)
     } finally {
       setLoading(false)
     }
-  }, [filterRegion, filterTipo])
+  }, [filterRegion, filterTipo, isEmpresa, userPropiedadId])
 
   useEffect(() => {
     fetchPropiedades()

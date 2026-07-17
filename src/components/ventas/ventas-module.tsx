@@ -92,7 +92,7 @@ const npsEmpleadoConfig: ChartConfig = {
 
 // ─── Main Component ──────────────────────────────────────────
 export function VentasModule() {
-  const { locale, selectedProperty } = useAppStore()
+  const { locale, selectedProperty, userRole, userPropiedadId } = useAppStore()
   const t = translations[locale].ventas
   const tc = translations[locale].common
 
@@ -119,11 +119,18 @@ export function VentasModule() {
     fuenteNPS: 'qr',
   })
 
+  const isEmpresa = userRole === 'empresa' && userPropiedadId
+
   const fetchVentas = useCallback(async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams()
-      if (selectedProperty !== 'all') params.set('propiedadId', selectedProperty)
+      // For empresa, always filter by their propiedad
+      if (isEmpresa) {
+        params.set('propiedadId', userPropiedadId!)
+      } else if (selectedProperty !== 'all') {
+        params.set('propiedadId', selectedProperty)
+      }
       if (filtroUpselling === 'upselling') params.set('esUpselling', 'true')
       params.set('limit', '50')
       const res = await fetch(`/api/ventas?${params}`)
@@ -135,17 +142,22 @@ export function VentasModule() {
     } finally {
       setLoading(false)
     }
-  }, [selectedProperty, filtroUpselling])
+  }, [selectedProperty, filtroUpselling, isEmpresa, userPropiedadId])
 
   useEffect(() => {
     fetchVentas()
   }, [fetchVentas])
 
-  // Fetch propiedades y empleados for form
+  // Fetch propiedades y empleados for form - empresa only sees their own
   useEffect(() => {
-    fetch('/api/propiedades').then(r => r.json()).then(d => setPropiedades(Array.isArray(d) ? d.map((p: { id: string; nombre: string }) => ({ id: p.id, nombre: p.nombre })) : [])).catch(() => {})
-    fetch('/api/empleados').then(r => r.json()).then(d => setEmpleados(Array.isArray(d) ? d.map((e: { id: string; nombre: string; posicion: string }) => ({ id: e.id, nombre: e.nombre, posicion: e.posicion })) : [])).catch(() => {})
-  }, [])
+    fetch('/api/propiedades').then(r => r.json()).then(d => {
+      const props = Array.isArray(d) ? d : []
+      const filtered = isEmpresa ? props.filter(p => p.id === userPropiedadId) : props
+      setPropiedades(filtered.map(p => ({ id: p.id, nombre: p.nombre })))
+    }).catch(() => {})
+    const empUrl = isEmpresa ? `/api/empleados?propiedadId=${userPropiedadId}` : '/api/empleados'
+    fetch(empUrl).then(r => r.json()).then(d => setEmpleados(Array.isArray(d) ? d.map((e: { id: string; nombre: string; posicion: string }) => ({ id: e.id, nombre: e.nombre, posicion: e.posicion })) : [])).catch(() => {})
+  }, [isEmpresa, userPropiedadId])
 
   const handleRegistrarVenta = async () => {
     try {

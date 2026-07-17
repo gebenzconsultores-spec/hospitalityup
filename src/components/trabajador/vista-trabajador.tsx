@@ -99,7 +99,7 @@ const categorias = [
 ]
 
 export function VistaTrabajador() {
-  const { locale, selectedProperty } = useAppStore()
+  const { locale, selectedProperty, userRole, userPropiedadId } = useAppStore()
   const t = translations[locale].trabajador
   const tc = translations[locale].common
 
@@ -116,6 +116,10 @@ export function VistaTrabajador() {
   const [categoriaFiltro, setCategoriaFiltro] = useState('todos')
   const [loadingServicios, setLoadingServicios] = useState(false)
 
+  // For empresa role, lock to their propiedad
+  const isEmpresa = userRole === 'empresa' && userPropiedadId
+  const effectivePropiedadId = isEmpresa ? userPropiedadId : (propiedadFiltro !== 'all' ? propiedadFiltro : null)
+
   // Venta dialog
   const [showVentaDialog, setShowVentaDialog] = useState(false)
   const [servicioVenta, setServicioVenta] = useState<Servicio | null>(null)
@@ -126,13 +130,14 @@ export function VistaTrabajador() {
   const [ventaComentario, setVentaComentario] = useState('')
   const [procesandoVenta, setProcesandoVenta] = useState(false)
 
-  // Load empleados
+  // Load empleados - empresa only sees their own
   useEffect(() => {
-    fetch('/api/empleados')
+    const url = isEmpresa ? `/api/empleados?propiedadId=${userPropiedadId}` : '/api/empleados'
+    fetch(url)
       .then(r => r.json())
       .then(data => setEmpleados(Array.isArray(data) ? data : []))
       .catch(() => {})
-  }, [])
+  }, [isEmpresa, userPropiedadId])
 
   // Load empresas (grupos)
   useEffect(() => {
@@ -179,7 +184,7 @@ export function VistaTrabajador() {
   })
 
   // When employee is selected, load their property's services and today's sales
-  const propiedadId = empleadoSeleccionado?.propiedadId || (selectedProperty !== 'all' ? selectedProperty : null)
+  const propiedadId = empleadoSeleccionado?.propiedadId || effectivePropiedadId || (selectedProperty !== 'all' ? selectedProperty : null)
 
   useEffect(() => {
     if (!propiedadId) return
@@ -301,7 +306,8 @@ export function VistaTrabajador() {
 
   return (
     <div className="space-y-4">
-      {/* ── Filtros: Empresa (Grupo) → Región → Propiedad ── */}
+      {/* ── Filtros: Empresa (Grupo) → Región → Propiedad ── (solo admin) */}
+      {!isEmpresa && (
       <Card className="border-teal-200 bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-teal-950/30 dark:to-emerald-950/30">
         <CardContent className="p-4 space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium text-teal-700 dark:text-teal-300">
@@ -396,6 +402,7 @@ export function VistaTrabajador() {
           )}
         </CardContent>
       </Card>
+      )}
 
       {/* ── Header: Employee Selector + Property + Scores ── */}
       <Card className="border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30">
