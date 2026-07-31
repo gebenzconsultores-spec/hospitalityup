@@ -20,23 +20,22 @@ if (isPostgres) {
     if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = _db
     _dbAvailable = true
     if (isVercel) {
-      console.log('✅ PostgreSQL database configured for Vercel')
+      console.log('PostgreSQL database configured for Vercel')
     } else {
-      console.log('✅ PostgreSQL database configured')
+      console.log('PostgreSQL database configured')
     }
   } catch (e) {
-    console.log('⚠️ Database init failed:', e)
+    console.log('Database init failed:', e)
     _dbAvailable = false
   }
 } else if (isSQLite) {
-  console.log('💡 SQLite detected - using mock data mode (SQLite not for production)')
-  console.log('💡 Set DATABASE_URL to PostgreSQL for production use')
+  console.log('SQLite detected - using mock data mode')
 } else {
-  console.log('⚠️ No DATABASE_URL found - using mock data mode')
+  console.log('No DATABASE_URL found - using mock data mode')
 }
 
 const db = _db
 
-const isDatabaseAvailable = (): boolean => _dbAvailable
+const isDatabaseAvailable = () => _dbAvailable
 
 export { db, isDatabaseAvailable }

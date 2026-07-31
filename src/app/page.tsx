@@ -29,6 +29,7 @@ const VentasModule = dynamic(() => import('@/components/ventas/ventas-module').t
 const CapacitacionModule = dynamic(() => import('@/components/capacitacion/capacitacion-module').then(m => ({ default: m.CapacitacionModule })), { loading: () => <Loading /> })
 const BolsaTrabajo = dynamic(() => import('@/components/bolsa-trabajo/bolsa-trabajo').then(m => ({ default: m.BolsaTrabajo })), { loading: () => <Loading /> })
 const ConfiguracionModule = dynamic(() => import('@/components/configuracion/configuracion').then(m => ({ default: m.ConfiguracionModule })), { loading: () => <Loading /> })
+const ProveedoresModule = dynamic(() => import('@/components/proveedores/proveedores-module').then(m => ({ default: m.ProveedoresModule })), { loading: () => <Loading /> })
 
 function Loading() {
   return (
@@ -119,6 +120,7 @@ function ContentArea({ currentView }: { currentView: ViewMode }) {
     case 'capacitacion': return <CapacitacionModule />
     case 'bolsa': return <BolsaTrabajo />
     case 'configuracion': return <ConfiguracionModule />
+    case 'proveedores': return <ProveedoresModule />
     default: return <DashboardGerencial />
   }
 }

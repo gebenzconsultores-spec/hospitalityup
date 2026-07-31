@@ -16,6 +16,7 @@ export const translations = {
       configuracion: 'Configuración',
       trabajador: 'Vista Trabajador',
       servicios: 'Menú & Servicios',
+      proveedores: 'Proveedores',
     },
 
     // Dashboard
@@ -364,7 +365,8 @@ export const translations = {
       bolsa: 'Job Pool',
       configuracion: 'Settings',
       trabajador: 'Worker View',
-      servicios: 'Menu & Services',
+      servicios: 'Menu & Services', 
+      proveedores: 'Suppliers',
     },
 
     // Dashboard

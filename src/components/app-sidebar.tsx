@@ -12,7 +12,7 @@ import {
   Hotel,
   Globe,
   ShoppingCart,
-  Package,
+  Package, Truck,
 } from 'lucide-react'
 
 import {
@@ -50,6 +50,7 @@ const navItems: { key: ViewMode; icon: React.ElementType }[] = [
   { key: 'capacitacion', icon: GraduationCap },
   { key: 'bolsa', icon: Briefcase },
   { key: 'configuracion', icon: Settings },
+  { key: 'proveedores', icon: Truck },
 ]
 
 interface Propiedad {
