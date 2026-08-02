@@ -38,6 +38,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
 import { useAppStore } from '@/lib/store'
+import { CotizadorCapacitacion } from '@/components/capacitacion/cotizador-capacitacion'
 import { translations } from '@/lib/i18n'
 import { toast } from 'sonner'
 
@@ -132,6 +133,7 @@ export function CapacitacionModule() {
   const [filtroModalidad, setFiltroModalidad] = useState('todas')
   const [propiedades, setPropiedades] = useState<{ id: string; nombre: string }[]>([])
   const [showSolicitarDialog, setShowSolicitarDialog] = useState(false)
+  const [showCotizador, setShowCotizador] = useState(false)
 
   const [form, setForm] = useState({
     modalidad: 'presencial',
@@ -222,7 +224,7 @@ export function CapacitacionModule() {
             {locale === 'es' ? 'Cursos, progreso y solicitudes de capacitación' : 'Courses, progress and training requests'}
           </p>
         </div>
-        <Button className="bg-teal-600 hover:bg-teal-700 text-white gap-2" onClick={() => setShowSolicitarDialog(true)}>
+        <Button className="bg-teal-600 hover:bg-teal-700 text-white gap-2" onClick={() => setShowCotizador(true)}>
           <GraduationCap className="size-4" />
           {t.solicitarHibrida}
         </Button>
@@ -466,6 +468,12 @@ export function CapacitacionModule() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    <CotizadorCapacitacion
+        open={showCotizador}
+        onClose={() => setShowCotizador(false)}
+        capacitaciones={capacitaciones}
+        propiedades={propiedades}
+      />
     </div>
   )
 }
