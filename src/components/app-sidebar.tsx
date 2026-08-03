@@ -40,6 +40,8 @@ import { Button } from '@/components/ui/button'
 import { useAppStore } from '@/lib/store'
 import { translations } from '@/lib/i18n'
 import type { ViewMode } from '@/lib/store'
+import { useRouter } from 'next/navigation'
+import { LogOut } from 'lucide-react'
 
 const navItems: { key: ViewMode; icon: React.ElementType }[] = [
   { key: 'dashboard', icon: LayoutDashboard },
@@ -63,6 +65,11 @@ interface Propiedad {
 
 export function AppSidebar() {
   const { currentView, setCurrentView, locale, setLocale, selectedProperty, setSelectedProperty, unreadNotifications, setShowNotifications } = useAppStore()
+  const router = useRouter()
+  const handleLogout = () => {
+    localStorage.removeItem('hospitalityup_session')
+    router.push('/login')
+  }
   const t = translations[locale]
   const [propiedades, setPropiedades] = useState<Propiedad[]>([])
 
@@ -237,8 +244,9 @@ export function AppSidebar() {
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                 <span className="truncate font-medium">Admin</span>
-                <span className="truncate text-xs opacity-60">
-                  {locale === 'es' ? 'Administrador' : 'Administrator'}
+                <span className="truncate text-xs opacity-60 flex items-center gap-1 cursor-pointer" onClick={handleLogout}>
+                  <LogOut className="size-3" />
+                  {locale === 'es' ? 'Cerrar sesión' : 'Sign out'}
                 </span>
               </div>
             </SidebarMenuButton>
