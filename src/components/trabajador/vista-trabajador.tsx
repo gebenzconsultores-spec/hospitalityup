@@ -17,17 +17,10 @@ import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { toast } from 'sonner'
 import {
-  ShoppingCart,
-  Target,
-  TrendingUp,
-  Star,
-  DollarSign,
-  User,
-  Building2,
-  ChevronRight,
+  ShoppingCart, Target, TrendingUp, Star,
+  DollarSign, User, Building2, ChevronRight,
 } from 'lucide-react'
 
-// ─── Types ────────────────────────────────────────────────────
 interface Servicio {
   id: string
   nombre: string
@@ -66,7 +59,6 @@ interface VentaDia {
   fechaVenta: string
 }
 
-// ─── Category definitions ─────────────────────────────────────
 const categorias = [
   { key: 'todos', es: 'Todos', en: 'All' },
   { key: 'platillo', es: 'Platillos', en: 'Dishes' },
@@ -83,15 +75,27 @@ export function VistaTrabajador() {
   const t = translations[locale].trabajador
   const tc = translations[locale].common
 
-  // State
+  const [sesionEmpleadoId, setSesionEmpleadoId] = useState<string | null>(null)
+  const esModoEmpleado = !!sesionEmpleadoId
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const session = localStorage.getItem('hospitalityup_session')
+      if (session) {
+        const parsed = JSON.parse(session)
+        if (parsed.rol === 'empleado') {
+          setSesionEmpleadoId(parsed.id)
+        }
+      }
+    }
+  }, [])
+
   const [empleados, setEmpleados] = useState<Empleado[]>([])
   const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState<Empleado | null>(null)
   const [servicios, setServicios] = useState<Servicio[]>([])
   const [ventasDia, setVentasDia] = useState<VentaDia[]>([])
   const [categoriaFiltro, setCategoriaFiltro] = useState('todos')
   const [loadingServicios, setLoadingServicios] = useState(false)
-
-  // Venta dialog
   const [showVentaDialog, setShowVentaDialog] = useState(false)
   const [servicioVenta, setServicioVenta] = useState<Servicio | null>(null)
   const [ventaCantidad, setVentaCantidad] = useState(1)
@@ -101,15 +105,25 @@ export function VistaTrabajador() {
   const [ventaComentario, setVentaComentario] = useState('')
   const [procesandoVenta, setProcesandoVenta] = useState(false)
 
-  // Load empleados
   useEffect(() => {
-    fetch('/api/empleados')
-      .then(r => r.json())
-      .then(data => setEmpleados(Array.isArray(data) ? data : []))
-      .catch(() => {})
-  }, [])
+    if (esModoEmpleado && sesionEmpleadoId) {
+      fetch(`/api/empleados/${sesionEmpleadoId}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data?.id) {
+            setEmpleados([data])
+            setEmpleadoSeleccionado(data)
+          }
+        })
+        .catch(() => {})
+    } else {
+      fetch('/api/empleados')
+        .then(r => r.json())
+        .then(data => setEmpleados(Array.isArray(data) ? data : []))
+        .catch(() => {})
+    }
+  }, [esModoEmpleado, sesionEmpleadoId])
 
-  // When employee is selected, load their property's services and today's sales
   const propiedadId = empleadoSeleccionado?.propiedadId || (selectedProperty !== 'all' ? selectedProperty : null)
 
   useEffect(() => {
@@ -125,10 +139,7 @@ export function VistaTrabajador() {
   }, [propiedadId])
 
   useEffect(() => {
-    if (!empleadoSeleccionado) {
-      setVentasDia([])
-      return
-    }
+    if (!empleadoSeleccionado) { setVentasDia([]); return }
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     fetch(`/api/ventas?empleadoId=${empleadoSeleccionado.id}&limit=100`)
@@ -136,55 +147,37 @@ export function VistaTrabajador() {
       .then(data => {
         const ventas = data?.ventas || data
         if (Array.isArray(ventas)) {
-          const hoy = ventas.filter((v: VentaDia) => {
-            const fecha = new Date(v.fechaVenta)
-            return fecha >= today
-          })
-          setVentasDia(hoy)
+          setVentasDia(ventas.filter((v: VentaDia) => new Date(v.fechaVenta) >= today))
         }
       })
       .catch(() => {})
   }, [empleadoSeleccionado])
 
-  // Calculated metrics
   const ventasNormales = ventasDia.filter(v => !v.esUpselling).reduce((s, v) => s + v.montoTotal, 0)
   const ventasUpsellingTotal = ventasDia.filter(v => v.esUpselling).reduce((s, v) => s + v.montoUpselling, 0)
   const ventasConNPS = ventasDia.filter(v => v.calificacionNPS !== null)
-  const npsPromedio = ventasConNPS.length > 0
-    ? ventasConNPS.reduce((s, v) => s + (v.calificacionNPS ?? 0), 0) / ventasConNPS.length
-    : 0
+  const npsPromedio = ventasConNPS.length > 0 ? ventasConNPS.reduce((s, v) => s + (v.calificacionNPS ?? 0), 0) / ventasConNPS.length : 0
   const totalDia = ventasNormales + ventasUpsellingTotal
   const totalServiciosVendidos = ventasDia.reduce((s, v) => s + v.cantidad, 0)
-
-  // Filtered services
-  const serviciosFiltrados = categoriaFiltro === 'todos'
-    ? servicios.filter(s => s.disponible)
-    : servicios.filter(s => s.categoria === categoriaFiltro && s.disponible)
-
-  // Upselling services for objectives section
+  const serviciosFiltrados = categoriaFiltro === 'todos' ? servicios.filter(s => s.disponible) : servicios.filter(s => s.categoria === categoriaFiltro && s.disponible)
   const serviciosUpselling = servicios.filter(s => s.esUpselling && s.disponible)
 
-  // Open venta dialog
   const abrirVenta = useCallback((servicio: Servicio) => {
     setServicioVenta(servicio)
     setVentaCantidad(1)
-    const esUps = servicio.esUpselling
-    setVentaEsUpselling(esUps)
-    setVentaPrecioFinal(esUps ? (servicio.precioUpselling || servicio.precioNormal) : servicio.precioNormal)
+    setVentaEsUpselling(servicio.esUpselling)
+    setVentaPrecioFinal(servicio.esUpselling ? (servicio.precioUpselling || servicio.precioNormal) : servicio.precioNormal)
     setVentaCalificacion(null)
     setVentaComentario('')
     setShowVentaDialog(true)
   }, [])
 
-  // Register sale
   const registrarVenta = async () => {
     if (!empleadoSeleccionado || !servicioVenta) return
     setProcesandoVenta(true)
-
     try {
       const montoTotal = ventaPrecioFinal * ventaCantidad
       const montoUpselling = ventaEsUpselling ? (ventaPrecioFinal - servicioVenta.precioNormal) * ventaCantidad : 0
-
       const res = await fetch('/api/ventas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -203,25 +196,15 @@ export function VistaTrabajador() {
           categoriaServicio: servicioVenta.categoria,
         }),
       })
-
-      if (!res.ok) {
-        const err = await res.json()
-        throw new Error(err.error || 'Error al registrar venta')
-      }
-
+      if (!res.ok) throw new Error((await res.json()).error || 'Error')
       const nuevaVenta = await res.json()
-
-      // Add to today's sales
       setVentasDia(prev => [nuevaVenta, ...prev])
-
-      // Show toast
       toast.success(t.ventaExitosa, {
         description: `$${montoTotal.toFixed(2)} - ${locale === 'en' && servicioVenta.nombreEn ? servicioVenta.nombreEn : servicioVenta.nombre}`,
       })
-
       setShowVentaDialog(false)
     } catch (error) {
-      toast.error(String(error?.valueOf()) || 'Error')
+      toast.error(String(error) || 'Error')
     } finally {
       setProcesandoVenta(false)
     }
@@ -232,46 +215,40 @@ export function VistaTrabajador() {
 
   return (
     <div className="space-y-4">
-      {/* ── Header: Employee Selector + Property + Scores ── */}
       <Card className="border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30">
         <CardContent className="p-4">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            {/* Employee selector */}
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <div className="flex items-center gap-2">
                 <User className="size-5 text-emerald-600" />
-                <Select
-                  value={empleadoSeleccionado?.id || ''}
-                  onValueChange={(val) => {
-                    const emp = empleados.find(e => e.id === val) || null
-                    setEmpleadoSeleccionado(emp)
-                  }}
-                >
-                  <SelectTrigger className="w-[260px] bg-white dark:bg-background">
-                    <SelectValue placeholder={t.seleccionarEmpleado} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {empleados.map(e => (
-                      <SelectItem key={e.id} value={e.id}>
-                        {e.nombre} - {e.empleadoId}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {esModoEmpleado ? (
+                  <div className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 dark:bg-background">
+                    <span className="font-semibold text-sm">{empleadoSeleccionado?.nombre}</span>
+                    <Badge variant="outline" className="text-xs">{empleadoSeleccionado?.empleadoId}</Badge>
+                  </div>
+                ) : (
+                  <Select
+                    value={empleadoSeleccionado?.id || ''}
+                    onValueChange={(val) => setEmpleadoSeleccionado(empleados.find(e => e.id === val) || null)}
+                  >
+                    <SelectTrigger className="w-[260px] bg-white dark:bg-background">
+                      <SelectValue placeholder={t.seleccionarEmpleado} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {empleados.map(e => (
+                        <SelectItem key={e.id} value={e.id}>{e.nombre} - {e.empleadoId}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
               {empleadoSeleccionado && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Building2 className="size-4" />
-                  <span>
-                    {locale === 'en' && empleadoSeleccionado.propiedad.nombreEn
-                      ? empleadoSeleccionado.propiedad.nombreEn
-                      : empleadoSeleccionado.propiedad.nombre}
-                  </span>
+                  <span>{locale === 'en' && empleadoSeleccionado.propiedad.nombreEn ? empleadoSeleccionado.propiedad.nombreEn : empleadoSeleccionado.propiedad.nombre}</span>
                 </div>
               )}
             </div>
-
-            {/* Today's scores */}
             {empleadoSeleccionado && (
               <div className="flex flex-wrap gap-3">
                 <div className="flex items-center gap-1.5 rounded-lg bg-green-100 px-3 py-1.5 dark:bg-green-900/30">
@@ -304,9 +281,7 @@ export function VistaTrabajador() {
         </Card>
       ) : (
         <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-          {/* ── Main: Service Menu ── */}
           <div className="space-y-4">
-            {/* Category filters */}
             <div className="flex flex-wrap gap-2">
               {categorias.map(cat => (
                 <Button
@@ -321,80 +296,46 @@ export function VistaTrabajador() {
               ))}
             </div>
 
-            {/* Service grid */}
             {loadingServicios ? (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {[1, 2, 3, 4, 5, 6].map(i => (
-                  <Card key={i} className="animate-pulse">
-                    <CardContent className="h-36 bg-muted" />
-                  </Card>
-                ))}
+                {[1,2,3,4,5,6].map(i => <Card key={i} className="animate-pulse"><CardContent className="h-36 bg-muted" /></Card>)}
               </div>
             ) : serviciosFiltrados.length === 0 ? (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                  <ShoppingCart className="mb-2 size-8 opacity-30" />
-                  <p>{t.noServicios}</p>
-                </CardContent>
-              </Card>
+              <Card><CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                <ShoppingCart className="mb-2 size-8 opacity-30" />
+                <p>{t.noServicios}</p>
+              </CardContent></Card>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {serviciosFiltrados.map(servicio => {
                   const nombre = locale === 'en' && servicio.nombreEn ? servicio.nombreEn : servicio.nombre
                   return (
-                    <Card
-                      key={servicio.id}
-                      className="group relative transition-all hover:shadow-md hover:ring-1 hover:ring-emerald-300"
-                    >
+                    <Card key={servicio.id} className="group relative transition-all hover:shadow-md hover:ring-1 hover:ring-emerald-300">
                       <CardContent className="p-4">
-                        {/* Upselling badge */}
                         {servicio.esUpselling && (
-                          <Badge className="absolute right-3 top-3 bg-emerald-600 text-white hover:bg-emerald-700">
-                            🎯 UPS
-                          </Badge>
+                          <Badge className="absolute right-3 top-3 bg-emerald-600 text-white hover:bg-emerald-700">UPS</Badge>
                         )}
-
-                        {/* Service name */}
                         <h3 className="mb-1 pr-16 text-sm font-semibold leading-tight">{nombre}</h3>
-
-                        {/* Category badge */}
-                        <Badge variant="outline" className="mb-2 text-[10px]">
-                          {servicio.categoria}
-                        </Badge>
-
-                        {/* Prices */}
+                        <Badge variant="outline" className="mb-2 text-[10px]">{servicio.categoria}</Badge>
                         <div className="mb-3 space-y-0.5">
                           <div className="flex items-baseline gap-1">
-                            <span className="text-lg font-bold text-green-700 dark:text-green-400">
-                              {fmt(servicio.precioNormal)}
-                            </span>
+                            <span className="text-lg font-bold text-green-700 dark:text-green-400">{fmt(servicio.precioNormal)}</span>
                             <span className="text-[10px] text-muted-foreground">{moneda}</span>
                           </div>
                           {servicio.esUpselling && servicio.precioUpselling && (
                             <div className="flex items-baseline gap-1">
-                              <span className="text-sm font-semibold text-emerald-600">
-                                ↑ {fmt(servicio.precioUpselling)}
-                              </span>
+                              <span className="text-sm font-semibold text-emerald-600">↑ {fmt(servicio.precioUpselling)}</span>
                               <span className="text-[10px] text-emerald-500">upselling</span>
                             </div>
                           )}
                         </div>
-
-                        {/* Upselling objective */}
                         {servicio.esUpselling && servicio.objetivoUpselling && (
                           <p className="mb-3 text-[11px] leading-snug text-amber-700 dark:text-amber-400">
-                            🎯 {locale === 'en' && servicio.objetivoUpsellingEn ? servicio.objetivoUpsellingEn : servicio.objetivoUpselling}
+                            {locale === 'en' && servicio.objetivoUpsellingEn ? servicio.objetivoUpsellingEn : servicio.objetivoUpselling}
                           </p>
                         )}
-
-                        {/* Sell button */}
-                        <Button
-                          className="w-full bg-green-600 text-base font-bold hover:bg-green-700"
-                          size="lg"
-                          onClick={() => abrirVenta(servicio)}
-                        >
-                          <ShoppingCart className="mr-2 size-5" />
-                          {t.vender}
+                        <Button className="w-full bg-green-600 text-base font-bold hover:bg-green-700" size="lg" onClick={() => abrirVenta(servicio)}>
+                          <ShoppingCart className="mr-2 size-5" />{t.vender}
                         </Button>
                       </CardContent>
                     </Card>
@@ -403,24 +344,17 @@ export function VistaTrabajador() {
               </div>
             )}
 
-            {/* ── Upselling Objectives Section ── */}
             {serviciosUpselling.length > 0 && (
               <div className="mt-6">
                 <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold">
-                  <Target className="size-5 text-amber-600" />
-                  {t.misObjetivos}
+                  <Target className="size-5 text-amber-600" />{t.misObjetivos}
                 </h2>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {serviciosUpselling.map(servicio => {
                     const nombre = locale === 'en' && servicio.nombreEn ? servicio.nombreEn : servicio.nombre
                     const objetivo = locale === 'en' && servicio.objetivoUpsellingEn ? servicio.objetivoUpsellingEn : servicio.objetivoUpselling
-                    // Count upselling sales of this service today
-                    const vendidosHoy = ventasDia.filter(v =>
-                      v.esUpselling && v.nombreServicio === (locale === 'en' && servicio.nombreEn ? servicio.nombreEn : servicio.nombre)
-                    ).length
-                    const objetivoNum = 3 // Default target for progress
-                    const porcentaje = Math.min(100, (vendidosHoy / objetivoNum) * 100)
-
+                    const vendidosHoy = ventasDia.filter(v => v.esUpselling && v.nombreServicio === nombre).length
+                    const porcentaje = Math.min(100, (vendidosHoy / 3) * 100)
                     return (
                       <Card key={servicio.id} className="border-amber-200 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-950/20">
                         <CardContent className="p-4">
@@ -449,39 +383,28 @@ export function VistaTrabajador() {
             )}
           </div>
 
-          {/* ── Sidebar: Today's Summary ── */}
           <div className="space-y-4">
             <Card className="sticky top-4">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <TrendingUp className="size-4 text-emerald-600" />
-                  {t.resumenDelDia}
+                  <TrendingUp className="size-4 text-emerald-600" />{t.resumenDelDia}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Normal sales */}
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">{t.ventasNormales}</span>
                   <span className="font-semibold text-green-700 dark:text-green-400">{fmt(ventasNormales)}</span>
                 </div>
-
-                {/* Upselling sales */}
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">{t.ventasUpselling}</span>
                   <span className="font-semibold text-emerald-700 dark:text-emerald-400">{fmt(ventasUpsellingTotal)}</span>
                 </div>
-
                 <Separator />
-
-                {/* Total */}
                 <div className="flex items-center justify-between">
                   <span className="font-medium">{t.total}</span>
                   <span className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{fmt(totalDia)}</span>
                 </div>
-
                 <Separator />
-
-                {/* Average rating */}
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">{t.calificacionPromedio}</span>
                   <div className="flex items-center gap-1">
@@ -489,14 +412,10 @@ export function VistaTrabajador() {
                     <span className="font-semibold">{npsPromedio.toFixed(1)}</span>
                   </div>
                 </div>
-
-                {/* Services sold */}
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">{t.serviciosVendidos}</span>
                   <span className="font-semibold">{totalServiciosVendidos}</span>
                 </div>
-
-                {/* Recent sales list */}
                 {ventasDia.length > 0 && (
                   <>
                     <Separator />
@@ -509,9 +428,7 @@ export function VistaTrabajador() {
                           {ventasDia.slice(0, 8).map(venta => (
                             <div key={venta.id} className="flex items-center justify-between rounded-md bg-muted/50 px-2 py-1.5 text-xs">
                               <div className="flex items-center gap-1.5 min-w-0">
-                                {venta.esUpselling && (
-                                  <span className="shrink-0 text-emerald-600">🎯</span>
-                                )}
+                                {venta.esUpselling && <span className="shrink-0 text-emerald-600">↑</span>}
                                 <span className="truncate">{venta.nombreServicio || '—'}</span>
                               </div>
                               <span className="shrink-0 font-medium">{fmt(venta.montoTotal)}</span>
@@ -528,7 +445,6 @@ export function VistaTrabajador() {
         </div>
       )}
 
-      {/* ── Sale Dialog ── */}
       <Dialog open={showVentaDialog} onOpenChange={setShowVentaDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -537,125 +453,53 @@ export function VistaTrabajador() {
               {locale === 'en' && servicioVenta?.nombreEn ? servicioVenta.nombreEn : servicioVenta?.nombre}
             </DialogTitle>
           </DialogHeader>
-
           <div className="space-y-4">
-            {/* Quantity */}
             <div className="space-y-1.5">
               <Label>{t.cantidad}</Label>
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setVentaCantidad(Math.max(1, ventaCantidad - 1))}
-                >
-                  −
-                </Button>
-                <Input
-                  type="number"
-                  min={1}
-                  value={ventaCantidad}
-                  onChange={(e) => setVentaCantidad(Math.max(1, parseInt(e.target.value) || 1))}
-                  className="w-20 text-center"
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setVentaCantidad(ventaCantidad + 1)}
-                >
-                  +
-                </Button>
+                <Button variant="outline" size="icon" onClick={() => setVentaCantidad(Math.max(1, ventaCantidad - 1))}>−</Button>
+                <Input type="number" min={1} value={ventaCantidad} onChange={(e) => setVentaCantidad(Math.max(1, parseInt(e.target.value) || 1))} className="w-20 text-center" />
+                <Button variant="outline" size="icon" onClick={() => setVentaCantidad(ventaCantidad + 1)}>+</Button>
               </div>
             </div>
-
-            {/* Is upselling? */}
             {servicioVenta?.esUpselling && (
               <div className="flex items-center justify-between rounded-lg bg-emerald-50 p-3 dark:bg-emerald-950/30">
-                <Label className="flex items-center gap-2 text-sm">
-                  🎯 {t.esUpselling}
-                </Label>
-                <Switch
-                  checked={ventaEsUpselling}
-                  onCheckedChange={(checked) => {
-                    setVentaEsUpselling(checked)
-                    setVentaPrecioFinal(
-                      checked
-                        ? (servicioVenta.precioUpselling || servicioVenta.precioNormal)
-                        : servicioVenta.precioNormal
-                    )
-                  }}
-                />
+                <Label className="flex items-center gap-2 text-sm">↑ {t.esUpselling}</Label>
+                <Switch checked={ventaEsUpselling} onCheckedChange={(checked) => {
+                  setVentaEsUpselling(checked)
+                  setVentaPrecioFinal(checked ? (servicioVenta.precioUpselling || servicioVenta.precioNormal) : servicioVenta.precioNormal)
+                }} />
               </div>
             )}
-
-            {/* Final price */}
             <div className="space-y-1.5">
               <Label>{t.precioFinal}</Label>
-              <Input
-                type="number"
-                value={ventaPrecioFinal}
-                onChange={(e) => setVentaPrecioFinal(parseFloat(e.target.value) || 0)}
-                className={ventaEsUpselling ? 'border-emerald-300 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/30' : ''}
-              />
+              <Input type="number" value={ventaPrecioFinal} onChange={(e) => setVentaPrecioFinal(parseFloat(e.target.value) || 0)} className={ventaEsUpselling ? 'border-emerald-300 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/30' : ''} />
             </div>
-
-            {/* Total preview */}
             <div className="rounded-lg bg-muted p-3 text-center">
               <span className="text-sm text-muted-foreground">{t.total}: </span>
-              <span className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
-                {fmt(ventaPrecioFinal * ventaCantidad)}
-              </span>
+              <span className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{fmt(ventaPrecioFinal * ventaCantidad)}</span>
               <span className="text-xs text-muted-foreground ml-1">{moneda}</span>
             </div>
-
-            {/* Customer rating */}
             <div className="space-y-1.5">
               <Label>{t.calificacionCliente}</Label>
               <div className="flex gap-1">
                 {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
-                  <Button
-                    key={n}
-                    variant={ventaCalificacion === n ? 'default' : 'outline'}
-                    size="sm"
-                    className={`h-8 w-8 p-0 text-xs ${
-                      ventaCalificacion === n
-                        ? n >= 9 ? 'bg-green-600 hover:bg-green-700' : n >= 7 ? 'bg-amber-500 hover:bg-amber-600' : 'bg-red-500 hover:bg-red-600'
-                        : ''
-                    }`}
+                  <Button key={n} variant={ventaCalificacion === n ? 'default' : 'outline'} size="sm"
+                    className={`h-8 w-8 p-0 text-xs ${ventaCalificacion === n ? n >= 9 ? 'bg-green-600 hover:bg-green-700' : n >= 7 ? 'bg-amber-500 hover:bg-amber-600' : 'bg-red-500 hover:bg-red-600' : ''}`}
                     onClick={() => setVentaCalificacion(n === ventaCalificacion ? null : n)}
-                  >
-                    {n}
-                  </Button>
+                  >{n}</Button>
                 ))}
               </div>
             </div>
-
-            {/* Customer comment */}
             <div className="space-y-1.5">
               <Label>{t.comentarioCliente}</Label>
-              <Textarea
-                value={ventaComentario}
-                onChange={(e) => setVentaComentario(e.target.value)}
-                placeholder="..."
-                rows={2}
-              />
+              <Textarea value={ventaComentario} onChange={(e) => setVentaComentario(e.target.value)} placeholder="..." rows={2} />
             </div>
           </div>
-
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowVentaDialog(false)}
-              disabled={procesandoVenta}
-            >
-              {tc.cancelar}
-            </Button>
-            <Button
-              className="bg-green-600 font-bold hover:bg-green-700"
-              onClick={registrarVenta}
-              disabled={procesandoVenta}
-            >
-              {procesandoVenta ? '...' : t.confirmarVenta}
-              <ChevronRight className="ml-1 size-4" />
+            <Button variant="outline" onClick={() => setShowVentaDialog(false)} disabled={procesandoVenta}>{tc.cancelar}</Button>
+            <Button className="bg-green-600 font-bold hover:bg-green-700" onClick={registrarVenta} disabled={procesandoVenta}>
+              {procesandoVenta ? '...' : t.confirmarVenta}<ChevronRight className="ml-1 size-4" />
             </Button>
           </DialogFooter>
         </DialogContent>
