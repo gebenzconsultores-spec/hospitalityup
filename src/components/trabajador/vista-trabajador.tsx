@@ -292,13 +292,15 @@ export function VistaTrabajador() {
   const descargarTicket = () => {
     if (!ticketData) return
     const html = generarTicketHTML(ticketData)
-    const blob = new Blob([html], { type: 'text/html' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `ticket-${ticketData.folio}.html`
-    a.click()
-    URL.revokeObjectURL(url)
+    const ventana = window.open('', '_blank')
+    if (!ventana) return
+    ventana.document.write(html)
+    ventana.document.close()
+    ventana.focus()
+    setTimeout(() => {
+      ventana.print()
+      ventana.close()
+    }, 500)
   }
 
   const compartirWhatsApp = () => {
