@@ -16,6 +16,7 @@ export default function Home() {
     if (parsed.rol === 'admin') router.push('/admin')
     else if (parsed.rol === 'empresa') router.push('/empresa')
     else if (parsed.rol === 'empleado') router.push('/empleado')
+    else if (parsed.rol === 'proveedor') router.push('/proveedor')
     else router.push('/login')
   }, [router])
 

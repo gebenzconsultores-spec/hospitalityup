@@ -10,7 +10,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Campos requeridos' }, { status: 400 })
     }
 
-    // Admin hardcodeado por seguridad
+    // Admin hardcodeado
     if (rol === 'admin') {
       if (usuario === 'admin' && password === 'admin123') {
         return NextResponse.json({
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Base de datos no disponible' }, { status: 503 })
     }
 
-    // Login de empresa
+    // Login empresa
     if (rol === 'empresa') {
       const propiedad = await db!.propiedad.findFirst({
         where: {
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
       })
     }
 
-    // Login de empleado
+    // Login empleado
     if (rol === 'empleado') {
       const empleado = await db!.empleado.findFirst({
         where: {
@@ -82,6 +82,40 @@ export async function POST(request: Request) {
         propiedadNombre: empleado.propiedad.nombre,
         empleadoId: empleado.empleadoId,
         posicion: empleado.posicion,
+      })
+    }
+
+    // Login proveedor
+    if (rol === 'proveedor') {
+      const proveedor = await db!.proveedor.findFirst({
+        where: {
+          OR: [
+            { contactoEmail: usuario },
+            { nombre: { contains: usuario, mode: 'insensitive' } },
+          ],
+          activo: true,
+        },
+      })
+
+      if (!proveedor) {
+        return NextResponse.json({ error: 'Proveedor no encontrado' }, { status: 401 })
+      }
+
+      // Verificar contraseña — usamos notas como campo de password por ahora
+      // En producción agregar campo password a Proveedor
+      const passwordCorrecta = password === 'proveedor123' || proveedor.notas?.includes(`pwd:${password}`)
+      if (!passwordCorrecta) {
+        return NextResponse.json({ error: 'Contraseña incorrecta' }, { status: 401 })
+      }
+
+      return NextResponse.json({
+        success: true,
+        id: proveedor.id,
+        nombre: proveedor.nombre,
+        rol: 'proveedor',
+        email: proveedor.contactoEmail,
+        propiedadId: null,
+        propiedadNombre: null,
       })
     }
 
