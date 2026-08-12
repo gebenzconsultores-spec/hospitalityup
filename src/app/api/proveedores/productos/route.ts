@@ -62,6 +62,7 @@ export async function POST(request: Request) {
         unidad, precio, precioMayoreo,
         cantidadMinima: cantidadMinima || 1,
         imagen, disponible: true,
+        updatedAt: new Date(),
       },
     })
 
