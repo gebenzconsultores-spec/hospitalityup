@@ -133,6 +133,11 @@ export default function ProveedorPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
+      if (!res.ok) {
+        const err = await res.json()
+        toast.error(err.error || 'Error al guardar')
+        return
+      }
       if (res.ok) {
         toast.success(editingProducto ? 'Producto actualizado' : 'Producto agregado')
         setShowFormProducto(false)

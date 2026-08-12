@@ -47,9 +47,15 @@ export async function POST(request: Request) {
       precioMayoreo, cantidadMinima, imagen, notas,
     } = body
 
-    if (!proveedorId || !nombre || !precio) {
+    if (!nombre || !precio) {
       return NextResponse.json(
-        { error: 'proveedorId, nombre y precio son requeridos' },
+        { error: 'nombre y precio son requeridos' },
+        { status: 400 }
+      )
+    }
+    if (!proveedorId) {
+      return NextResponse.json(
+        { error: 'proveedorId es requerido' },
         { status: 400 }
       )
     }
