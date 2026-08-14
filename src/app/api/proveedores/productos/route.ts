@@ -8,73 +8,101 @@ export async function GET(request: Request) {
     const categoria = searchParams.get('categoria')
     const disponible = searchParams.get('disponible')
 
-    if (!isDatabaseAvailable()) {
-      return NextResponse.json([])
-    }
+    if (!isDatabaseAvailable()) return NextResponse.json([])
 
     const where: Record<string, unknown> = {}
     if (proveedorId) where.proveedorId = proveedorId
     if (categoria) where.categoria = categoria
-    if (disponible !== null) where.disponible = disponible === 'true'
+    if (disponible !== null && disponible !== undefined) where.disponible = disponible === 'true'
 
     const productos = await db!.productoProveedor.findMany({
       where,
       include: {
-        proveedor: {
-          select: { id: true, nombre: true, tipo: true, region: true }
-        }
+        proveedor: { select: { id: true, nombre: true, tipo: true, region: true } }
       },
       orderBy: { nombre: 'asc' },
     })
 
     return NextResponse.json(productos)
   } catch (error) {
-    console.error('Productos proveedor GET error:', error)
-    return NextResponse.json([], { status: 200 })
+    console.error('Productos GET error:', error)
+    return NextResponse.json([])
   }
 }
 
 export async function POST(request: Request) {
   try {
-    if (!isDatabaseAvailable()) {
-      return NextResponse.json({ success: true, demo: true })
-    }
+    if (!isDatabaseAvailable()) return NextResponse.json({ success: true, demo: true })
 
     const body = await request.json()
-    const {
-      proveedorId, nombre, nombreEn, descripcion,
-      descripcionEn, categoria, unidad, precio,
-      precioMayoreo, cantidadMinima, imagen, notas,
-    } = body
+    const { proveedorId, nombre, nombreEn, descripcion, descripcionEn, categoria, unidad, precio, precioMayoreo, cantidadMinima } = body
 
     if (!nombre || !precio) {
-      return NextResponse.json(
-        { error: 'nombre y precio son requeridos' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'nombre y precio son requeridos' }, { status: 400 })
     }
     if (!proveedorId) {
-      return NextResponse.json(
-        { error: 'proveedorId es requerido' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'proveedorId es requerido' }, { status: 400 })
     }
 
     const producto = await db!.productoProveedor.create({
       data: {
-        proveedorId, nombre, nombreEn,
-        descripcion, descripcionEn,
+        id: crypto.randomUUID(),
+        proveedorId,
+        nombre,
+        nombreEn: nombreEn || null,
+        descripcion: descripcion || null,
+        descripcionEn: descripcionEn || null,
         categoria: categoria || 'otro',
-        unidad, precio, precioMayoreo,
-        cantidadMinima: cantidadMinima || 1,
-        imagen, disponible: true,
+        unidad: unidad || null,
+        precio: parseFloat(String(precio)),
+        precioMayoreo: precioMayoreo ? parseFloat(String(precioMayoreo)) : null,
+        cantidadMinima: cantidadMinima ? parseInt(String(cantidadMinima)) : 1,
+        disponible: true,
         updatedAt: new Date(),
       },
     })
 
     return NextResponse.json(producto, { status: 201 })
   } catch (error) {
-    console.error('Productos proveedor POST error:', error)
-    return NextResponse.json({ error: 'Error al crear producto' }, { status: 500 })
+    console.error('Productos POST error:', error)
+    return NextResponse.json({ error: `Error al crear producto: ${error}` }, { status: 500 })
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    if (!isDatabaseAvailable()) return NextResponse.json({ success: true, demo: true })
+
+    const body = await request.json()
+    const { id, ...data } = body
+
+    if (!id) return NextResponse.json({ error: 'ID requerido' }, { status: 400 })
+
+    const producto = await db!.productoProveedor.update({
+      where: { id },
+      data: { ...data, updatedAt: new Date() },
+    })
+
+    return NextResponse.json(producto)
+  } catch (error) {
+    console.error('Productos PATCH error:', error)
+    return NextResponse.json({ error: 'Error al actualizar producto' }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    if (!isDatabaseAvailable()) return NextResponse.json({ success: true, demo: true })
+
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+
+    if (!id) return NextResponse.json({ error: 'ID requerido' }, { status: 400 })
+
+    await db!.productoProveedor.delete({ where: { id } })
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Productos DELETE error:', error)
+    return NextResponse.json({ error: 'Error al eliminar producto' }, { status: 500 })
   }
 }
