@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     const productos = await db!.productoProveedor.findMany({
       where,
       include: {
-        proveedor: { select: { id: true, nombre: true, tipo: true, region: true } }
+        Proveedor: { select: { id: true, nombre: true, tipo: true, region: true } }
       },
       orderBy: { nombre: 'asc' },
     })
