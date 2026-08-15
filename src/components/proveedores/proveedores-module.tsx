@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   Package, Plus, Search, Star, MapPin,
   Phone, Mail, Globe, Edit, ChevronRight,
-  Truck, ShoppingBag, X
+  Truck, ShoppingBag, X, ShoppingCart,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -102,6 +102,14 @@ export function ProveedoresModule() {
   const [showFormProveedor, setShowFormProveedor] = useState(false)
   const [showFormProducto, setShowFormProducto] = useState(false)
   const [editingProveedor, setEditingProveedor] = useState<Proveedor | null>(null)
+  const [productosProveedor, setProductosProveedor] = useState<Producto[]>([])
+  const [loadingProductos, setLoadingProductos] = useState(false)
+  const [showPedidoDialog, setShowPedidoDialog] = useState(false)
+  const [productoPedido, setProductoPedido] = useState<Producto | null>(null)
+  const [pedidoCantidad, setPedidoCantidad] = useState('1')
+  const [pedidoNotas, setPedidoNotas] = useState('')
+  const [propiedades, setPropiedades] = useState<{ id: string; nombre: string }[]>([])
+  const [pedidoPropiedadId, setPedidoPropiedadId] = useState('')
 
   const [formProveedor, setFormProveedor] = useState({
     nombre: '', nombreEn: '', tipo: 'alimentos',
@@ -132,6 +140,26 @@ export function ProveedoresModule() {
   }, [filterTipo])
 
   useEffect(() => { fetchProveedores() }, [fetchProveedores])
+
+  useEffect(() => {
+    fetch('/api/propiedades')
+      .then(r => r.json())
+      .then(data => setPropiedades(Array.isArray(data) ? data.map((p: { id: string; nombre: string }) => ({ id: p.id, nombre: p.nombre })) : []))
+      .catch(() => {})
+  }, [])
+
+  const cargarProductosProveedor = async (proveedorId: string) => {
+    setLoadingProductos(true)
+    try {
+      const res = await fetch(`/api/proveedores/productos?proveedorId=${proveedorId}`)
+      const data = await res.json()
+      setProductosProveedor(Array.isArray(data) ? data : [])
+    } catch {
+      setProductosProveedor([])
+    } finally {
+      setLoadingProductos(false)
+    }
+  }
 
   const handleGuardarProveedor = async () => {
     if (!formProveedor.nombre || !formProveedor.tipo) {
@@ -191,6 +219,7 @@ export function ProveedoresModule() {
           precio: '', precioMayoreo: '', cantidadMinima: '1',
         })
         fetchProveedores()
+        cargarProductosProveedor(selectedProveedor.id)
       }
     } catch {
       toast.error('Error al guardar producto')
@@ -212,6 +241,47 @@ export function ProveedoresModule() {
     setShowFormProveedor(true)
   }
 
+  const handleAbrirPedido = (producto: Producto) => {
+    setProductoPedido(producto)
+    setPedidoCantidad('1')
+    setPedidoNotas('')
+    setShowPedidoDialog(true)
+  }
+
+  const handleEnviarPedido = async () => {
+    if (!productoPedido || !selectedProveedor) return
+    if (!pedidoPropiedadId) {
+      toast.error('Selecciona una propiedad')
+      return
+    }
+    try {
+      const cantidad = parseInt(pedidoCantidad) || 1
+      const total = productoPedido.precio * cantidad
+      const res = await fetch('/api/pedidos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          propiedadId: pedidoPropiedadId,
+          proveedorId: selectedProveedor.id,
+          productoId: productoPedido.id,
+          cantidad,
+          unidad: productoPedido.unidad || null,
+          precioEstimado: productoPedido.precio,
+          totalEstimado: total,
+          notas: pedidoNotas || null,
+        }),
+      })
+      if (res.ok) {
+        toast.success('Pedido enviado al proveedor')
+        setShowPedidoDialog(false)
+      } else {
+        toast.error('Error al enviar pedido')
+      }
+    } catch {
+      toast.error('Error al enviar pedido')
+    }
+  }
+
   const filtered = proveedores.filter(p =>
     p.nombre.toLowerCase().includes(search.toLowerCase()) ||
     (p.ciudad && p.ciudad.toLowerCase().includes(search.toLowerCase()))
@@ -222,7 +292,7 @@ export function ProveedoresModule() {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" className="gap-1.5" onClick={() => setSelectedProveedor(null)}>
+          <Button variant="ghost" className="gap-1.5" onClick={() => { setSelectedProveedor(null); setProductosProveedor([]) }}>
             <X className="size-4" />
             {locale === 'es' ? 'Volver' : 'Back'}
           </Button>
@@ -232,7 +302,7 @@ export function ProveedoresModule() {
           </div>
           <Button
             className="bg-teal-600 hover:bg-teal-700 text-white gap-2"
-            onClick={() => { setShowFormProducto(true) }}
+            onClick={() => setShowFormProducto(true)}
           >
             <Plus className="size-4" />
             {locale === 'es' ? 'Agregar Producto' : 'Add Product'}
@@ -312,13 +382,17 @@ export function ProveedoresModule() {
                 <CardTitle className="text-base flex items-center gap-2">
                   <ShoppingBag className="size-4 text-teal-600" />
                   {locale === 'es' ? 'Catálogo de Productos y Servicios' : 'Product & Service Catalog'}
-                  <Badge variant="outline" className="ml-auto">{prov.productos?.length || 0}</Badge>
+                  <Badge variant="outline" className="ml-auto">{productosProveedor.length}</Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {prov.productos && prov.productos.length > 0 ? (
+                {loadingProductos ? (
+                  <div className="space-y-2">
+                    {[1,2,3].map(i => <div key={i} className="h-12 animate-pulse rounded bg-muted" />)}
+                  </div>
+                ) : productosProveedor.length > 0 ? (
                   <div className="space-y-3">
-                    {prov.productos.map(producto => (
+                    {productosProveedor.map(producto => (
                       <div key={producto.id} className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
@@ -342,7 +416,7 @@ export function ProveedoresModule() {
                             )}
                           </div>
                         </div>
-                        <div className="text-right shrink-0">
+                        <div className="text-right shrink-0 mr-2">
                           <div className="font-bold text-sm">${producto.precio.toFixed(2)}</div>
                           {producto.precioMayoreo && (
                             <div className="text-xs text-emerald-600">
@@ -350,6 +424,14 @@ export function ProveedoresModule() {
                             </div>
                           )}
                         </div>
+                        <Button
+                          size="sm"
+                          className="bg-teal-600 hover:bg-teal-700 text-white gap-1 shrink-0"
+                          onClick={() => handleAbrirPedido(producto)}
+                        >
+                          <ShoppingCart className="size-3" />
+                          {locale === 'es' ? 'Pedir' : 'Order'}
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -374,6 +456,7 @@ export function ProveedoresModule() {
           </div>
         </div>
 
+        {/* Dialog: Agregar Producto */}
         <Dialog open={showFormProducto} onOpenChange={setShowFormProducto}>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
@@ -431,6 +514,71 @@ export function ProveedoresModule() {
               <Button variant="outline" onClick={() => setShowFormProducto(false)}>{locale === 'es' ? 'Cancelar' : 'Cancel'}</Button>
               <Button className="bg-teal-600 hover:bg-teal-700 text-white" onClick={handleGuardarProducto}>
                 {locale === 'es' ? 'Guardar Producto' : 'Save Product'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog: Hacer Pedido */}
+        <Dialog open={showPedidoDialog} onOpenChange={setShowPedidoDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <ShoppingCart className="size-5 text-teal-600" />
+                {locale === 'es' ? 'Hacer Pedido' : 'Place Order'}
+              </DialogTitle>
+            </DialogHeader>
+            {productoPedido && (
+              <div className="space-y-4 py-2">
+                <div className="rounded-lg bg-muted/50 p-3">
+                  <div className="font-semibold">{productoPedido.nombre}</div>
+                  <div className="text-sm text-muted-foreground">
+                    ${productoPedido.precio.toFixed(2)}/{productoPedido.unidad || 'unidad'}
+                    {productoPedido.precioMayoreo && ` · Mayoreo: $${productoPedido.precioMayoreo.toFixed(2)}`}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label>{locale === 'es' ? 'Propiedad que solicita *' : 'Requesting property *'}</Label>
+                  <Select value={pedidoPropiedadId} onValueChange={setPedidoPropiedadId}>
+                    <SelectTrigger><SelectValue placeholder={locale === 'es' ? 'Seleccionar propiedad...' : 'Select property...'} /></SelectTrigger>
+                    <SelectContent>
+                      {propiedades.map(p => <SelectItem key={p.id} value={p.id}>{p.nombre}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label>{locale === 'es' ? 'Cantidad' : 'Quantity'}</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={pedidoCantidad}
+                    onChange={e => setPedidoCantidad(e.target.value)}
+                  />
+                </div>
+                {parseInt(pedidoCantidad) > 0 && (
+                  <div className="rounded-lg bg-teal-50 dark:bg-teal-950/30 p-3 flex justify-between">
+                    <span className="text-sm font-medium">{locale === 'es' ? 'Total estimado' : 'Estimated total'}</span>
+                    <span className="font-bold text-teal-700">${(productoPedido.precio * parseInt(pedidoCantidad || '1')).toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="space-y-1">
+                  <Label>{locale === 'es' ? 'Notas adicionales' : 'Additional notes'}</Label>
+                  <Textarea
+                    value={pedidoNotas}
+                    onChange={e => setPedidoNotas(e.target.value)}
+                    placeholder={locale === 'es' ? 'Especificaciones, fecha de entrega deseada...' : 'Specifications, desired delivery date...'}
+                    rows={2}
+                  />
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowPedidoDialog(false)}>
+                {locale === 'es' ? 'Cancelar' : 'Cancel'}
+              </Button>
+              <Button className="bg-teal-600 hover:bg-teal-700 text-white gap-2" onClick={handleEnviarPedido}>
+                <ShoppingCart className="size-4" />
+                {locale === 'es' ? 'Enviar Pedido' : 'Send Order'}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -507,7 +655,7 @@ export function ProveedoresModule() {
             <Card
               key={proveedor.id}
               className="hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => setSelectedProveedor(proveedor)}
+              onClick={() => { setSelectedProveedor(proveedor); cargarProductosProveedor(proveedor.id) }}
             >
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
