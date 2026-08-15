@@ -143,7 +143,7 @@ export default function ProveedorPage() {
         setShowFormProducto(false)
         setEditingProducto(null)
         resetForm()
-        fetchData(session.id)
+        await fetchData(session.id)
       }
     } catch {
       toast.error('Error al guardar producto')
