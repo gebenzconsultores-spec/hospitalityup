@@ -30,6 +30,7 @@ function Loading() {
 }
 
 const EmpleadosModule = dynamic(() => import('@/components/empleados/empleados-module').then(m => ({ default: m.EmpleadosModule })), { loading: () => <Loading /> })
+const ProveedoresModule = dynamic(() => import('@/components/proveedores/proveedores-module').then(m => ({ default: m.ProveedoresModule })), { loading: () => <Loading /> })
 const ServiciosAdmin = dynamic(() => import('@/components/servicios/servicios-admin').then(m => ({ default: m.ServiciosAdmin })), { loading: () => <Loading /> })
 const VentasModule = dynamic(() => import('@/components/ventas/ventas-module').then(m => ({ default: m.VentasModule })), { loading: () => <Loading /> })
 const CapacitacionModule = dynamic(() => import('@/components/capacitacion/capacitacion-module').then(m => ({ default: m.CapacitacionModule })), { loading: () => <Loading /> })
@@ -239,7 +240,8 @@ const viewLabels: Record<EmpresaView, { es: string; en: string }> = {
   servicios: { es: 'Menú & Servicios', en: 'Menu & Services' },
   ventas: { es: 'Ventas & NPS', en: 'Sales & NPS' },
   capacitacion: { es: 'Capacitación', en: 'Training' },
-  sucursales: { es: 'Mis Sucursales', en: 'My Branches' },
+    sucursales: { es: 'Mis Sucursales', en: 'My Branches' },
+  proveedores: { es: 'Proveedores', en: 'Suppliers' },
 }
 
 export default function EmpresaPage() {
@@ -265,7 +267,8 @@ export default function EmpresaPage() {
       case 'servicios': return <ServiciosAdmin />
       case 'ventas': return <VentasModule />
       case 'capacitacion': return <CapacitacionModule />
-      case 'sucursales': return <SucursalesEmpresa session={session!} locale={locale} />
+            case 'sucursales': return <SucursalesEmpresa session={session!} locale={locale} />
+      case 'proveedores': return <ProveedoresModule />
       default: return <DashboardEmpresa session={session!} locale={locale} />
     }
   }

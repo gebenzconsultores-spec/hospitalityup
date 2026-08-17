@@ -29,7 +29,7 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { useRouter } from 'next/navigation'
 
-export type EmpresaView = 'dashboard' | 'empleados' | 'servicios' | 'ventas' | 'capacitacion' | 'sucursales'
+export type EmpresaView = 'dashboard' | 'empleados' | 'servicios' | 'ventas' | 'capacitacion' | 'sucursales' | 'proveedores'
 
 const navItems: { key: EmpresaView; icon: React.ElementType; labelEs: string; labelEn: string }[] = [
   { key: 'dashboard', icon: LayoutDashboard, labelEs: 'Dashboard', labelEn: 'Dashboard' },
@@ -37,7 +37,8 @@ const navItems: { key: EmpresaView; icon: React.ElementType; labelEs: string; la
   { key: 'servicios', icon: Package, labelEs: 'Menú & Servicios', labelEn: 'Menu & Services' },
   { key: 'ventas', icon: DollarSign, labelEs: 'Ventas & NPS', labelEn: 'Sales & NPS' },
   { key: 'capacitacion', icon: GraduationCap, labelEs: 'Capacitación', labelEn: 'Training' },
-  { key: 'sucursales', icon: Building2, labelEs: 'Mis Sucursales', labelEn: 'My Branches' },
+    { key: 'sucursales', icon: Building2, labelEs: 'Mis Sucursales', labelEn: 'My Branches' },
+  { key: 'proveedores', icon: Package, labelEs: 'Proveedores', labelEn: 'Suppliers' },
 ]
 
 interface AppSidebarEmpresaProps {
