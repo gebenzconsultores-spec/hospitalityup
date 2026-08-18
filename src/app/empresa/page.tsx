@@ -263,7 +263,7 @@ export default function EmpresaPage() {
   function ContentArea() {
     switch (currentView) {
       case 'dashboard': return <DashboardEmpresa session={session!} locale={locale} />
-      case 'empleados': return <EmpleadosModule />
+            case 'empleados': return <EmpleadosModule propiedadFija={session!.propiedadId} />
       case 'servicios': return <ServiciosAdmin />
       case 'ventas': return <VentasModule />
       case 'capacitacion': return <CapacitacionModule />

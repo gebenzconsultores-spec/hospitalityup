@@ -114,7 +114,7 @@ function getScoreColor(score: number): string {
 }
 
 // ─── Main Component ──────────────────────────────────────────
-export function EmpleadosModule() {
+export function EmpleadosModule({ propiedadFija }: { propiedadFija?: string }) {
   const { locale, selectedProperty, selectedEmployee, setSelectedEmployee } = useAppStore()
   const t = translations[locale].employees
   const tc = translations[locale].common
@@ -131,8 +131,9 @@ export function EmpleadosModule() {
   const fetchEmpleados = useCallback(async () => {
     setLoading(true)
     try {
-      const params = new URLSearchParams()
-      if (selectedProperty !== 'all') params.set('propiedadId', selectedProperty)
+            const params = new URLSearchParams()
+      const propId = propiedadFija || (selectedProperty !== 'all' ? selectedProperty : null)
+      if (propId) params.set('propiedadId', propId)
       if (search) params.set('search', search)
       if (filterDepto !== 'todos') params.set('departamento', filterDepto)
       if (filterRiesgo !== 'todos') params.set('nivelRiesgoBaja', filterRiesgo)
