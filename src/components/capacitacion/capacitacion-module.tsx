@@ -3,9 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   BookOpen, Search, GraduationCap, Users, Calendar,
-  CheckCircle2, PlayCircle, Clock, Monitor, MapPin,
-  Link, DollarSign, UserCheck, ChevronDown, ChevronUp,
-  Plus,
+  PlayCircle, Clock, Monitor, MapPin, Link as LinkIcon,
+  DollarSign, UserCheck, ChevronDown, ChevronUp, Plus,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -23,6 +22,7 @@ import { CotizadorCapacitacion } from '@/components/capacitacion/cotizador-capac
 import { translations } from '@/lib/i18n'
 import { toast } from 'sonner'
 
+// Interfaces
 interface Capacitacion {
   id: string
   titulo: string
@@ -58,11 +58,12 @@ interface Solicitud {
   linkZoom: string | null
   nombreInstructor: string | null
   costo: number | null
-  propiedad: { nombre: string; region: string }
+  propiedad: { nombre: string; region?: string }
   capacitacion: { titulo: string; categoria: string } | null
   createdAt: string
 }
 
+// Helpers de Estilos e Idioma
 function getCategoryColor(cat: string): string {
   switch (cat) {
     case 'upselling': return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
@@ -70,17 +71,17 @@ function getCategoryColor(cat: string): string {
     case 'conocimiento_producto': return 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
     case 'onboarding': return 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300'
     case 'liderazgo': return 'bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300'
-    default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/40 dark:text-gray-300'
+    default: return 'bg-muted text-muted-foreground'
   }
 }
 
 function getCategoryLabel(cat: string, t: typeof translations.es.capacitacion): string {
   switch (cat) {
-    case 'upselling': return t.upselling
-    case 'hospitalidad': return t.hospitalidad
-    case 'conocimiento_producto': return t.producto
-    case 'onboarding': return t.onboarding
-    case 'liderazgo': return t.liderazgo
+    case 'upselling': return t.upselling || 'Upselling'
+    case 'hospitalidad': return t.hospitalidad || 'Hospitalidad'
+    case 'conocimiento_producto': return t.producto || 'Producto'
+    case 'onboarding': return t.onboarding || 'Onboarding'
+    case 'liderazgo': return t.liderazgo || 'Liderazgo'
     default: return cat
   }
 }
@@ -91,24 +92,31 @@ function getEstadoColor(estado: string): string {
     case 'confirmada': return 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400'
     case 'completada': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
     case 'cancelada': return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-    default: return 'bg-gray-100 text-gray-700'
+    default: return 'bg-muted text-muted-foreground'
   }
 }
 
-export function CapacitacionModule({ propiedadFija, esEmpresa }: { propiedadFija?: string; esEmpresa?: boolean }) {
+export function CapacitacionModule({
+  propiedadFija,
+  esEmpresa = false,
+}: {
+  propiedadFija?: string
+  esEmpresa?: boolean
+}) {
   const { locale, selectedProperty } = useAppStore()
-  const t = translations[locale].capacitacion
+  const t = translations[locale]?.capacitacion || translations.es.capacitacion
 
   const [capacitaciones, setCapacitaciones] = useState<Capacitacion[]>([])
   const [solicitudes, setSolicitudes] = useState<Solicitud[]>([])
   const [loading, setLoading] = useState(true)
+  const [busqueda, setBusqueda] = useState('')
   const [filtroCategoria, setFiltroCategoria] = useState('todas')
   const [filtroModalidad, setFiltroModalidad] = useState('todas')
   const [propiedades, setPropiedades] = useState<{ id: string; nombre: string }[]>([])
   const [showCotizador, setShowCotizador] = useState(false)
   const [solicitudExpandida, setSolicitudExpandida] = useState<string | null>(null)
 
-  // Dialog de respuesta admin
+  // Diálogo para administración de solicitudes
   const [showResponderDialog, setShowResponderDialog] = useState(false)
   const [solicitudSeleccionada, setSolicitudSeleccionada] = useState<Solicitud | null>(null)
   const [formRespuesta, setFormRespuesta] = useState({
@@ -140,21 +148,28 @@ export function CapacitacionModule({ propiedadFija, esEmpresa }: { propiedadFija
         fetch(`/api/solicitudes?${solParams}`),
         fetch('/api/propiedades'),
       ])
+
       const capData = await capRes.json()
       const solData = await solRes.json()
       const propData = await propRes.json()
 
       setCapacitaciones(Array.isArray(capData) ? capData : [])
       setSolicitudes(Array.isArray(solData) ? solData : [])
-      setPropiedades(Array.isArray(propData) ? propData.map((p: { id: string; nombre: string }) => ({ id: p.id, nombre: p.nombre })) : [])
-    } catch {
-      toast.error(locale === 'es' ? 'Error al cargar datos' : 'Error loading data')
+      setPropiedades(
+        Array.isArray(propData)
+          ? propData.map((p: { id: string; nombre: string }) => ({ id: p.id, nombre: p.nombre }))
+          : []
+      )
+    } catch (error) {
+      toast.error(locale === 'es' ? 'Error al cargar los datos' : 'Error loading data')
     } finally {
       setLoading(false)
     }
   }, [filtroCategoria, filtroModalidad, propIdFiltro, locale])
 
-  useEffect(() => { fetchData() }, [fetchData])
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
   const handleResponder = async () => {
     if (!solicitudSeleccionada) return
@@ -172,11 +187,12 @@ export function CapacitacionModule({ propiedadFija, esEmpresa }: { propiedadFija
           notas: formRespuesta.notas || null,
         }),
       })
+
       if (res.ok) {
         toast.success(
           formRespuesta.estado === 'confirmada'
-            ? (locale === 'es' ? 'Capacitacion confirmada' : 'Training confirmed')
-            : (locale === 'es' ? 'Solicitud actualizada' : 'Request updated')
+            ? locale === 'es' ? 'Capacitación confirmada' : 'Training confirmed'
+            : locale === 'es' ? 'Solicitud actualizada' : 'Request updated'
         )
         setShowResponderDialog(false)
         fetchData()
@@ -184,7 +200,7 @@ export function CapacitacionModule({ propiedadFija, esEmpresa }: { propiedadFija
         toast.error(locale === 'es' ? 'Error al responder' : 'Error responding')
       }
     } catch {
-      toast.error(locale === 'es' ? 'Error de conexion' : 'Connection error')
+      toast.error(locale === 'es' ? 'Error de conexión' : 'Connection error')
     }
   }
 
@@ -201,37 +217,48 @@ export function CapacitacionModule({ propiedadFija, esEmpresa }: { propiedadFija
     setShowResponderDialog(true)
   }
 
-  const solicitudesPendientes = solicitudes.filter(s => s.estado === 'pendiente').length
+  // Filtrado en cliente por búsqueda
+  const capacitacionesFiltradas = capacitaciones.filter((cap) => {
+    const titulo = (locale === 'en' && cap.tituloEn ? cap.tituloEn : cap.titulo).toLowerCase()
+    return titulo.includes(busqueda.toLowerCase())
+  })
+
+  const solicitudesPendientes = solicitudes.filter((s) => s.estado === 'pendiente').length
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Encabezado */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
           <p className="text-sm text-muted-foreground">{t.subtitle}</p>
         </div>
         <Button
-          className="bg-teal-600 hover:bg-teal-700 text-white gap-2"
+          className="bg-teal-600 hover:bg-teal-700 text-white gap-2 shadow-sm"
           onClick={() => setShowCotizador(true)}
         >
           <Plus className="size-4" />
-          {locale === 'es' ? 'Solicitar Capacitacion' : 'Request Training'}
+          {locale === 'es' ? 'Solicitar Capacitación' : 'Request Training'}
         </Button>
       </div>
 
       {/* Filtros */}
       <div className="flex flex-wrap gap-3">
-        <div className="relative">
+        <div className="relative flex-1 sm:flex-initial">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <Input placeholder={locale === 'es' ? 'Buscar...' : 'Search...'} className="pl-9 w-48" />
+          <Input
+            placeholder={locale === 'es' ? 'Buscar...' : 'Search...'}
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            className="pl-9 w-full sm:w-48"
+          />
         </div>
         <Select value={filtroCategoria} onValueChange={setFiltroCategoria}>
-          <SelectTrigger className="w-44">
-            <SelectValue placeholder={locale === 'es' ? 'Categoria' : 'Category'} />
+          <SelectTrigger className="w-full sm:w-44">
+            <SelectValue placeholder={locale === 'es' ? 'Categoría' : 'Category'} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="todas">{locale === 'es' ? 'Todas las categorias' : 'All categories'}</SelectItem>
+            <SelectItem value="todas">{locale === 'es' ? 'Todas las categorías' : 'All categories'}</SelectItem>
             <SelectItem value="upselling">{t.upselling}</SelectItem>
             <SelectItem value="hospitalidad">{t.hospitalidad}</SelectItem>
             <SelectItem value="conocimiento_producto">{t.producto}</SelectItem>
@@ -240,23 +267,24 @@ export function CapacitacionModule({ propiedadFija, esEmpresa }: { propiedadFija
           </SelectContent>
         </Select>
         <Select value={filtroModalidad} onValueChange={setFiltroModalidad}>
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-full sm:w-40">
             <SelectValue placeholder={t.modalidad} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="todas">{locale === 'es' ? 'Todas' : 'All'}</SelectItem>
             <SelectItem value="virtual">{t.virtual}</SelectItem>
             <SelectItem value="presencial">{t.presencial}</SelectItem>
-            <SelectItem value="hibrido">{locale === 'es' ? 'Hibrido' : 'Hybrid'}</SelectItem>
+            <SelectItem value="hibrido">{locale === 'es' ? 'Híbrido' : 'Hybrid'}</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
+      {/* Pestañas de Vista */}
       <Tabs defaultValue="catalogo">
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-3 sm:w-auto sm:inline-flex">
           <TabsTrigger value="catalogo">
             <BookOpen className="size-4 mr-1.5" />
-            {locale === 'es' ? 'Catalogo' : 'Catalog'}
+            {locale === 'es' ? 'Catálogo' : 'Catalog'}
           </TabsTrigger>
           <TabsTrigger value="progreso">
             <PlayCircle className="size-4 mr-1.5" />
@@ -264,30 +292,36 @@ export function CapacitacionModule({ propiedadFija, esEmpresa }: { propiedadFija
           </TabsTrigger>
           <TabsTrigger value="solicitudes">
             <Calendar className="size-4 mr-1.5" />
-            {locale === 'es' ? 'Capacitaciones Programadas' : 'Scheduled Trainings'}
+            {locale === 'es' ? 'Programadas' : 'Scheduled'}
             {solicitudesPendientes > 0 && (
               <Badge className="ml-1.5 bg-amber-500 text-white text-[10px] px-1.5">{solicitudesPendientes}</Badge>
             )}
           </TabsTrigger>
         </TabsList>
 
-        {/* Catalogo */}
+        {/* Tab 1: Catálogo */}
         <TabsContent value="catalogo" className="mt-4">
           {loading ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {[1,2,3,4,5,6].map(i => (
-                <Card key={i}><CardContent className="p-4"><div className="h-48 animate-pulse rounded bg-muted" /></CardContent></Card>
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Card key={i}>
+                  <CardContent className="p-4">
+                    <div className="h-48 animate-pulse rounded bg-muted" />
+                  </CardContent>
+                </Card>
               ))}
             </div>
-          ) : capacitaciones.length === 0 ? (
+          ) : capacitacionesFiltradas.length === 0 ? (
             <div className="text-center py-16">
-              <BookOpen className="size-12 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground">{locale === 'es' ? 'No hay capacitaciones disponibles' : 'No training available'}</p>
+              <BookOpen className="size-12 text-muted-foreground mx-auto mb-3 opacity-50" />
+              <p className="text-muted-foreground">
+                {locale === 'es' ? 'No hay capacitaciones disponibles' : 'No training available'}
+              </p>
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {capacitaciones.map(cap => (
-                <Card key={cap.id} className="group hover:shadow-md transition-shadow">
+              {capacitacionesFiltradas.map((cap) => (
+                <Card key={cap.id} className="group hover:shadow-md transition-all flex flex-col justify-between">
                   <CardHeader className="pb-2 pt-4 px-4">
                     <div className="flex items-start justify-between gap-2">
                       <CardTitle className="text-sm font-semibold leading-tight line-clamp-2">
@@ -303,7 +337,9 @@ export function CapacitacionModule({ propiedadFija, esEmpresa }: { propiedadFija
                   </CardHeader>
                   <CardContent className="px-4 pb-4 space-y-3">
                     {cap.descripcion && (
-                      <p className="text-xs text-muted-foreground line-clamp-2">{locale === 'en' && cap.descripcionEn ? cap.descripcionEn : cap.descripcion}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-2">
+                        {locale === 'en' && cap.descripcionEn ? cap.descripcionEn : cap.descripcion}
+                      </p>
                     )}
                     <div className="flex flex-wrap gap-1.5">
                       <Badge variant="outline" className="text-[10px] gap-0.5">
@@ -311,7 +347,8 @@ export function CapacitacionModule({ propiedadFija, esEmpresa }: { propiedadFija
                         {cap.modalidad}
                       </Badge>
                       <Badge variant="outline" className="text-[10px] gap-0.5">
-                        <Clock className="size-3" />{cap.duracion} min
+                        <Clock className="size-3" />
+                        {cap.duracion} min
                       </Badge>
                       <Badge variant="outline" className="text-[10px]">{cap.dificultad}</Badge>
                       <Badge variant="outline" className="text-[10px]">{cap.puntos} pts</Badge>
@@ -324,7 +361,10 @@ export function CapacitacionModule({ propiedadFija, esEmpresa }: { propiedadFija
                       </div>
                       <Progress value={cap.tasaCompletado} className="h-1.5 [&>[data-slot=progress-indicator]]:bg-teal-500" />
                       <div className="flex justify-between text-[10px] text-muted-foreground">
-                        <span className="flex items-center gap-0.5"><PlayCircle className="size-3" /> {cap.enProgresoCount} {locale === 'es' ? 'en progreso' : 'in progress'}</span>
+                        <span className="flex items-center gap-0.5">
+                          <PlayCircle className="size-3" />
+                          {cap.enProgresoCount} {locale === 'es' ? 'en progreso' : 'in progress'}
+                        </span>
                       </div>
                     </div>
                   </CardContent>
@@ -334,14 +374,16 @@ export function CapacitacionModule({ propiedadFija, esEmpresa }: { propiedadFija
           )}
         </TabsContent>
 
-        {/* Progreso */}
+        {/* Tab 2: Progreso */}
         <TabsContent value="progreso" className="mt-4">
           <div className="grid gap-4 sm:grid-cols-2">
-            {capacitaciones.map(cap => (
+            {capacitacionesFiltradas.map((cap) => (
               <Card key={cap.id}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-sm truncate">{locale === 'en' && cap.tituloEn ? cap.tituloEn : cap.titulo}</h3>
+                    <h3 className="font-semibold text-sm truncate">
+                      {locale === 'en' && cap.tituloEn ? cap.tituloEn : cap.titulo}
+                    </h3>
                     <Badge className={`text-[10px] ${getCategoryColor(cap.categoria)}`}>
                       {getCategoryLabel(cap.categoria, t)}
                     </Badge>
@@ -367,28 +409,27 @@ export function CapacitacionModule({ propiedadFija, esEmpresa }: { propiedadFija
           </div>
         </TabsContent>
 
-        {/* Solicitudes / Capacitaciones Programadas */}
+        {/* Tab 3: Solicitudes Programadas */}
         <TabsContent value="solicitudes" className="mt-4">
           {solicitudes.length === 0 ? (
             <div className="text-center py-12">
-              <Calendar className="size-12 text-muted-foreground mx-auto mb-3" />
+              <Calendar className="size-12 text-muted-foreground mx-auto mb-3 opacity-50" />
               <p className="text-muted-foreground">
                 {locale === 'es' ? 'No hay capacitaciones programadas' : 'No scheduled trainings'}
               </p>
               <Button className="mt-4 bg-teal-600 hover:bg-teal-700 text-white" onClick={() => setShowCotizador(true)}>
-                {locale === 'es' ? 'Solicitar capacitacion' : 'Request training'}
+                {locale === 'es' ? 'Solicitar capacitación' : 'Request training'}
               </Button>
             </div>
           ) : (
             <div className="space-y-3">
-              {/* Pendientes primero */}
               {solicitudesPendientes > 0 && !esEmpresa && (
                 <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800 dark:bg-amber-950/20 dark:border-amber-800 dark:text-amber-400">
                   <span className="font-semibold">{solicitudesPendientes}</span>
-                  {locale === 'es' ? ' solicitud(es) pendiente(s) de confirmacion' : ' pending request(s) to confirm'}
+                  {locale === 'es' ? ' solicitud(es) pendiente(s) de confirmación' : ' pending request(s) to confirm'}
                 </div>
               )}
-              {solicitudes.map(sol => (
+              {solicitudes.map((sol) => (
                 <Card key={sol.id} className={sol.estado === 'pendiente' ? 'border-amber-200 dark:border-amber-800' : ''}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between gap-3">
@@ -407,7 +448,10 @@ export function CapacitacionModule({ propiedadFija, esEmpresa }: { propiedadFija
                             {sol.modalidad === 'virtual' ? <Monitor className="size-3" /> : <MapPin className="size-3" />}
                             {sol.modalidad}
                           </span>
-                          <span className="flex items-center gap-1"><Users className="size-3" />{sol.participantes}</span>
+                          <span className="flex items-center gap-1">
+                            <Users className="size-3" />
+                            {sol.participantes}
+                          </span>
                           <span className="flex items-center gap-1">
                             <Calendar className="size-3" />
                             {new Date(sol.fechaSolicitada).toLocaleDateString(locale === 'es' ? 'es-MX' : 'en-US')}
@@ -415,10 +459,10 @@ export function CapacitacionModule({ propiedadFija, esEmpresa }: { propiedadFija
                           {sol.costo && <span className="text-emerald-600 font-medium">${sol.costo.toFixed(0)}</span>}
                         </div>
 
-                        {/* Detalles expandibles */}
+                        {/* Detalles Desplegables */}
                         {(sol.nombreInstructor || sol.linkZoom || sol.notas) && (
                           <button
-                            className="text-xs text-teal-600 hover:underline mt-1 flex items-center gap-1"
+                            className="text-xs text-teal-600 hover:underline mt-2 flex items-center gap-1 font-medium"
                             onClick={() => setSolicitudExpandida(solicitudExpandida === sol.id ? null : sol.id)}
                           >
                             {solicitudExpandida === sol.id ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
@@ -427,7 +471,7 @@ export function CapacitacionModule({ propiedadFija, esEmpresa }: { propiedadFija
                         )}
 
                         {solicitudExpandida === sol.id && (
-                          <div className="mt-2 space-y-1 text-xs bg-muted/50 rounded-lg p-3">
+                          <div className="mt-2 space-y-1 text-xs bg-muted/50 rounded-lg p-3 border">
                             {sol.nombreInstructor && (
                               <div className="flex items-center gap-1.5">
                                 <UserCheck className="size-3 text-teal-600" />
@@ -439,12 +483,14 @@ export function CapacitacionModule({ propiedadFija, esEmpresa }: { propiedadFija
                               <div className="flex items-center gap-1.5">
                                 <Calendar className="size-3 text-teal-600" />
                                 <span className="text-muted-foreground">Fecha confirmada:</span>
-                                <span className="font-medium">{new Date(sol.fechaConfirmada).toLocaleDateString(locale === 'es' ? 'es-MX' : 'en-US')}</span>
+                                <span className="font-medium">
+                                  {new Date(sol.fechaConfirmada).toLocaleDateString(locale === 'es' ? 'es-MX' : 'en-US')}
+                                </span>
                               </div>
                             )}
                             {sol.linkZoom && (
                               <div className="flex items-center gap-1.5">
-                                <Link className="size-3 text-teal-600" />
+                                <LinkIcon className="size-3 text-teal-600" />
                                 <a href={sol.linkZoom} target="_blank" rel="noreferrer" className="text-teal-600 hover:underline truncate">
                                   {locale === 'es' ? 'Unirse a Zoom' : 'Join Zoom'}
                                 </a>
@@ -460,7 +506,7 @@ export function CapacitacionModule({ propiedadFija, esEmpresa }: { propiedadFija
                         )}
                       </div>
 
-                      {/* Botón de respuesta — solo admin */}
+                      {/* Botón de Respuesta Admin */}
                       {!esEmpresa && (
                         <Button
                           size="sm"
@@ -469,8 +515,8 @@ export function CapacitacionModule({ propiedadFija, esEmpresa }: { propiedadFija
                           onClick={() => abrirResponder(sol)}
                         >
                           {sol.estado === 'pendiente'
-                            ? (locale === 'es' ? 'Responder' : 'Respond')
-                            : (locale === 'es' ? 'Editar' : 'Edit')}
+                            ? locale === 'es' ? 'Responder' : 'Respond'
+                            : locale === 'es' ? 'Editar' : 'Edit'}
                         </Button>
                       )}
                     </div>
@@ -482,7 +528,7 @@ export function CapacitacionModule({ propiedadFija, esEmpresa }: { propiedadFija
         </TabsContent>
       </Tabs>
 
-      {/* Dialog: Admin responde solicitud */}
+      {/* Diálogo del Administrador para Responder */}
       <Dialog open={showResponderDialog} onOpenChange={setShowResponderDialog}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
@@ -491,15 +537,14 @@ export function CapacitacionModule({ propiedadFija, esEmpresa }: { propiedadFija
               {locale === 'es' ? 'Responder Solicitud' : 'Respond to Request'}
             </DialogTitle>
             <DialogDescription>
-              {solicitudSeleccionada?.capacitacion?.titulo || solicitudSeleccionada?.tema || 'Solicitud de capacitacion'}
+              {solicitudSeleccionada?.capacitacion?.titulo || solicitudSeleccionada?.tema || 'Solicitud de capacitación'}
               {' · '}{solicitudSeleccionada?.propiedad.nombre}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            {/* Estado */}
             <div className="space-y-1">
               <Label>{locale === 'es' ? 'Estado' : 'Status'}</Label>
-              <Select value={formRespuesta.estado} onValueChange={v => setFormRespuesta(p => ({ ...p, estado: v }))}>
+              <Select value={formRespuesta.estado} onValueChange={(v) => setFormRespuesta((p) => ({ ...p, estado: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="confirmada">{locale === 'es' ? 'Confirmar' : 'Confirm'}</SelectItem>
@@ -521,7 +566,7 @@ export function CapacitacionModule({ propiedadFija, esEmpresa }: { propiedadFija
                     <Input
                       placeholder={locale === 'es' ? 'Nombre del instructor' : 'Instructor name'}
                       value={formRespuesta.nombreInstructor}
-                      onChange={e => setFormRespuesta(p => ({ ...p, nombreInstructor: e.target.value }))}
+                      onChange={(e) => setFormRespuesta((p) => ({ ...p, nombreInstructor: e.target.value }))}
                     />
                   </div>
                   <div className="space-y-1">
@@ -533,7 +578,7 @@ export function CapacitacionModule({ propiedadFija, esEmpresa }: { propiedadFija
                       type="number"
                       placeholder="0.00"
                       value={formRespuesta.costo}
-                      onChange={e => setFormRespuesta(p => ({ ...p, costo: e.target.value }))}
+                      onChange={(e) => setFormRespuesta((p) => ({ ...p, costo: e.target.value }))}
                     />
                   </div>
                 </div>
@@ -546,20 +591,20 @@ export function CapacitacionModule({ propiedadFija, esEmpresa }: { propiedadFija
                   <Input
                     type="date"
                     value={formRespuesta.fechaConfirmada}
-                    onChange={e => setFormRespuesta(p => ({ ...p, fechaConfirmada: e.target.value }))}
+                    onChange={(e) => setFormRespuesta((p) => ({ ...p, fechaConfirmada: e.target.value }))}
                   />
                 </div>
 
                 {solicitudSeleccionada?.modalidad === 'virtual' && (
                   <div className="space-y-1">
                     <Label className="flex items-center gap-1">
-                      <Link className="size-3.5" />
+                      <LinkIcon className="size-3.5" />
                       {locale === 'es' ? 'Link de Zoom' : 'Zoom Link'}
                     </Label>
                     <Input
                       placeholder="https://zoom.us/j/..."
                       value={formRespuesta.linkZoom}
-                      onChange={e => setFormRespuesta(p => ({ ...p, linkZoom: e.target.value }))}
+                      onChange={(e) => setFormRespuesta((p) => ({ ...p, linkZoom: e.target.value }))}
                     />
                   </div>
                 )}
@@ -570,7 +615,7 @@ export function CapacitacionModule({ propiedadFija, esEmpresa }: { propiedadFija
               <Label>{locale === 'es' ? 'Notas para la empresa' : 'Notes for the company'}</Label>
               <Textarea
                 value={formRespuesta.notas}
-                onChange={e => setFormRespuesta(p => ({ ...p, notas: e.target.value }))}
+                onChange={(e) => setFormRespuesta((p) => ({ ...p, notas: e.target.value }))}
                 placeholder={locale === 'es' ? 'Instrucciones, requisitos previos, etc.' : 'Instructions, prerequisites, etc.'}
                 rows={2}
               />
@@ -587,11 +632,15 @@ export function CapacitacionModule({ propiedadFija, esEmpresa }: { propiedadFija
         </DialogContent>
       </Dialog>
 
+      {/* Componente Cotizador */}
       <CotizadorCapacitacion
         open={showCotizador}
-        onClose={() => { setShowCotizador(false); fetchData() }}
+        onClose={() => {
+          setShowCotizador(false)
+          fetchData()
+        }}
         capacitaciones={capacitaciones}
-        propiedades={propiedadFija ? propiedades.filter(p => p.id === propiedadFija) : propiedades}
+        propiedades={propiedadFija ? propiedades.filter((p) => p.id === propiedadFija) : propiedades}
       />
     </div>
   )
