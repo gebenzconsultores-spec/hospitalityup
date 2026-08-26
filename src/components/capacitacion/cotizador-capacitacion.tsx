@@ -1,14 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { Monitor, MapPin, DollarSign, Link, Users, Calendar, Calculator, CheckCircle } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Monitor, MapPin, Calendar, Users, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { useAppStore } from '@/lib/store'
@@ -35,12 +32,6 @@ interface CotizadorProps {
   propiedades: Propiedad[]
 }
 
-const TARIFAS_INSTRUCTOR = {
-  principiante: 500,
-  intermedio: 800,
-  avanzado: 1200,
-}
-
 export function CotizadorCapacitacion({ open, onClose, capacitaciones, propiedades }: CotizadorProps) {
   const { locale, selectedProperty } = useAppStore()
 
@@ -50,101 +41,49 @@ export function CotizadorCapacitacion({ open, onClose, capacitaciones, propiedad
     modalidad: 'virtual',
     fechaSolicitada: '',
     participantes: '5',
-    nombreInstructor: '',
-    linkZoom: '',
     notas: '',
-    // Viáticos (solo presencial)
-    costoTransporte: '0',
-    costoHospedaje: '0',
-    costoComida: '0',
-    tarifaInstructor: '800',
-    horasInstructor: '4',
   })
 
   const [enviando, setEnviando] = useState(false)
-  const [cotizacion, setCotizacion] = useState<{
-    subtotal: number
-    viaticos: number
-    total: number
-    desglose: { concepto: string; monto: number }[]
-  } | null>(null)
-
-  const capacitacionSeleccionada = capacitaciones.find(c => c.id === form.capacitacionId)
-
-  const calcularCotizacion = () => {
-    const participantes = parseInt(form.participantes) || 1
-    const tarifaInstructor = parseFloat(form.tarifaInstructor) || 0
-    const horasInstructor = parseFloat(form.horasInstructor) || 1
-    const costoInstructor = tarifaInstructor * horasInstructor
-
-    const desglose: { concepto: string; monto: number }[] = [
-      { concepto: locale === 'es' ? 'Honorarios del instructor' : 'Instructor fees', monto: costoInstructor },
-    ]
-
-    let viaticos = 0
-
-    if (form.modalidad === 'presencial') {
-      const transporte = parseFloat(form.costoTransporte) || 0
-      const hospedaje = parseFloat(form.costoHospedaje) || 0
-      const comida = parseFloat(form.costoComida) || 0
-      viaticos = transporte + hospedaje + comida
-
-      if (transporte > 0) desglose.push({ concepto: locale === 'es' ? 'Transporte' : 'Transportation', monto: transporte })
-      if (hospedaje > 0) desglose.push({ concepto: locale === 'es' ? 'Hospedaje' : 'Accommodation', monto: hospedaje })
-      if (comida > 0) desglose.push({ concepto: locale === 'es' ? 'Alimentación' : 'Meals', monto: comida })
-    }
-
-    const subtotal = costoInstructor
-    const total = subtotal + viaticos
-
-    setCotizacion({ subtotal, viaticos, total, desglose })
-  }
 
   const handleEnviar = async () => {
-    if (!form.capacitacionId || !form.propiedadId || !form.fechaSolicitada) {
-      toast.error(locale === 'es' ? 'Completa los campos requeridos' : 'Complete required fields')
+    if (!form.fechaSolicitada) {
+      toast.error(locale === 'es' ? 'Selecciona una fecha' : 'Select a date')
       return
     }
-    if (form.modalidad === 'virtual' && !form.linkZoom) {
-      toast.error(locale === 'es' ? 'Agrega el link de Zoom' : 'Add the Zoom link')
+    const propId = form.propiedadId || propiedades[0]?.id
+    if (!propId) {
+      toast.error(locale === 'es' ? 'Selecciona una propiedad' : 'Select a property')
       return
     }
 
     setEnviando(true)
     try {
-      const costo = cotizacion?.total || null
       const res = await fetch('/api/solicitudes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          capacitacionId: form.capacitacionId,
-          propiedadId: form.propiedadId,
+          propiedadId: propId,
+          capacitacionId: form.capacitacionId || null,
           modalidad: form.modalidad,
           fechaSolicitada: form.fechaSolicitada,
           participantes: parseInt(form.participantes),
-          nombreInstructor: form.nombreInstructor || null,
-          linkZoom: form.modalidad === 'virtual' ? form.linkZoom : null,
           notas: form.notas || null,
-          costo,
           estado: 'pendiente',
         }),
       })
-
       if (res.ok) {
-        toast.success(locale === 'es' ? '¡Capacitación solicitada exitosamente!' : 'Training requested successfully!')
+        toast.success(locale === 'es' ? 'Solicitud enviada. El admin la revisara pronto.' : 'Request sent. Admin will review it soon.')
         onClose()
         setForm({
           capacitacionId: '', propiedadId: '', modalidad: 'virtual',
-          fechaSolicitada: '', participantes: '5', nombreInstructor: '',
-          linkZoom: '', notas: '', costoTransporte: '0', costoHospedaje: '0',
-          costoComida: '0', tarifaInstructor: '800', horasInstructor: '4',
+          fechaSolicitada: '', participantes: '5', notas: '',
         })
-        setCotizacion(null)
       } else {
-        toast.error(locale === 'es' ? 'Error al solicitar' : 'Error requesting')
+        toast.error(locale === 'es' ? 'Error al enviar solicitud' : 'Error sending request')
       }
     } catch {
-      toast.error(locale === 'es' ? 'Error de conexión' : 'Connection error')
+      toast.error(locale === 'es' ? 'Error de conexion' : 'Connection error')
     } finally {
       setEnviando(false)
     }
@@ -152,30 +91,30 @@ export function CotizadorCapacitacion({ open, onClose, capacitaciones, propiedad
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Calculator className="size-5 text-teal-600" />
-            {locale === 'es' ? 'Solicitar y Cotizar Capacitación' : 'Request & Quote Training'}
+            <FileText className="size-5 text-teal-600" />
+            {locale === 'es' ? 'Solicitar Capacitacion' : 'Request Training'}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          {/* Capacitación */}
+          <p className="text-sm text-muted-foreground">
+            {locale === 'es'
+              ? 'Completa la solicitud. El administrador la revisara y te confirmara los detalles.'
+              : 'Complete the request. The administrator will review it and confirm the details.'}
+          </p>
+
+          {/* Curso */}
           <div className="space-y-1">
-            <Label>{locale === 'es' ? 'Capacitación *' : 'Training *'}</Label>
-            <Select value={form.capacitacionId} onValueChange={v => {
-              const cap = capacitaciones.find(c => c.id === v)
-              setForm(p => ({
-                ...p,
-                capacitacionId: v,
-                modalidad: cap?.modalidad || 'virtual',
-                horasInstructor: cap ? String(Math.ceil(cap.duracion / 60)) : '1',
-              }))
-              setCotizacion(null)
-            }}>
-              <SelectTrigger><SelectValue placeholder={locale === 'es' ? 'Seleccionar curso...' : 'Select course...'} /></SelectTrigger>
+            <Label>{locale === 'es' ? 'Tema / Curso (opcional)' : 'Topic / Course (optional)'}</Label>
+            <Select value={form.capacitacionId} onValueChange={v => setForm(p => ({ ...p, capacitacionId: v }))}>
+              <SelectTrigger>
+                <SelectValue placeholder={locale === 'es' ? 'Seleccionar curso o escribir tema...' : 'Select course or write topic...'} />
+              </SelectTrigger>
               <SelectContent>
+                <SelectItem value="otro">{locale === 'es' ? 'Otro tema (especificar en notas)' : 'Other topic (specify in notes)'}</SelectItem>
                 {capacitaciones.map(c => (
                   <SelectItem key={c.id} value={c.id}>
                     {locale === 'en' && c.tituloEn ? c.tituloEn : c.titulo}
@@ -183,20 +122,14 @@ export function CotizadorCapacitacion({ open, onClose, capacitaciones, propiedad
                 ))}
               </SelectContent>
             </Select>
-            {capacitacionSeleccionada && (
-              <div className="flex gap-2 mt-1">
-                <Badge variant="outline" className="text-xs">{capacitacionSeleccionada.categoria}</Badge>
-                <Badge variant="outline" className="text-xs">{capacitacionSeleccionada.duracion} min</Badge>
-              </div>
-            )}
           </div>
 
-          {/* Propiedad + Fecha */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Propiedad */}
+          {propiedades.length > 1 && (
             <div className="space-y-1">
-              <Label>{locale === 'es' ? 'Propiedad *' : 'Property *'}</Label>
+              <Label>{locale === 'es' ? 'Propiedad' : 'Property'}</Label>
               <Select value={form.propiedadId} onValueChange={v => setForm(p => ({ ...p, propiedadId: v }))}>
-                <SelectTrigger><SelectValue placeholder={locale === 'es' ? 'Seleccionar...' : 'Select...'} /></SelectTrigger>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {propiedades.map(p => (
                     <SelectItem key={p.id} value={p.id}>{p.nombre}</SelectItem>
@@ -204,8 +137,40 @@ export function CotizadorCapacitacion({ open, onClose, capacitaciones, propiedad
                 </SelectContent>
               </Select>
             </div>
+          )}
+
+          {/* Modalidad */}
+          <div className="space-y-1">
+            <Label>{locale === 'es' ? 'Modalidad preferida' : 'Preferred modality'}</Label>
+            <div className="flex gap-2">
+              <Button
+                type="button" size="sm"
+                variant={form.modalidad === 'virtual' ? 'default' : 'outline'}
+                className={form.modalidad === 'virtual' ? 'bg-teal-600 hover:bg-teal-700' : ''}
+                onClick={() => setForm(p => ({ ...p, modalidad: 'virtual' }))}
+              >
+                <Monitor className="size-3.5 mr-1" />
+                {locale === 'es' ? 'Virtual' : 'Virtual'}
+              </Button>
+              <Button
+                type="button" size="sm"
+                variant={form.modalidad === 'presencial' ? 'default' : 'outline'}
+                className={form.modalidad === 'presencial' ? 'bg-teal-600 hover:bg-teal-700' : ''}
+                onClick={() => setForm(p => ({ ...p, modalidad: 'presencial' }))}
+              >
+                <MapPin className="size-3.5 mr-1" />
+                {locale === 'es' ? 'Presencial' : 'In-person'}
+              </Button>
+            </div>
+          </div>
+
+          {/* Fecha y participantes */}
+          <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <Label>{locale === 'es' ? 'Fecha *' : 'Date *'}</Label>
+              <Label className="flex items-center gap-1">
+                <Calendar className="size-3.5" />
+                {locale === 'es' ? 'Fecha deseada *' : 'Desired date *'}
+              </Label>
               <Input
                 type="date"
                 value={form.fechaSolicitada}
@@ -213,35 +178,11 @@ export function CotizadorCapacitacion({ open, onClose, capacitaciones, propiedad
                 onChange={e => setForm(p => ({ ...p, fechaSolicitada: e.target.value }))}
               />
             </div>
-          </div>
-
-          {/* Modalidad + Participantes */}
-          <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <Label>{locale === 'es' ? 'Modalidad' : 'Modality'}</Label>
-              <div className="flex gap-2">
-                <Button
-                  type="button" size="sm"
-                  variant={form.modalidad === 'virtual' ? 'default' : 'outline'}
-                  className={form.modalidad === 'virtual' ? 'bg-teal-600 hover:bg-teal-700' : ''}
-                  onClick={() => setForm(p => ({ ...p, modalidad: 'virtual' }))}
-                >
-                  <Monitor className="size-3.5 mr-1" />
-                  {locale === 'es' ? 'Virtual' : 'Virtual'}
-                </Button>
-                <Button
-                  type="button" size="sm"
-                  variant={form.modalidad === 'presencial' ? 'default' : 'outline'}
-                  className={form.modalidad === 'presencial' ? 'bg-teal-600 hover:bg-teal-700' : ''}
-                  onClick={() => setForm(p => ({ ...p, modalidad: 'presencial' }))}
-                >
-                  <MapPin className="size-3.5 mr-1" />
-                  {locale === 'es' ? 'Presencial' : 'In-person'}
-                </Button>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <Label>{locale === 'es' ? 'Participantes' : 'Participants'}</Label>
+              <Label className="flex items-center gap-1">
+                <Users className="size-3.5" />
+                {locale === 'es' ? 'Participantes' : 'Participants'}
+              </Label>
               <Input
                 type="number" min="1" max="100"
                 value={form.participantes}
@@ -250,140 +191,24 @@ export function CotizadorCapacitacion({ open, onClose, capacitaciones, propiedad
             </div>
           </div>
 
-          {/* Link Zoom (virtual) */}
-          {form.modalidad === 'virtual' && (
-            <div className="space-y-1">
-              <Label className="flex items-center gap-1">
-                <Link className="size-3.5 text-teal-600" />
-                {locale === 'es' ? 'Link de Zoom *' : 'Zoom Link *'}
-              </Label>
-              <Input
-                placeholder="https://zoom.us/j/..."
-                value={form.linkZoom}
-                onChange={e => setForm(p => ({ ...p, linkZoom: e.target.value }))}
-              />
-            </div>
-          )}
-
-          {/* Instructor */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="col-span-1 space-y-1">
-              <Label>{locale === 'es' ? 'Instructor' : 'Instructor'}</Label>
-              <Input
-                placeholder={locale === 'es' ? 'Nombre...' : 'Name...'}
-                value={form.nombreInstructor}
-                onChange={e => setForm(p => ({ ...p, nombreInstructor: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>{locale === 'es' ? 'Tarifa/hora ($)' : 'Rate/hour ($)'}</Label>
-              <Input
-                type="number" min="0"
-                value={form.tarifaInstructor}
-                onChange={e => setForm(p => ({ ...p, tarifaInstructor: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>{locale === 'es' ? 'Horas' : 'Hours'}</Label>
-              <Input
-                type="number" min="1"
-                value={form.horasInstructor}
-                onChange={e => setForm(p => ({ ...p, horasInstructor: e.target.value }))}
-              />
-            </div>
-          </div>
-
-          {/* Viáticos (presencial) */}
-          {form.modalidad === 'presencial' && (
-            <Card className="border-amber-200 dark:border-amber-800">
-              <CardHeader className="pb-2 pt-3 px-4">
-                <CardTitle className="text-sm flex items-center gap-2 text-amber-700 dark:text-amber-400">
-                  <DollarSign className="size-4" />
-                  {locale === 'es' ? 'Viáticos del Instructor' : 'Instructor Travel Expenses'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 pb-3">
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs">{locale === 'es' ? 'Transporte ($)' : 'Transport ($)'}</Label>
-                    <Input
-                      type="number" min="0"
-                      value={form.costoTransporte}
-                      onChange={e => setForm(p => ({ ...p, costoTransporte: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">{locale === 'es' ? 'Hospedaje ($)' : 'Lodging ($)'}</Label>
-                    <Input
-                      type="number" min="0"
-                      value={form.costoHospedaje}
-                      onChange={e => setForm(p => ({ ...p, costoHospedaje: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">{locale === 'es' ? 'Alimentación ($)' : 'Meals ($)'}</Label>
-                    <Input
-                      type="number" min="0"
-                      value={form.costoComida}
-                      onChange={e => setForm(p => ({ ...p, costoComida: e.target.value }))}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Notas */}
           <div className="space-y-1">
-            <Label>{locale === 'es' ? 'Notas adicionales' : 'Additional notes'}</Label>
+            <Label>{locale === 'es' ? 'Notas o requisitos especiales' : 'Notes or special requirements'}</Label>
             <Textarea
-              rows={2}
-              placeholder={locale === 'es' ? 'Requisitos especiales, temas específicos...' : 'Special requirements, specific topics...'}
               value={form.notas}
               onChange={e => setForm(p => ({ ...p, notas: e.target.value }))}
+              placeholder={locale === 'es'
+                ? 'Describe el tema si no esta en el catalogo, horario preferido, requisitos especiales...'
+                : 'Describe the topic if not in catalog, preferred schedule, special requirements...'}
+              rows={3}
             />
           </div>
 
-          {/* Botón cotizar */}
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full border-teal-500 text-teal-700 hover:bg-teal-50"
-            onClick={calcularCotizacion}
-          >
-            <Calculator className="size-4 mr-2" />
-            {locale === 'es' ? 'Calcular Cotización' : 'Calculate Quote'}
-          </Button>
-
-          {/* Resultado cotización */}
-          {cotizacion && (
-            <Card className="border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/20">
-              <CardContent className="pt-4 pb-3 px-4 space-y-2">
-                <div className="flex items-center gap-2 mb-2">
-                  <CheckCircle className="size-4 text-emerald-600" />
-                  <span className="font-semibold text-sm text-emerald-700 dark:text-emerald-400">
-                    {locale === 'es' ? 'Cotización Estimada' : 'Estimated Quote'}
-                  </span>
-                </div>
-                {cotizacion.desglose.map((item, i) => (
-                  <div key={i} className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{item.concepto}</span>
-                    <span>${item.monto.toFixed(2)}</span>
-                  </div>
-                ))}
-                <Separator />
-                <div className="flex justify-between font-bold text-base">
-                  <span>{locale === 'es' ? 'Total Estimado' : 'Estimated Total'}</span>
-                  <span className="text-emerald-700 dark:text-emerald-400">${cotizacion.total.toFixed(2)}</span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {locale === 'es'
-                    ? '* Los precios son estimados y pueden variar según confirmación del instructor'
-                    : '* Prices are estimates and may vary upon instructor confirmation'}
-                </p>
-              </CardContent>
-            </Card>
-          )}
+          <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-700 dark:bg-amber-950/20 dark:border-amber-800 dark:text-amber-400">
+            {locale === 'es'
+              ? 'El administrador revisara tu solicitud y te enviara la confirmacion con los detalles del instructor y enlace de acceso.'
+              : 'The administrator will review your request and send you confirmation with instructor details and access link.'}
+          </div>
         </div>
 
         <DialogFooter>
@@ -400,7 +225,240 @@ export function CotizadorCapacitacion({ open, onClose, capacitaciones, propiedad
             ) : (
               <Calendar className="size-4" />
             )}
-            {locale === 'es' ? 'Solicitar Capacitación' : 'Request Training'}
+            {locale === 'es' ? 'Enviar Solicitud' : 'Send Request'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}'use client'
+
+import { useState } from 'react'
+import { Monitor, MapPin, Calendar, Users, FileText } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { useAppStore } from '@/lib/store'
+import { toast } from 'sonner'
+
+interface Capacitacion {
+  id: string
+  titulo: string
+  tituloEn: string | null
+  modalidad: string
+  duracion: number
+  categoria: string
+}
+
+interface Propiedad {
+  id: string
+  nombre: string
+}
+
+interface CotizadorProps {
+  open: boolean
+  onClose: () => void
+  capacitaciones: Capacitacion[]
+  propiedades: Propiedad[]
+}
+
+export function CotizadorCapacitacion({ open, onClose, capacitaciones, propiedades }: CotizadorProps) {
+  const { locale, selectedProperty } = useAppStore()
+
+  const [form, setForm] = useState({
+    capacitacionId: '',
+    propiedadId: selectedProperty !== 'all' ? selectedProperty : '',
+    modalidad: 'virtual',
+    fechaSolicitada: '',
+    participantes: '5',
+    notas: '',
+  })
+
+  const [enviando, setEnviando] = useState(false)
+
+  const handleEnviar = async () => {
+    if (!form.fechaSolicitada) {
+      toast.error(locale === 'es' ? 'Selecciona una fecha' : 'Select a date')
+      return
+    }
+    const propId = form.propiedadId || propiedades[0]?.id
+    if (!propId) {
+      toast.error(locale === 'es' ? 'Selecciona una propiedad' : 'Select a property')
+      return
+    }
+
+    setEnviando(true)
+    try {
+      const res = await fetch('/api/solicitudes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          propiedadId: propId,
+          capacitacionId: form.capacitacionId || null,
+          modalidad: form.modalidad,
+          fechaSolicitada: form.fechaSolicitada,
+          participantes: parseInt(form.participantes),
+          notas: form.notas || null,
+          estado: 'pendiente',
+        }),
+      })
+      if (res.ok) {
+        toast.success(locale === 'es' ? 'Solicitud enviada. El admin la revisara pronto.' : 'Request sent. Admin will review it soon.')
+        onClose()
+        setForm({
+          capacitacionId: '', propiedadId: '', modalidad: 'virtual',
+          fechaSolicitada: '', participantes: '5', notas: '',
+        })
+      } else {
+        toast.error(locale === 'es' ? 'Error al enviar solicitud' : 'Error sending request')
+      }
+    } catch {
+      toast.error(locale === 'es' ? 'Error de conexion' : 'Connection error')
+    } finally {
+      setEnviando(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FileText className="size-5 text-teal-600" />
+            {locale === 'es' ? 'Solicitar Capacitacion' : 'Request Training'}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          <p className="text-sm text-muted-foreground">
+            {locale === 'es'
+              ? 'Completa la solicitud. El administrador la revisara y te confirmara los detalles.'
+              : 'Complete the request. The administrator will review it and confirm the details.'}
+          </p>
+
+          {/* Curso */}
+          <div className="space-y-1">
+            <Label>{locale === 'es' ? 'Tema / Curso (opcional)' : 'Topic / Course (optional)'}</Label>
+            <Select value={form.capacitacionId} onValueChange={v => setForm(p => ({ ...p, capacitacionId: v }))}>
+              <SelectTrigger>
+                <SelectValue placeholder={locale === 'es' ? 'Seleccionar curso o escribir tema...' : 'Select course or write topic...'} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="otro">{locale === 'es' ? 'Otro tema (especificar en notas)' : 'Other topic (specify in notes)'}</SelectItem>
+                {capacitaciones.map(c => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {locale === 'en' && c.tituloEn ? c.tituloEn : c.titulo}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Propiedad */}
+          {propiedades.length > 1 && (
+            <div className="space-y-1">
+              <Label>{locale === 'es' ? 'Propiedad' : 'Property'}</Label>
+              <Select value={form.propiedadId} onValueChange={v => setForm(p => ({ ...p, propiedadId: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {propiedades.map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.nombre}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Modalidad */}
+          <div className="space-y-1">
+            <Label>{locale === 'es' ? 'Modalidad preferida' : 'Preferred modality'}</Label>
+            <div className="flex gap-2">
+              <Button
+                type="button" size="sm"
+                variant={form.modalidad === 'virtual' ? 'default' : 'outline'}
+                className={form.modalidad === 'virtual' ? 'bg-teal-600 hover:bg-teal-700' : ''}
+                onClick={() => setForm(p => ({ ...p, modalidad: 'virtual' }))}
+              >
+                <Monitor className="size-3.5 mr-1" />
+                {locale === 'es' ? 'Virtual' : 'Virtual'}
+              </Button>
+              <Button
+                type="button" size="sm"
+                variant={form.modalidad === 'presencial' ? 'default' : 'outline'}
+                className={form.modalidad === 'presencial' ? 'bg-teal-600 hover:bg-teal-700' : ''}
+                onClick={() => setForm(p => ({ ...p, modalidad: 'presencial' }))}
+              >
+                <MapPin className="size-3.5 mr-1" />
+                {locale === 'es' ? 'Presencial' : 'In-person'}
+              </Button>
+            </div>
+          </div>
+
+          {/* Fecha y participantes */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="flex items-center gap-1">
+                <Calendar className="size-3.5" />
+                {locale === 'es' ? 'Fecha deseada *' : 'Desired date *'}
+              </Label>
+              <Input
+                type="date"
+                value={form.fechaSolicitada}
+                min={new Date().toISOString().split('T')[0]}
+                onChange={e => setForm(p => ({ ...p, fechaSolicitada: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="flex items-center gap-1">
+                <Users className="size-3.5" />
+                {locale === 'es' ? 'Participantes' : 'Participants'}
+              </Label>
+              <Input
+                type="number" min="1" max="100"
+                value={form.participantes}
+                onChange={e => setForm(p => ({ ...p, participantes: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          {/* Notas */}
+          <div className="space-y-1">
+            <Label>{locale === 'es' ? 'Notas o requisitos especiales' : 'Notes or special requirements'}</Label>
+            <Textarea
+              value={form.notas}
+              onChange={e => setForm(p => ({ ...p, notas: e.target.value }))}
+              placeholder={locale === 'es'
+                ? 'Describe el tema si no esta en el catalogo, horario preferido, requisitos especiales...'
+                : 'Describe the topic if not in catalog, preferred schedule, special requirements...'}
+              rows={3}
+            />
+          </div>
+
+          <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-700 dark:bg-amber-950/20 dark:border-amber-800 dark:text-amber-400">
+            {locale === 'es'
+              ? 'El administrador revisara tu solicitud y te enviara la confirmacion con los detalles del instructor y enlace de acceso.'
+              : 'The administrator will review your request and send you confirmation with instructor details and access link.'}
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            {locale === 'es' ? 'Cancelar' : 'Cancel'}
+          </Button>
+          <Button
+            className="bg-teal-600 hover:bg-teal-700 text-white gap-2"
+            onClick={handleEnviar}
+            disabled={enviando}
+          >
+            {enviando ? (
+              <div className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            ) : (
+              <Calendar className="size-4" />
+            )}
+            {locale === 'es' ? 'Enviar Solicitud' : 'Send Request'}
           </Button>
         </DialogFooter>
       </DialogContent>

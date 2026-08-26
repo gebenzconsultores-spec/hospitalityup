@@ -2,16 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import {
-  BookOpen,
-  Search,
-  GraduationCap,
-  Users,
-  Calendar,
-  CheckCircle2,
-  PlayCircle,
-  Clock,
-  Monitor,
-  MapPin,
+  BookOpen, Search, GraduationCap, Users, Calendar,
+  CheckCircle2, PlayCircle, Clock, Monitor, MapPin,
+  Link, DollarSign, UserCheck, ChevronDown, ChevronUp,
+  Plus,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -20,21 +14,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Progress } from '@/components/ui/progress'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
 import { useAppStore } from '@/lib/store'
@@ -42,7 +23,6 @@ import { CotizadorCapacitacion } from '@/components/capacitacion/cotizador-capac
 import { translations } from '@/lib/i18n'
 import { toast } from 'sonner'
 
-// ─── Types ───────────────────────────────────────────────────
 interface Capacitacion {
   id: string
   titulo: string
@@ -71,15 +51,18 @@ interface Solicitud {
   modalidad: string
   tema: string | null
   fechaSolicitada: string
+  fechaConfirmada: string | null
   participantes: number
   estado: string
   notas: string | null
+  linkZoom: string | null
+  nombreInstructor: string | null
+  costo: number | null
   propiedad: { nombre: string; region: string }
   capacitacion: { titulo: string; categoria: string } | null
   createdAt: string
 }
 
-// ─── Helpers ─────────────────────────────────────────────────
 function getCategoryColor(cat: string): string {
   switch (cat) {
     case 'upselling': return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
@@ -102,16 +85,7 @@ function getCategoryLabel(cat: string, t: typeof translations.es.capacitacion): 
   }
 }
 
-function getDificultadLabel(dif: string, t: typeof translations.es.capacitacion): string {
-  switch (dif) {
-    case 'principiante': return t.principiante
-    case 'intermedio': return t.intermedio
-    case 'avanzado': return t.avanzado
-    default: return dif
-  }
-}
-
-function getEstadoSolicitudColor(estado: string): string {
+function getEstadoColor(estado: string): string {
   switch (estado) {
     case 'pendiente': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
     case 'confirmada': return 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400'
@@ -121,8 +95,7 @@ function getEstadoSolicitudColor(estado: string): string {
   }
 }
 
-// ─── Main Component ──────────────────────────────────────────
-export function CapacitacionModule() {
+export function CapacitacionModule({ propiedadFija, esEmpresa }: { propiedadFija?: string; esEmpresa?: boolean }) {
   const { locale, selectedProperty } = useAppStore()
   const t = translations[locale].capacitacion
 
@@ -132,27 +105,32 @@ export function CapacitacionModule() {
   const [filtroCategoria, setFiltroCategoria] = useState('todas')
   const [filtroModalidad, setFiltroModalidad] = useState('todas')
   const [propiedades, setPropiedades] = useState<{ id: string; nombre: string }[]>([])
-  const [showSolicitarDialog, setShowSolicitarDialog] = useState(false)
   const [showCotizador, setShowCotizador] = useState(false)
+  const [solicitudExpandida, setSolicitudExpandida] = useState<string | null>(null)
 
-  const [form, setForm] = useState({
-    modalidad: 'presencial',
-    capacitacionId: '',
-    tema: '',
-    fechaSolicitada: '',
-    participantes: '1',
-    propiedadId: '',
+  // Dialog de respuesta admin
+  const [showResponderDialog, setShowResponderDialog] = useState(false)
+  const [solicitudSeleccionada, setSolicitudSeleccionada] = useState<Solicitud | null>(null)
+  const [formRespuesta, setFormRespuesta] = useState({
+    estado: 'confirmada',
+    nombreInstructor: '',
+    linkZoom: '',
+    fechaConfirmada: '',
+    costo: '',
     notas: '',
   })
+
+  const propIdFiltro = propiedadFija || (selectedProperty !== 'all' ? selectedProperty : null)
 
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
       const capParams = new URLSearchParams()
       const solParams = new URLSearchParams()
-      if (selectedProperty !== 'all') {
-        capParams.set('propiedadId', selectedProperty)
-        solParams.set('propiedadId', selectedProperty)
+
+      if (propIdFiltro) {
+        capParams.set('propiedadId', propIdFiltro)
+        solParams.set('propiedadId', propIdFiltro)
       }
       if (filtroCategoria !== 'todas') capParams.set('categoria', filtroCategoria)
       if (filtroModalidad !== 'todas') capParams.set('modalidad', filtroModalidad)
@@ -169,50 +147,61 @@ export function CapacitacionModule() {
       setCapacitaciones(Array.isArray(capData) ? capData : [])
       setSolicitudes(Array.isArray(solData) ? solData : [])
       setPropiedades(Array.isArray(propData) ? propData.map((p: { id: string; nombre: string }) => ({ id: p.id, nombre: p.nombre })) : [])
-    } catch (err) {
-      console.error('Error fetching capacitaciones:', err)
+    } catch {
+      toast.error(locale === 'es' ? 'Error al cargar datos' : 'Error loading data')
     } finally {
       setLoading(false)
     }
-  }, [selectedProperty, filtroCategoria, filtroModalidad])
+  }, [filtroCategoria, filtroModalidad, propIdFiltro, locale])
 
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
+  useEffect(() => { fetchData() }, [fetchData])
 
-  const handleSolicitar = async () => {
+  const handleResponder = async () => {
+    if (!solicitudSeleccionada) return
     try {
-      const propId = form.propiedadId || (selectedProperty !== 'all' ? selectedProperty : propiedades[0]?.id)
-      if (!propId || !form.fechaSolicitada) {
-        toast.error(locale === 'es' ? 'Completa los campos requeridos' : 'Fill required fields')
-        return
-      }
       const res = await fetch('/api/solicitudes', {
-        method: 'POST',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          propiedadId: propId,
-          capacitacionId: form.capacitacionId || null,
-          modalidad: form.modalidad,
-          tema: form.tema || null,
-          fechaSolicitada: form.fechaSolicitada,
-          participantes: parseInt(form.participantes),
-          notas: form.notas || null,
-          estado: 'pendiente',
+          id: solicitudSeleccionada.id,
+          estado: formRespuesta.estado,
+          nombreInstructor: formRespuesta.nombreInstructor || null,
+          linkZoom: formRespuesta.linkZoom || null,
+          fechaConfirmada: formRespuesta.fechaConfirmada || null,
+          costo: formRespuesta.costo ? parseFloat(formRespuesta.costo) : null,
+          notas: formRespuesta.notas || null,
         }),
       })
       if (res.ok) {
-        toast.success(locale === 'es' ? 'Solicitud creada exitosamente' : 'Request created successfully')
-        setShowSolicitarDialog(false)
-        setForm({ modalidad: 'presencial', capacitacionId: '', tema: '', fechaSolicitada: '', participantes: '1', propiedadId: '', notas: '' })
+        toast.success(
+          formRespuesta.estado === 'confirmada'
+            ? (locale === 'es' ? 'Capacitacion confirmada' : 'Training confirmed')
+            : (locale === 'es' ? 'Solicitud actualizada' : 'Request updated')
+        )
+        setShowResponderDialog(false)
         fetchData()
+      } else {
+        toast.error(locale === 'es' ? 'Error al responder' : 'Error responding')
       }
     } catch {
-      toast.error(locale === 'es' ? 'Error al crear solicitud' : 'Error creating request')
+      toast.error(locale === 'es' ? 'Error de conexion' : 'Connection error')
     }
   }
 
-  const categorias = [...new Set(capacitaciones.map(c => c.categoria))]
+  const abrirResponder = (sol: Solicitud) => {
+    setSolicitudSeleccionada(sol)
+    setFormRespuesta({
+      estado: sol.estado === 'pendiente' ? 'confirmada' : sol.estado,
+      nombreInstructor: sol.nombreInstructor || '',
+      linkZoom: sol.linkZoom || '',
+      fechaConfirmada: sol.fechaConfirmada ? new Date(sol.fechaConfirmada).toISOString().split('T')[0] : '',
+      costo: sol.costo ? String(sol.costo) : '',
+      notas: sol.notas || '',
+    })
+    setShowResponderDialog(true)
+  }
+
+  const solicitudesPendientes = solicitudes.filter(s => s.estado === 'pendiente').length
 
   return (
     <div className="space-y-6">
@@ -220,97 +209,114 @@ export function CapacitacionModule() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
-          <p className="text-sm text-muted-foreground">
-            {locale === 'es' ? 'Cursos, progreso y solicitudes de capacitación' : 'Courses, progress and training requests'}
-          </p>
+          <p className="text-sm text-muted-foreground">{t.subtitle}</p>
         </div>
-        <Button className="bg-teal-600 hover:bg-teal-700 text-white gap-2" onClick={() => setShowCotizador(true)}>
-          <GraduationCap className="size-4" />
-          {t.solicitarHibrida}
+        <Button
+          className="bg-teal-600 hover:bg-teal-700 text-white gap-2"
+          onClick={() => setShowCotizador(true)}
+        >
+          <Plus className="size-4" />
+          {locale === 'es' ? 'Solicitar Capacitacion' : 'Request Training'}
         </Button>
       </div>
 
+      {/* Filtros */}
+      <div className="flex flex-wrap gap-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Input placeholder={locale === 'es' ? 'Buscar...' : 'Search...'} className="pl-9 w-48" />
+        </div>
+        <Select value={filtroCategoria} onValueChange={setFiltroCategoria}>
+          <SelectTrigger className="w-44">
+            <SelectValue placeholder={locale === 'es' ? 'Categoria' : 'Category'} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todas">{locale === 'es' ? 'Todas las categorias' : 'All categories'}</SelectItem>
+            <SelectItem value="upselling">{t.upselling}</SelectItem>
+            <SelectItem value="hospitalidad">{t.hospitalidad}</SelectItem>
+            <SelectItem value="conocimiento_producto">{t.producto}</SelectItem>
+            <SelectItem value="onboarding">{t.onboarding}</SelectItem>
+            <SelectItem value="liderazgo">{t.liderazgo}</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filtroModalidad} onValueChange={setFiltroModalidad}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder={t.modalidad} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todas">{locale === 'es' ? 'Todas' : 'All'}</SelectItem>
+            <SelectItem value="virtual">{t.virtual}</SelectItem>
+            <SelectItem value="presencial">{t.presencial}</SelectItem>
+            <SelectItem value="hibrido">{locale === 'es' ? 'Hibrido' : 'Hybrid'}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <Tabs defaultValue="catalogo">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="catalogo" className="gap-1.5">
-            <BookOpen className="size-4 hidden sm:inline-block" />
-            {t.catalogo}
+        <TabsList>
+          <TabsTrigger value="catalogo">
+            <BookOpen className="size-4 mr-1.5" />
+            {locale === 'es' ? 'Catalogo' : 'Catalog'}
           </TabsTrigger>
-          <TabsTrigger value="progreso" className="gap-1.5">
-            <Users className="size-4 hidden sm:inline-block" />
-            {t.progreso}
+          <TabsTrigger value="progreso">
+            <PlayCircle className="size-4 mr-1.5" />
+            {locale === 'es' ? 'Progreso' : 'Progress'}
           </TabsTrigger>
-          <TabsTrigger value="solicitudes" className="gap-1.5">
-            <Calendar className="size-4 hidden sm:inline-block" />
-            {t.solicitudes}
+          <TabsTrigger value="solicitudes">
+            <Calendar className="size-4 mr-1.5" />
+            {locale === 'es' ? 'Capacitaciones Programadas' : 'Scheduled Trainings'}
+            {solicitudesPendientes > 0 && (
+              <Badge className="ml-1.5 bg-amber-500 text-white text-[10px] px-1.5">{solicitudesPendientes}</Badge>
+            )}
           </TabsTrigger>
         </TabsList>
 
-        {/* ─── Catálogo ──────────────────────────────────── */}
+        {/* Catalogo */}
         <TabsContent value="catalogo" className="mt-4">
-          {/* Filters */}
-          <div className="flex flex-wrap gap-3 mb-4">
-            <Select value={filtroCategoria} onValueChange={setFiltroCategoria}>
-              <SelectTrigger className="w-[160px]"><SelectValue placeholder={t.categoria} /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">{t.todas}</SelectItem>
-                {categorias.map(c => (
-                  <SelectItem key={c} value={c}>{getCategoryLabel(c, t)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={filtroModalidad} onValueChange={setFiltroModalidad}>
-              <SelectTrigger className="w-[140px]"><SelectValue placeholder={t.modalidad} /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">{t.todas}</SelectItem>
-                <SelectItem value="presencial">{t.presencial}</SelectItem>
-                <SelectItem value="virtual">{t.virtual}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
           {loading ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 6 }).map((_, i) => (
+              {[1,2,3,4,5,6].map(i => (
                 <Card key={i}><CardContent className="p-4"><div className="h-48 animate-pulse rounded bg-muted" /></CardContent></Card>
               ))}
+            </div>
+          ) : capacitaciones.length === 0 ? (
+            <div className="text-center py-16">
+              <BookOpen className="size-12 text-muted-foreground mx-auto mb-3" />
+              <p className="text-muted-foreground">{locale === 'es' ? 'No hay capacitaciones disponibles' : 'No training available'}</p>
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {capacitaciones.map(cap => (
-                <Card key={cap.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-2 mb-3">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-sm truncate">
-                          {locale === 'en' && cap.tituloEn ? cap.tituloEn : cap.titulo}
-                        </h3>
-                        <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
-                          {locale === 'en' && cap.descripcionEn ? cap.descripcionEn : cap.descripcion}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-1.5 mb-3">
-                      <Badge className={`text-[10px] px-1.5 ${getCategoryColor(cap.categoria)}`}>
+                <Card key={cap.id} className="group hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-2 pt-4 px-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <CardTitle className="text-sm font-semibold leading-tight line-clamp-2">
+                        {locale === 'en' && cap.tituloEn ? cap.tituloEn : cap.titulo}
+                      </CardTitle>
+                      <Badge className={`text-[10px] shrink-0 ${getCategoryColor(cap.categoria)}`}>
                         {getCategoryLabel(cap.categoria, t)}
                       </Badge>
-                      <Badge variant="outline" className="text-[10px] px-1.5 gap-1">
-                        {cap.modalidad === 'presencial' ? <MapPin className="size-3" /> : <Monitor className="size-3" />}
-                        {cap.modalidad === 'presencial' ? t.presencial : t.virtual}
-                      </Badge>
-                      <Badge variant="outline" className="text-[10px] px-1.5">
-                        {getDificultadLabel(cap.dificultad, t)}
-                      </Badge>
                     </div>
-
-                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-                      <span className="flex items-center gap-1"><Clock className="size-3" /> {cap.duracion} {t.minutos}</span>
-                      <span>{cap.puntos} pts</span>
+                    {cap.propiedad && (
+                      <CardDescription className="text-[11px]">{cap.propiedad.nombre}</CardDescription>
+                    )}
+                  </CardHeader>
+                  <CardContent className="px-4 pb-4 space-y-3">
+                    {cap.descripcion && (
+                      <p className="text-xs text-muted-foreground line-clamp-2">{locale === 'en' && cap.descripcionEn ? cap.descripcionEn : cap.descripcion}</p>
+                    )}
+                    <div className="flex flex-wrap gap-1.5">
+                      <Badge variant="outline" className="text-[10px] gap-0.5">
+                        {cap.modalidad === 'virtual' ? <Monitor className="size-3" /> : <MapPin className="size-3" />}
+                        {cap.modalidad}
+                      </Badge>
+                      <Badge variant="outline" className="text-[10px] gap-0.5">
+                        <Clock className="size-3" />{cap.duracion} min
+                      </Badge>
+                      <Badge variant="outline" className="text-[10px]">{cap.dificultad}</Badge>
+                      <Badge variant="outline" className="text-[10px]">{cap.puntos} pts</Badge>
                     </div>
-
-                    <Separator className="my-3" />
-
+                    <Separator />
                     <div className="space-y-1.5">
                       <div className="flex justify-between text-[11px]">
                         <span>{t.completados}: {cap.completadosCount}/{cap.inscripcionesCount}</span>
@@ -328,7 +334,7 @@ export function CapacitacionModule() {
           )}
         </TabsContent>
 
-        {/* ─── Progreso ──────────────────────────────────── */}
+        {/* Progreso */}
         <TabsContent value="progreso" className="mt-4">
           <div className="grid gap-4 sm:grid-cols-2">
             {capacitaciones.map(cap => (
@@ -361,36 +367,112 @@ export function CapacitacionModule() {
           </div>
         </TabsContent>
 
-        {/* ─── Solicitudes ───────────────────────────────── */}
+        {/* Solicitudes / Capacitaciones Programadas */}
         <TabsContent value="solicitudes" className="mt-4">
           {solicitudes.length === 0 ? (
             <div className="text-center py-12">
               <Calendar className="size-12 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground">{locale === 'es' ? 'No hay solicitudes pendientes' : 'No pending requests'}</p>
+              <p className="text-muted-foreground">
+                {locale === 'es' ? 'No hay capacitaciones programadas' : 'No scheduled trainings'}
+              </p>
+              <Button className="mt-4 bg-teal-600 hover:bg-teal-700 text-white" onClick={() => setShowCotizador(true)}>
+                {locale === 'es' ? 'Solicitar capacitacion' : 'Request training'}
+              </Button>
             </div>
           ) : (
-            <div className="grid gap-3">
+            <div className="space-y-3">
+              {/* Pendientes primero */}
+              {solicitudesPendientes > 0 && !esEmpresa && (
+                <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800 dark:bg-amber-950/20 dark:border-amber-800 dark:text-amber-400">
+                  <span className="font-semibold">{solicitudesPendientes}</span>
+                  {locale === 'es' ? ' solicitud(es) pendiente(s) de confirmacion' : ' pending request(s) to confirm'}
+                </div>
+              )}
               {solicitudes.map(sol => (
-                <Card key={sol.id}>
+                <Card key={sol.id} className={sol.estado === 'pendiente' ? 'border-amber-200 dark:border-amber-800' : ''}>
                   <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <span className="font-semibold text-sm">
                             {sol.capacitacion?.titulo || sol.tema || (locale === 'es' ? 'Solicitud abierta' : 'Open request')}
                           </span>
-                          <Badge className={`text-[10px] ${getEstadoSolicitudColor(sol.estado)}`}>
-                            {t[sol.estado as keyof typeof t] || sol.estado}
+                          <Badge className={`text-[10px] ${getEstadoColor(sol.estado)}`}>
+                            {sol.estado}
                           </Badge>
                         </div>
                         <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
                           <span>{sol.propiedad.nombre}</span>
-                          <span className="flex items-center gap-1"><MapPin className="size-3" />{sol.modalidad}</span>
+                          <span className="flex items-center gap-1">
+                            {sol.modalidad === 'virtual' ? <Monitor className="size-3" /> : <MapPin className="size-3" />}
+                            {sol.modalidad}
+                          </span>
                           <span className="flex items-center gap-1"><Users className="size-3" />{sol.participantes}</span>
-                          <span className="flex items-center gap-1"><Calendar className="size-3" />{new Date(sol.fechaSolicitada).toLocaleDateString(locale === 'es' ? 'es-MX' : 'en-US')}</span>
+                          <span className="flex items-center gap-1">
+                            <Calendar className="size-3" />
+                            {new Date(sol.fechaSolicitada).toLocaleDateString(locale === 'es' ? 'es-MX' : 'en-US')}
+                          </span>
+                          {sol.costo && <span className="text-emerald-600 font-medium">${sol.costo.toFixed(0)}</span>}
                         </div>
-                        {sol.notas && <p className="text-xs text-muted-foreground mt-1">{sol.notas}</p>}
+
+                        {/* Detalles expandibles */}
+                        {(sol.nombreInstructor || sol.linkZoom || sol.notas) && (
+                          <button
+                            className="text-xs text-teal-600 hover:underline mt-1 flex items-center gap-1"
+                            onClick={() => setSolicitudExpandida(solicitudExpandida === sol.id ? null : sol.id)}
+                          >
+                            {solicitudExpandida === sol.id ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
+                            {locale === 'es' ? 'Ver detalles' : 'View details'}
+                          </button>
+                        )}
+
+                        {solicitudExpandida === sol.id && (
+                          <div className="mt-2 space-y-1 text-xs bg-muted/50 rounded-lg p-3">
+                            {sol.nombreInstructor && (
+                              <div className="flex items-center gap-1.5">
+                                <UserCheck className="size-3 text-teal-600" />
+                                <span className="text-muted-foreground">Instructor:</span>
+                                <span className="font-medium">{sol.nombreInstructor}</span>
+                              </div>
+                            )}
+                            {sol.fechaConfirmada && (
+                              <div className="flex items-center gap-1.5">
+                                <Calendar className="size-3 text-teal-600" />
+                                <span className="text-muted-foreground">Fecha confirmada:</span>
+                                <span className="font-medium">{new Date(sol.fechaConfirmada).toLocaleDateString(locale === 'es' ? 'es-MX' : 'en-US')}</span>
+                              </div>
+                            )}
+                            {sol.linkZoom && (
+                              <div className="flex items-center gap-1.5">
+                                <Link className="size-3 text-teal-600" />
+                                <a href={sol.linkZoom} target="_blank" rel="noreferrer" className="text-teal-600 hover:underline truncate">
+                                  {locale === 'es' ? 'Unirse a Zoom' : 'Join Zoom'}
+                                </a>
+                              </div>
+                            )}
+                            {sol.notas && (
+                              <div className="flex items-start gap-1.5">
+                                <span className="text-muted-foreground mt-0.5">{locale === 'es' ? 'Notas:' : 'Notes:'}</span>
+                                <span>{sol.notas}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
+
+                      {/* Botón de respuesta — solo admin */}
+                      {!esEmpresa && (
+                        <Button
+                          size="sm"
+                          variant={sol.estado === 'pendiente' ? 'default' : 'outline'}
+                          className={sol.estado === 'pendiente' ? 'bg-teal-600 hover:bg-teal-700 text-white shrink-0' : 'shrink-0'}
+                          onClick={() => abrirResponder(sol)}
+                        >
+                          {sol.estado === 'pendiente'
+                            ? (locale === 'es' ? 'Responder' : 'Respond')
+                            : (locale === 'es' ? 'Editar' : 'Edit')}
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -400,79 +482,116 @@ export function CapacitacionModule() {
         </TabsContent>
       </Tabs>
 
-      {/* ─── Dialog: Solicitar Capacitación ──────────────── */}
-      <Dialog open={showSolicitarDialog} onOpenChange={setShowSolicitarDialog}>
+      {/* Dialog: Admin responde solicitud */}
+      <Dialog open={showResponderDialog} onOpenChange={setShowResponderDialog}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <GraduationCap className="size-5 text-teal-600" />
-              {t.solicitarHibrida}
+              {locale === 'es' ? 'Responder Solicitud' : 'Respond to Request'}
             </DialogTitle>
             <DialogDescription>
-              {locale === 'es' ? 'Solicita una sesión de capacitación presencial o virtual' : 'Request an in-person or virtual training session'}
+              {solicitudSeleccionada?.capacitacion?.titulo || solicitudSeleccionada?.tema || 'Solicitud de capacitacion'}
+              {' · '}{solicitudSeleccionada?.propiedad.nombre}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>{t.modalidad}</Label>
-              <div className="flex gap-2">
-                <Button type="button" variant={form.modalidad === 'presencial' ? 'default' : 'outline'} className={form.modalidad === 'presencial' ? 'bg-teal-600 hover:bg-teal-700' : ''} onClick={() => setForm(p => ({ ...p, modalidad: 'presencial' }))}>
-                  <MapPin className="size-4 mr-1.5" />{t.presencial}
-                </Button>
-                <Button type="button" variant={form.modalidad === 'virtual' ? 'default' : 'outline'} className={form.modalidad === 'virtual' ? 'bg-teal-600 hover:bg-teal-700' : ''} onClick={() => setForm(p => ({ ...p, modalidad: 'virtual' }))}>
-                  <Monitor className="size-4 mr-1.5" />{t.virtual}
-                </Button>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>{locale === 'es' ? 'Tema / Capacitación' : 'Topic / Training'}</Label>
-              <Select value={form.capacitacionId} onValueChange={v => setForm(p => ({ ...p, capacitacionId: v }))}>
-                <SelectTrigger><SelectValue placeholder={locale === 'es' ? 'Seleccionar...' : 'Select...'} /></SelectTrigger>
-                <SelectContent>
-                  {capacitaciones.map(c => (
-                    <SelectItem key={c.id} value={c.id}>{locale === 'en' && c.tituloEn ? c.tituloEn : c.titulo}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>{locale === 'es' ? 'Propiedad' : 'Property'}</Label>
-              <Select value={form.propiedadId || selectedProperty} onValueChange={v => setForm(p => ({ ...p, propiedadId: v }))}>
+          <div className="space-y-4 py-2">
+            {/* Estado */}
+            <div className="space-y-1">
+              <Label>{locale === 'es' ? 'Estado' : 'Status'}</Label>
+              <Select value={formRespuesta.estado} onValueChange={v => setFormRespuesta(p => ({ ...p, estado: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {propiedades.map(p => (<SelectItem key={p.id} value={p.id}>{p.nombre}</SelectItem>))}
+                  <SelectItem value="confirmada">{locale === 'es' ? 'Confirmar' : 'Confirm'}</SelectItem>
+                  <SelectItem value="pendiente">{locale === 'es' ? 'Dejar pendiente' : 'Keep pending'}</SelectItem>
+                  <SelectItem value="cancelada">{locale === 'es' ? 'Cancelar' : 'Cancel'}</SelectItem>
+                  <SelectItem value="completada">{locale === 'es' ? 'Completada' : 'Completed'}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>{locale === 'es' ? 'Fecha' : 'Date'}</Label>
-                <Input type="date" value={form.fechaSolicitada} onChange={e => setForm(p => ({ ...p, fechaSolicitada: e.target.value }))} min={new Date().toISOString().split('T')[0]} />
-              </div>
-              <div className="space-y-2">
-                <Label>{t.participantes}</Label>
-                <Input type="number" min="1" max="100" value={form.participantes} onChange={e => setForm(p => ({ ...p, participantes: e.target.value }))} />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>{locale === 'es' ? 'Notas' : 'Notes'}</Label>
-              <Textarea value={form.notas} onChange={e => setForm(p => ({ ...p, notas: e.target.value }))} rows={2} />
+
+            {formRespuesta.estado === 'confirmada' && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="flex items-center gap-1">
+                      <UserCheck className="size-3.5" />
+                      {locale === 'es' ? 'Instructor' : 'Instructor'}
+                    </Label>
+                    <Input
+                      placeholder={locale === 'es' ? 'Nombre del instructor' : 'Instructor name'}
+                      value={formRespuesta.nombreInstructor}
+                      onChange={e => setFormRespuesta(p => ({ ...p, nombreInstructor: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="flex items-center gap-1">
+                      <DollarSign className="size-3.5" />
+                      {locale === 'es' ? 'Costo total ($)' : 'Total cost ($)'}
+                    </Label>
+                    <Input
+                      type="number"
+                      placeholder="0.00"
+                      value={formRespuesta.costo}
+                      onChange={e => setFormRespuesta(p => ({ ...p, costo: e.target.value }))}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="flex items-center gap-1">
+                    <Calendar className="size-3.5" />
+                    {locale === 'es' ? 'Fecha confirmada' : 'Confirmed date'}
+                  </Label>
+                  <Input
+                    type="date"
+                    value={formRespuesta.fechaConfirmada}
+                    onChange={e => setFormRespuesta(p => ({ ...p, fechaConfirmada: e.target.value }))}
+                  />
+                </div>
+
+                {solicitudSeleccionada?.modalidad === 'virtual' && (
+                  <div className="space-y-1">
+                    <Label className="flex items-center gap-1">
+                      <Link className="size-3.5" />
+                      {locale === 'es' ? 'Link de Zoom' : 'Zoom Link'}
+                    </Label>
+                    <Input
+                      placeholder="https://zoom.us/j/..."
+                      value={formRespuesta.linkZoom}
+                      onChange={e => setFormRespuesta(p => ({ ...p, linkZoom: e.target.value }))}
+                    />
+                  </div>
+                )}
+              </>
+            )}
+
+            <div className="space-y-1">
+              <Label>{locale === 'es' ? 'Notas para la empresa' : 'Notes for the company'}</Label>
+              <Textarea
+                value={formRespuesta.notas}
+                onChange={e => setFormRespuesta(p => ({ ...p, notas: e.target.value }))}
+                placeholder={locale === 'es' ? 'Instrucciones, requisitos previos, etc.' : 'Instructions, prerequisites, etc.'}
+                rows={2}
+              />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowSolicitarDialog(false)}>{locale === 'es' ? 'Cancelar' : 'Cancel'}</Button>
-            <Button className="bg-teal-600 hover:bg-teal-700 text-white gap-1.5" onClick={handleSolicitar}>
-              <Calendar className="size-4" />
-              {locale === 'es' ? 'Confirmar Solicitud' : 'Confirm Request'}
+            <Button variant="outline" onClick={() => setShowResponderDialog(false)}>
+              {locale === 'es' ? 'Cancelar' : 'Cancel'}
+            </Button>
+            <Button className="bg-teal-600 hover:bg-teal-700 text-white" onClick={handleResponder}>
+              {locale === 'es' ? 'Guardar Respuesta' : 'Save Response'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    <CotizadorCapacitacion
+
+      <CotizadorCapacitacion
         open={showCotizador}
-        onClose={() => setShowCotizador(false)}
+        onClose={() => { setShowCotizador(false); fetchData() }}
         capacitaciones={capacitaciones}
-        propiedades={propiedades}
+        propiedades={propiedadFija ? propiedades.filter(p => p.id === propiedadFija) : propiedades}
       />
     </div>
   )
